@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "csv-parser": "^3.0.0",        
+    "fs": "^0.0.1-security"        
+  },
+  "scripts": {
+    "import-bikes": "node scripts/importBikes.js",
+    "enrich-bikes": "node scripts/enrichBikes.js",
+    "init-backend": "node src/server.js"
+  }
+}
