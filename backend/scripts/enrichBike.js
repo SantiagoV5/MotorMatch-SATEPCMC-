@@ -1,43 +1,37 @@
-// backend/scripts/enriquecerMotos.js
-const admin = require('firebase-admin');
+// backend/scripts/enrichBike.js
+const prisma = require('../src/config/database');
 const MotorcycleEnricher = require('../src/modules/motorcycles/motorcycle.enricher');
 
-const serviceAccount = require('../src/config/serviceAccountKey.json');
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
-const db = admin.firestore();
-
 async function enriquecerMotos() {
-  const snapshot = await db.collection('motorcycles')
-    .where('necesita_enriquecimiento', '==', true)
-    .get();
-
-  console.log(`🔍 ${snapshot.size} motos por enriquecer`);
-  
-  const batch = db.batch();
-  let count = 0;
-
-  snapshot.forEach(doc => {
-    const moto = doc.data();
-    const datosEstimados = MotorcycleEnricher.getEstimatedData(
-      moto.marca, 
-      moto.modelo, 
-      moto.cilindraje
-    );
-    
-    batch.update(doc.ref, {
-      ...datosEstimados,
-      necesita_enriquecimiento: false,
-      fecha_enriquecimiento: new Date()
-    });
-    
-    count++;
+  const motos = await prisma.motorcycle.findMany({
+    where: { necesitaEnriquecimiento: true },
   });
 
-  await batch.commit();
-  console.log(`✅ ${count} motos enriquecidas con datos estimados`);
+  console.log(`🔍 ${motos.length} motos por enriquecer`);
+
+  for (const moto of motos) {
+    const datosEstimados = MotorcycleEnricher.getEstimatedData(
+      moto.marca,
+      moto.modelo,
+      moto.cilindraje
+    );
+
+    await prisma.motorcycle.update({
+      where: { id: moto.id },
+      data: {
+        ...datosEstimados,
+        necesitaEnriquecimiento: false,
+      },
+    });
+  }
+
+  console.log(`✅ ${motos.length} motos enriquecidas con datos estimados`);
+  await prisma.$disconnect();
   process.exit(0);
 }
 
-enriquecerMotos();
+enriquecerMotos().catch(async (err) => {
+  console.error('❌ Error enriqueciendo motos:', err);
+  await prisma.$disconnect();
+  process.exit(1);
+});

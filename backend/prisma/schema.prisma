@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── USUARIOS ────────────────────────────────────────────────────────────────
+// Autenticación propia: bcryptjs para hashear contraseñas + JWT para sesiones.
+// Sin dependencias externas de autenticación (sin Firebase).
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  savedResults SavedResult[]
+
+  @@map("users")
+}
+
+// ─── MOTOCICLETAS ─────────────────────────────────────────────────────────────
+model Motorcycle {
+  id                      String   @id @default(uuid())
+  marca                   String
+  linea                   String?
+  modelo                  Int
+  cilindraje              Int?
+  tipoCombustible         String   @default("GASOLINA") @map("tipo_combustible")
+  peso                    Float?
+  capacidadPasajeros      Int      @default(2) @map("capacidad_pasajeros")
+
+  // Datos enriquecidos (precio, imagen, consumo, etc.)
+  precioEstimado          Float?   @map("precio_estimado")
+  alturaAsiento           Int?     @map("altura_asiento")  // en mm
+  imagenUrl               String?  @map("imagen_url")
+  consumoPromedio         Float?   @map("consumo_promedio") // km/l
+  ventajas                String[]
+  desventajas             String[]
+
+  fuente                  String   @default("datos.gov.co")
+  necesitaEnriquecimiento Boolean  @default(true) @map("necesita_enriquecimiento")
+
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  savedResults            SavedResult[]
+
+  @@map("motorcycles")
+}
+
+// ─── RESULTADOS GUARDADOS ─────────────────────────────────────────────────────
+// Solo usuarios autenticados pueden guardar recomendaciones.
+model SavedResult {
+  id           String     @id @default(uuid())
+  userId       String     @map("user_id")
+  motorcycleId String     @map("motorcycle_id")
+  score        Float?     // Puntaje del algoritmo de recomendación
+  notas        String?    // Notas personales del usuario
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  motorcycle Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, motorcycleId])
+  @@map("saved_results")
+}
