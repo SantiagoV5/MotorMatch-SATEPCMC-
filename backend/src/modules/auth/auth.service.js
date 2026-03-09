@@ -36,15 +36,16 @@ async function register({ name, email, password }) {
   // Hash seguro de la contraseña
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-  // Crear usuario en la BD
+  // Crear usuario en la BD — fullName mapea a full_name en PostgreSQL
   const user = await prisma.user.create({
-    data: { name, email, passwordHash },
-    select: { id: true, name: true, email: true, createdAt: true },
+    data: { fullName: name, email, passwordHash },
+    select: { id: true, fullName: true, email: true, createdAt: true },
   });
 
   const token = signToken(user);
 
-  return { token, user };
+  // Normalizar fullName → name para el frontend
+  return { token, user: { id: user.id, name: user.fullName, email: user.email, createdAt: user.createdAt } };
 }
 
 // ── Login ───────────────────────────────────────────────────────────────────
@@ -64,9 +65,11 @@ async function login({ email, password }) {
 
   const token = signToken(user);
 
-  // Devolver usuario sin el hash
-  const { passwordHash: _omit, ...safeUser } = user;
-  return { token, user: safeUser };
+  // Normalizar fullName → name y excluir el hash de la respuesta
+  return {
+    token,
+    user: { id: user.id, name: user.fullName, email: user.email, createdAt: user.createdAt },
+  };
 }
 
 module.exports = { register, login };

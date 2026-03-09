@@ -5,7 +5,11 @@ const { logger } = require('../utils/logger');
  * Captura cualquier error lanzado con next(err) desde controllers o middlewares.
  */
 // eslint-disable-next-line no-unused-vars
-function errorHandler(err, _req, res, _next) {
+function errorHandler(err, req, res, _next) {
+  // Log siempre: método, ruta y error completo para debugging
+  logger.error(`[${req.method} ${req.path}] ${err.message}`);
+  if (err.stack) logger.error(err.stack);
+
   // Errores de validación de Joi (lanzados desde validation.middleware)
   if (err.isJoi) {
     return res.status(400).json({
@@ -28,8 +32,7 @@ function errorHandler(err, _req, res, _next) {
     });
   }
 
-  // Error genérico no controlado — loguear y no exponer detalle al cliente
-  logger.error(err);
+  // Error genérico no controlado
   return res.status(500).json({
     message: 'Error interno del servidor',
   });

@@ -3,35 +3,55 @@ import { useNavigate } from 'react-router-dom'
 import AuthSidePanel from './AuthSidePanel'
 import useAuth from '../hooks/useAuth'
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail]               = useState('')
   const [password, setPassword]         = useState('')
+  const [touched, setTouched]           = useState({})
   const navigate                        = useNavigate()
   const { login, loading, error }       = useAuth()
 
+  function touch(field) { setTouched(p => ({ ...p, [field]: true })) }
+
+  const emailError    = touched.email    && !EMAIL_RE.test(email)  ? 'Ingresa un correo electronico valido' : ''
+  const passwordError = touched.password && !password               ? 'La contraseña es obligatoria'        : ''
+
   async function handleSubmit(e) {
     e.preventDefault()
+    setTouched({ email: true, password: true })
+    if (!EMAIL_RE.test(email) || !password) return
     try {
       await login(email, password)
-      navigate('/')  // redirigir tras login exitoso
+      navigate('/')
     } catch {
       // el error queda capturado en useAuth().error
     }
   }
 
+  function inputCls(hasErr) {
+    return [
+      'w-full pl-12 py-3 rounded-lg border',
+      hasErr
+        ? 'border-red-400 focus:ring-red-200 focus:border-red-400'
+        : 'border-slate-200 dark:border-slate-800 focus:ring-primary/20 focus:border-primary',
+      'bg-slate-50 dark:bg-slate-800 focus:ring-2 outline-none transition-all dark:text-white',
+    ].join(' ')
+  }
+
   return (
     <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-[1200px] h-[800px] flex overflow-hidden rounded-xl shadow-2xl bg-white dark:bg-slate-900">
+      <div className="w-full max-w-[1200px] h-[850px] flex overflow-hidden rounded-xl shadow-2xl bg-white dark:bg-slate-900">
 
         {/* Panel izquierdo compartido */}
         <AuthSidePanel description="Encuentra la motocicleta perfecta que se adapte a tu estilo de vida y pasion por la carretera." />
 
         {/* Panel derecho: formulario */}
-        <div className="w-full lg:w-1/2 flex flex-col p-8 md:p-16 bg-white dark:bg-slate-900 overflow-y-auto">
+        <div className="w-full lg:w-1/2 flex flex-col p-8 md:p-12 bg-white dark:bg-slate-900 overflow-y-auto">
 
           {/* Encabezado */}
-          <div className="mb-10">
+          <div className="mb-8">
             <h3 className="text-3xl font-bold text-neutral-dark dark:text-slate-100 mb-2">
               Bienvenido de nuevo
             </h3>
@@ -55,72 +75,61 @@ function LoginForm() {
           </div>
 
           {/* Formulario */}
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-semibold text-neutral-dark dark:text-slate-300 mb-2">
+              <label className="block text-sm font-semibold text-neutral-dark dark:text-slate-300 mb-1.5">
                 Correo Electronico
               </label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                  mail
-                </span>
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">mail</span>
                 <input
                   type="email"
                   placeholder="ejemplo@motormatch.com"
-                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white"
+                  onBlur={() => touch('email')}
+                  className={inputCls(!!emailError) + ' pr-4'}
                 />
               </div>
+              <p className="mt-1 h-4 text-xs text-red-500">{emailError}</p>
             </div>
 
             {/* Contrasena */}
             <div>
-              <label className="block text-sm font-semibold text-neutral-dark dark:text-slate-300 mb-2">
-                Contrasena
+              <label className="block text-sm font-semibold text-neutral-dark dark:text-slate-300 mb-1.5">
+                Contraseña
               </label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                  lock
-                </span>
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="xxxxxxxxxx"
-                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-12 py-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white"
+                  onBlur={() => touch('password')}
+                  className={inputCls(!!passwordError) + ' pr-12'}
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
+                  onClick={() => setShowPassword((p) => !p)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
-                  aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
-                  <span className="material-symbols-outlined">
-                    {showPassword ? 'visibility_off' : 'visibility'}
-                  </span>
+                  <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
                 </button>
               </div>
+              <p className="mt-1 h-4 text-xs text-red-500">{passwordError}</p>
             </div>
 
             {/* Recordarme + Olvidaste */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pt-1">
               <label className="flex items-center gap-2 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  className="size-4 rounded border-slate-300 text-primary focus:ring-primary"
-                />
-                <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-neutral-dark transition-colors">
-                  Recordarme
-                </span>
+                <input type="checkbox" className="size-4 rounded border-slate-300 text-primary focus:ring-primary" />
+                <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-neutral-dark transition-colors">Recordarme</span>
               </label>
-              <a href="#" className="text-sm font-medium text-accent hover:underline">
-                Olvidaste tu contrasena?
-              </a>
+              <a href="#" className="text-sm font-medium text-accent hover:underline">¿Olvidaste tu contraseña?</a>
             </div>
 
             {/* Error del servidor */}
@@ -140,22 +149,15 @@ function LoginForm() {
             </button>
           </form>
 
-          {/* Divisor */}
-          <div className="relative my-10">
+          {/* Divisor decorativo */}
+          <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-200 dark:border-slate-800" />
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-white dark:bg-slate-900 px-4 text-slate-500">
-               
-              </span>
-            </div>
           </div>
 
-          
-
           {/* Footer */}
-          <div className="mt-auto pt-8 text-center">
+          <div className="mt-auto text-center">
             <p className="text-sm text-slate-500">
               Aun no eres parte de la comunidad?{' '}
               <button

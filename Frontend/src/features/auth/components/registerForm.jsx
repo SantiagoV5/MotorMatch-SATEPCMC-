@@ -3,6 +3,29 @@ import { useNavigate } from 'react-router-dom'
 import AuthSidePanel from './AuthSidePanel'
 import useAuth from '../hooks/useAuth'
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function validate({ name, email, password, confirmPassword }) {
+  const errs = {}
+  if (!name || name.trim().length < 2)
+    errs.name = 'El nombre debe tener al menos 2 caracteres'
+  else if (name.trim().length > 80)
+    errs.name = 'El nombre no puede superar 80 caracteres'
+
+  if (!email || !EMAIL_RE.test(email))
+    errs.email = 'Ingresa un correo electronico valido'
+
+  if (!password || password.length < 8)
+    errs.password = 'La contraseña debe tener al menos 8 caracteres'
+
+  if (!confirmPassword)
+    errs.confirmPassword = 'Por favor confirma tu contraseña'
+  else if (password !== confirmPassword)
+    errs.confirmPassword = 'Las contraseñas no coinciden'
+
+  return errs
+}
+
 function RegisterForm() {
   const [showPassword, setShowPassword]               = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -10,20 +33,36 @@ function RegisterForm() {
   const [email, setEmail]                 = useState('')
   const [password, setPassword]           = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [formError, setFormError]         = useState(null)
+  const [touched, setTouched]             = useState({})
   const navigate                          = useNavigate()
   const { register, loading, error }      = useAuth()
 
+  const fieldErrors = validate({ name, email, password, confirmPassword })
+
+  function touch(field) { setTouched(p => ({ ...p, [field]: true })) }
+  function showErr(field) { return touched[field] ? (fieldErrors[field] || '') : '' }
+
+  function inputCls(field, extraPr = 'pr-4') {
+    const hasErr = touched[field] && fieldErrors[field]
+    return [
+      'w-full pl-12',
+      extraPr,
+      'py-3 rounded-lg border',
+      hasErr
+        ? 'border-red-400 focus:ring-red-200 focus:border-red-400'
+        : 'border-slate-200 dark:border-slate-800 focus:ring-primary/20 focus:border-primary',
+      'bg-slate-50 dark:bg-slate-800 focus:ring-2 outline-none transition-all dark:text-white',
+    ].join(' ')
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
-    if (password !== confirmPassword) {
-      setFormError('Las contraseñas no coinciden')
-      return
-    }
-    setFormError(null)
+    // Mostrar todos los errores si el usuario intentó enviar sin completar
+    setTouched({ name: true, email: true, password: true, confirmPassword: true })
+    if (Object.keys(fieldErrors).length > 0) return
     try {
       await register(name, email, password)
-      navigate('/')  // redirigir tras registro exitoso
+      navigate('/')
     } catch {
       // el error queda capturado en useAuth().error
     }
@@ -64,7 +103,7 @@ function RegisterForm() {
           </div>
 
           {/* Formulario */}
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-3" onSubmit={handleSubmit}>
 
             {/* Nombre */}
             <div>
@@ -72,18 +111,17 @@ function RegisterForm() {
                 Nombre Completo
               </label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                  person
-                </span>
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">person</span>
                 <input
                   type="text"
                   placeholder="Juan Perez"
-                  required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white"
+                  onBlur={() => touch('name')}
+                  className={inputCls('name')}
                 />
               </div>
+              <p className="mt-1 h-4 text-xs text-red-500">{showErr('name')}</p>
             </div>
 
             {/* Email */}
@@ -92,18 +130,17 @@ function RegisterForm() {
                 Correo Electronico
               </label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                  mail
-                </span>
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">mail</span>
                 <input
-                  type="email"
+                  type="text"
                   placeholder="ejemplo@motormatch.com"
-                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white"
+                  onBlur={() => touch('email')}
+                  className={inputCls('email')}
                 />
               </div>
+              <p className="mt-1 h-4 text-xs text-red-500">{showErr('email')}</p>
             </div>
 
             {/* Contrasena + Confirmar (grid 2 columnas) */}
@@ -112,66 +149,60 @@ function RegisterForm() {
               {/* Contrasena */}
               <div>
                 <label className="block text-sm font-semibold text-neutral-dark dark:text-slate-300 mb-1.5">
-                  Contrasena
+                  Contraseña
                 </label>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                    lock
-                  </span>
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="xxxxxxxxxx"
-                    required
+                    placeholder="Min. 8 caracteres"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-12 pr-12 py-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white"
+                    onBlur={() => touch('password')}
+                    className={inputCls('password', 'pr-12')}
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
+                    onClick={() => setShowPassword((p) => !p)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
-                    aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   >
-                    <span className="material-symbols-outlined text-xl">
-                      {showPassword ? 'visibility_off' : 'visibility'}
-                    </span>
+                    <span className="material-symbols-outlined text-xl">{showPassword ? 'visibility_off' : 'visibility'}</span>
                   </button>
                 </div>
+                <p className="mt-1 h-4 text-xs text-red-500">{showErr('password')}</p>
               </div>
 
               {/* Confirmar contrasena */}
               <div>
                 <label className="block text-sm font-semibold text-neutral-dark dark:text-slate-300 mb-1.5">
-                  Confirmar Contrasena
+                  Confirmar Contraseña
                 </label>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                    lock_reset
-                  </span>
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock_reset</span>
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="xxxxxxxxxx"
-                    required
+                    placeholder="Repite tu contraseña"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full pl-12 pr-12 py-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white"
+                    onBlur={() => touch('confirmPassword')}
+                    className={inputCls('confirmPassword', 'pr-12')}
                   />
                   <button
                     type="button"
-                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    onClick={() => setShowConfirmPassword((p) => !p)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
-                    aria-label={showConfirmPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+                    aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   >
-                    <span className="material-symbols-outlined text-xl">
-                      {showConfirmPassword ? 'visibility_off' : 'visibility'}
-                    </span>
+                    <span className="material-symbols-outlined text-xl">{showConfirmPassword ? 'visibility_off' : 'visibility'}</span>
                   </button>
                 </div>
+                <p className="mt-1 h-4 text-xs text-red-500">{showErr('confirmPassword')}</p>
               </div>
             </div>
 
             {/* Terminos */}
-            <div className="flex items-start gap-2 pt-2">
+            <div className="flex items-start gap-2 pt-1">
               <input
                 id="terms"
                 type="checkbox"
@@ -180,17 +211,15 @@ function RegisterForm() {
               />
               <label htmlFor="terms" className="text-sm text-slate-600 dark:text-slate-400 leading-tight">
                 Acepto los{' '}
-                <a href="#" className="text-primary font-medium hover:underline">
-                  Terminos y Condiciones
-                </a>{' '}
+                <a href="#" className="text-primary font-medium hover:underline">Terminos y Condiciones</a>{' '}
                 y la Politica de Privacidad de MotorMatch.
               </label>
             </div>
 
-            {/* Errores */}
-            {(formError || error) && (
+            {/* Errores del servidor */}
+            {error && (
               <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3">
-                {formError || error}
+                {error}
               </p>
             )}
 
@@ -198,26 +227,21 @@ function RegisterForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-primary text-white rounded-lg font-bold text-lg hover:bg-[#081d50] transition-all shadow-lg shadow-primary/20 tracking-wider mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-4 bg-primary text-white rounded-lg font-bold text-lg hover:bg-[#081d50] transition-all shadow-lg shadow-primary/20 tracking-wider mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? 'CREANDO CUENTA...' : 'CREAR CUENTA'}
             </button>
           </form>
 
-          {/* Divisor */}
-          <div className="relative my-8">
+          {/* Divisor decorativo */}
+          <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-200 dark:border-slate-800" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-white dark:bg-slate-900 px-4 text-slate-500 uppercase tracking-widest text-xs">
-                
-              </span>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="mt-auto pt-8 text-center">
+          <div className="mt-auto text-center">
             <p className="text-sm text-slate-500">
               Ya tienes una cuenta?{' '}
               <button
