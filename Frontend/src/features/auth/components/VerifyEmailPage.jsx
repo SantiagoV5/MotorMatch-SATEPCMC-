@@ -24,8 +24,8 @@ export default function VerifyEmailPage() {
 
     verifyEmail(token)
       .then(data => {
-        localStorage.setItem('mm_token', data.token)
-        localStorage.setItem('mm_user', JSON.stringify(data.user))
+        sessionStorage.setItem('mm_token', data.token)
+        sessionStorage.setItem('mm_user', JSON.stringify(data.user))
         // Redirigir inmediatamente sin mostrar pantalla intermedia
         navigate('/', { replace: true })
       })

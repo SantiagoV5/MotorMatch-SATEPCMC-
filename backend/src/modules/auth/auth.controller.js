@@ -42,4 +42,14 @@ async function login(req, res, next) {
   }
 }
 
-module.exports = { register, verifyEmail, login };
+// POST /api/auth/resend-verification
+async function resendVerification(req, res, next) {
+  try {
+    const result = await authService.resendVerification(req.body);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { register, verifyEmail, login, resendVerification };

@@ -62,6 +62,9 @@ model Motorcycle {
   description           String?
   advantages            String[]
   disadvantages         String[]
+  colors                String[]  @default([])
+  warranty              String?   @db.VarChar(200)
+  countryOrigin         String?   @map("country_origin") @db.VarChar(100)
   source                String?   @db.VarChar(50)
   externalIds           Json?     @map("external_ids")
   lastApiUpdate         DateTime? @map("last_api_update")

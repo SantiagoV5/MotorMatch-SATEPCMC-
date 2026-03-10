@@ -5,14 +5,14 @@ const TOKEN_KEY = 'mm_token'
 const USER_KEY  = 'mm_user'
 
 function useAuth() {
-  const [user, setUser]       = useState(() => JSON.parse(localStorage.getItem(USER_KEY) || 'null'))
-  const [token, setToken]     = useState(() => localStorage.getItem(TOKEN_KEY) || null)
+  const [user, setUser]       = useState(() => JSON.parse(sessionStorage.getItem(USER_KEY) || 'null'))
+  const [token, setToken]     = useState(() => sessionStorage.getItem(TOKEN_KEY) || null)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
 
   function persist(newToken, newUser) {
-    localStorage.setItem(TOKEN_KEY, newToken)
-    localStorage.setItem(USER_KEY, JSON.stringify(newUser))
+    sessionStorage.setItem(TOKEN_KEY, newToken)
+    sessionStorage.setItem(USER_KEY, JSON.stringify(newUser))
     setToken(newToken)
     setUser(newUser)
   }
@@ -51,8 +51,8 @@ function useAuth() {
   }, [])
 
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
+    sessionStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem(USER_KEY)
     setToken(null)
     setUser(null)
   }, [])

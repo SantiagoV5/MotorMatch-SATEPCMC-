@@ -4,7 +4,7 @@ const crypto  = require('crypto');
 
 const prisma                         = require('../../config/database');
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../../config/environment');
-const { sendVerificationEmail }      = require('../../utils/mailer');
+const { sendVerificationEmail, sendWelcomeEmail } = require('../../utils/mailer');
 
 const SALT_ROUNDS = 12;
 
@@ -81,6 +81,14 @@ async function verifyEmail(token) {
     data: { emailVerified: true, verificationToken: null, verificationExpiresAt: null },
   });
 
+  // Enviar correo de bienvenida
+  try {
+    await sendWelcomeEmail({ to: user.email, name: user.fullName });
+  } catch (mailErr) {
+    const { logger } = require('../../utils/logger');
+    logger.error(`Error enviando email de bienvenida a ${user.email}: ${mailErr.message}`);
+  }
+
   const jwtToken = signToken(user);
   return {
     token: jwtToken,
@@ -108,4 +116,40 @@ async function login({ email, password }) {
   };
 }
 
-module.exports = { register, verifyEmail, login };
+// ── Reenviar correo de verificación ────────────────────────────────────────────
+
+async function resendVerification({ email }) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    throw createError('No existe una cuenta con ese correo electrónico', 404);
+  }
+
+  if (user.emailVerified) {
+    throw createError('Tu correo ya está verificado. Puedes iniciar sesión.', 400);
+  }
+
+  // Generar nuevo token de verificación
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+  const verificationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { verificationToken, verificationExpiresAt },
+  });
+
+  // Enviar correo
+  const appUrl = process.env.APP_URL || 'http://localhost:5173';
+  const verificationUrl = `${appUrl}/verify-email?token=${verificationToken}`;
+  try {
+    await sendVerificationEmail({ to: email, name: user.fullName, verificationUrl });
+  } catch (error) {
+    const { logger } = require('../../utils/logger');
+    logger.error(`Error al enviar correo de verificación: ${error.message}`);
+  }
+
+  return {
+    message: 'Correo de verificación reenviado. Revisa tu bandeja de entrada.',
+  };
+}
+
+module.exports = { register, verifyEmail, login, resendVerification };
