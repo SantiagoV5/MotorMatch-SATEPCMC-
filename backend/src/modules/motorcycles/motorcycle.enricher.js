@@ -18,16 +18,17 @@ class MotorcycleEnricher {
       alto: 820     // 400cc+
     };
 
-    const segmento = cilindraje <= 200 ? 'bajo' : (cilindraje <= 400 ? 'medio' : 'alto');
+    // Guard: cilindraje null se trata como segmento bajo (principiante por defecto)
+    const segmento = !cilindraje || cilindraje <= 200 ? 'bajo' : (cilindraje <= 400 ? 'medio' : 'alto');
     const precios = preciosPorMarca[marca.toUpperCase()] || preciosPorMarca['BAJAJ'];
 
     return {
-      precio_estimado: precios?.[segmento] || 8000000,
-      altura_asiento: alturaPorSegmento[segmento],
-      consumo_promedio: segmento === 'bajo' ? 35 : (segmento === 'medio' ? 28 : 22),
-      imagen_url: `https://via.placeholder.com/300x200?text=${marca}+${modelo}`,
+      precioEstimado: precios?.[segmento] || 8000000,
+      alturaAsiento: alturaPorSegmento[segmento],
+      consumoPromedio: segmento === 'bajo' ? 35 : (segmento === 'medio' ? 28 : 22),
+      imagenUrl: `https://via.placeholder.com/300x200?text=${marca}+${modelo}`,
       ventajas: this.getVentajasPorSegmento(segmento),
-      desventajas: this.getDesventajasPorSegmento(segmento)
+      desventajas: this.getDesventajasPorSegmento(segmento),
     };
   }
 
