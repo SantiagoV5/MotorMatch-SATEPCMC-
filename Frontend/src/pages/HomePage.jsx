@@ -167,6 +167,7 @@ export default function HomePage() {
 
         {/* Main CTAs */}
         <section className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <button onClick={() => navigate('/questionnaire')} className="w-full py-2 bg-primary hover:bg-primary/95 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg">
           <button className="w-full py-2 bg-primary hover:bg-primary/95 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg">
             <span className="material-symbols-outlined text-base">quiz</span>
             COMENZAR CUESTIONARIO

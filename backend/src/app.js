@@ -6,8 +6,9 @@ const { NODE_ENV } = require('./config/environment');
 const errorHandler = require('./middlewares/error.handler');
 
 // ─── Rutas (se irán añadiendo por módulo) ───────────────────────────────────
-const authRoutes = require('./modules/auth/auth.routes');
-const motorcycleRoutes = require('./modules/motorcycles/motorcycle.routes');
+const authRoutes        = require('./modules/auth/auth.routes');
+const motorcycleRoutes  = require('./modules/motorcycles/motorcycle.routes');
+const questionnaireRoutes = require('./modules/questionnaire/questionnaire.routes');
 
 const app = express();
 
@@ -29,6 +30,7 @@ if (NODE_ENV !== 'test') {
 //─── Rutas de la API ─────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/motorcycles', motorcycleRoutes);
+app.use('/api/questionnaire', questionnaireRoutes);
 
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
