@@ -11,23 +11,44 @@ const { generateRecommendations } = require('../recommendations/recommendation.s
 async function processQuestionnaire(userId, data) {
   const budget = data.budget ? parseFloat(data.budget) : 0
 
-  // 1. Guardar cuestionario
-  const questionnaire = await prisma.questionnaire.create({
-    data: {
-      userId,
-      budget,
-      includesSoat:         data.includesSoat         ?? false,
-      includesRegistration: data.includesRegistration  ?? false,
-      usageType:            data.usageType             ?? '',
-      frequency:            data.frequency             ?? null,
-      hasPassenger:         data.hasPassenger          ?? false,
-      passengerFrequency:   data.passengerFrequency    ?? null,
-      heightCm:             data.heightCm,
-      weightKg:             data.weightKg              ?? null,
-      comfortWithHeavy:     data.comfortWithHeavy      ?? null,
-      recommendationIds:    [],
-    },
+  const questionnaireData = {
+    userId,
+    budget,
+    includesSoat:         data.includesSoat         ?? false,
+    includesRegistration: data.includesRegistration  ?? false,
+    usageType:            data.usageType             ?? '',
+    frequency:            data.frequency             ?? null,
+    hasPassenger:         data.hasPassenger          ?? false,
+    passengerFrequency:   data.passengerFrequency    ?? null,
+    heightCm:             data.heightCm,
+    weightKg:             data.weightKg              ?? null,
+    comfortWithHeavy:     data.comfortWithHeavy      ?? null,
+    recommendationIds:    [],
+  }
+
+  // 1. Crear o actualizar cuestionario según si el usuario ya tenía uno
+  const existing = await prisma.questionnaire.findFirst({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
   })
+
+  let questionnaire
+  if (existing) {
+    // Ya existe — actualizar en lugar de crear uno nuevo
+    questionnaire = await prisma.questionnaire.update({
+      where: { id: existing.id },
+      data:  { ...questionnaireData, completedAt: new Date() },
+    })
+    // Borrar las recomendaciones anteriores vinculadas a este cuestionario
+    await prisma.recommendation.deleteMany({
+      where: { questionnaireId: existing.id },
+    })
+  } else {
+    // Primera vez — crear registro nuevo
+    questionnaire = await prisma.questionnaire.create({
+      data: questionnaireData,
+    })
+  }
 
   // 2. Generar recomendaciones
   const recommendations = await generateRecommendations(userId, questionnaire.id, {

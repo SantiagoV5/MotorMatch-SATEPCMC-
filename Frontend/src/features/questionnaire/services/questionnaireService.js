@@ -5,4 +5,9 @@ async function submitQuestionnaire(answers) {
   return data  // { questionnaire, recommendations }
 }
 
-export { submitQuestionnaire }
+async function checkMyQuestionnaire() {
+  const { data } = await apiClient.get('/questionnaire/my')
+  return data
+}
+
+export { submitQuestionnaire, checkMyQuestionnaire }
