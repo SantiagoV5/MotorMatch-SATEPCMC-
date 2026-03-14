@@ -8,12 +8,13 @@ import apiClient from '../../../services/apiClient';
 export async function getAllMotorcycles(filters = {}) {
   const params = new URLSearchParams();
   
-  if (filters.brand) params.append('brand', filters.brand);
+  if (filters.brand)    params.append('brand',    filters.brand);
   if (filters.minPrice) params.append('minPrice', filters.minPrice);
   if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
-  if (filters.minCc) params.append('minCc', filters.minCc);
-  if (filters.maxCc) params.append('maxCc', filters.maxCc);
-  if (filters.limit) params.append('limit', filters.limit);
+  if (filters.minCc)    params.append('minCc',    filters.minCc);
+  if (filters.maxCc)    params.append('maxCc',    filters.maxCc);
+  if (filters.search)   params.append('search',   filters.search);
+  if (filters.limit)    params.append('limit',     filters.limit);
 
   const queryString = params.toString();
   const url = queryString ? `/motorcycles?${queryString}` : '/motorcycles';

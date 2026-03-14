@@ -13,10 +13,12 @@ const MAX_PRICE = 50000000;
 export default function HomePage() {
   const navigate = useNavigate();
   const [motorcycles, setMotorcycles] = useState([]);
+  const [brandCounts, setBrandCounts] = useState({});
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [committedSearch, setCommittedSearch] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Filter states
@@ -93,7 +95,8 @@ export default function HomePage() {
   // Re-fetch motorcycles from the backend whenever any filter changes
   useEffect(() => {
     loadMotorcycles();
-  }, [debouncedPrice, selectedBrands, selectedDisplacement]);
+    loadBrandCounts();
+  }, [debouncedPrice, selectedBrands, selectedDisplacement, committedSearch]);
 
   const loadMotorcycles = async () => {
     try {
@@ -113,6 +116,9 @@ export default function HomePage() {
         if (minCc !== null) filters.minCc = minCc;
         if (maxCc !== null) filters.maxCc = maxCc;
       }
+
+      // Search by text — only sent after user presses Buscar
+      if (committedSearch.trim()) filters.search = committedSearch.trim();
 
       // Brand — backend accepts one brand at a time; we call once per brand and merge,
       // OR send the first selected brand if only one is chosen.
@@ -146,6 +152,32 @@ export default function HomePage() {
   // Keep loadData as a simple alias so the "Reintentar" button still works
   const loadData = loadMotorcycles;
 
+  // Fetches motorcycle counts per brand using the active price/cc/search filters
+  // but WITHOUT the brand filter, so all brands always show their correct count.
+  const loadBrandCounts = async () => {
+    try {
+      const filters = {};
+      if (debouncedPrice[0] !== MIN_PRICE) filters.minPrice = debouncedPrice[0];
+      if (debouncedPrice[1] !== MAX_PRICE) filters.maxPrice = debouncedPrice[1];
+      if (selectedDisplacement && DISPLACEMENT_CC[selectedDisplacement]) {
+        const { minCc, maxCc } = DISPLACEMENT_CC[selectedDisplacement];
+        if (minCc !== null) filters.minCc = minCc;
+        if (maxCc !== null) filters.maxCc = maxCc;
+      }
+      if (committedSearch.trim()) filters.search = committedSearch.trim();
+      // No brand filter here — we want counts for ALL brands
+      const data = await getAllMotorcycles({ ...filters, limit: 500 });
+      const counts = (data || []).reduce((acc, moto) => {
+        const brand = (moto.brand || '').toUpperCase();
+        acc[brand] = (acc[brand] || 0) + 1;
+        return acc;
+      }, {});
+      setBrandCounts(counts);
+    } catch (err) {
+      console.error('Error cargando conteos por marca:', err);
+    }
+  };
+
   const handleLogout = () => {
     sessionStorage.removeItem('mm_token');
     sessionStorage.removeItem('mm_user');
@@ -154,7 +186,7 @@ export default function HomePage() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    console.log('Buscando:', searchTerm);
+    setCommittedSearch(searchTerm);   // triggers useEffect → loadMotorcycles
   };
 
   const handleBrandToggle = (brand) => {
@@ -167,6 +199,8 @@ export default function HomePage() {
     setPriceRange([MIN_PRICE, MAX_PRICE]);
     setSelectedBrands([]);
     setSelectedDisplacement('');
+    setSearchTerm('');
+    setCommittedSearch('');
   };
 
   const activeFilterCount =
@@ -197,12 +231,8 @@ export default function HomePage() {
 
   const filterBrands = brands.length > 0 ? brands : ['YAMAHA', 'HONDA', 'BAJAJ', 'KAWASAKI'];
 
-  // ----- bike amount by brand (from currently loaded results) -----
-  const countByBrand = useMemo(() => motorcycles.reduce((acc, moto) => {
-    const brand = (moto.brand || moto.marca || '').toUpperCase();
-    acc[brand] = (acc[brand] || 0) + 1;
-    return acc;
-  }, {}), [motorcycles]);
+  // brandCounts comes from a separate query without brand filter — always shows all brands
+  const countByBrand = brandCounts;
 
 
   return (
@@ -427,7 +457,7 @@ export default function HomePage() {
 
 
       {/* Navigation Bar */}
-      <header className="sticky top-0 z-30 w-full bg-white dark:bg-background-dark border-b border-primary/10 px-4 md:px-6 py-3 shadow-sm">
+      <header className="fixed top-0 left-0 z-30 w-full bg-white dark:bg-background-dark border-b border-primary/10 px-4 md:px-6 py-3 shadow-sm">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between gap-4 mb-3">
             <div className="flex items-center gap-2">
@@ -465,6 +495,16 @@ export default function HomePage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => { setSearchTerm(''); setCommittedSearch(''); }}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                aria-label="Limpiar búsqueda"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            )}
             <button
               type="submit"
               className="bg-accent hover:bg-accent/90 text-white px-4 py-1.5 rounded-md font-bold text-sm transition-colors"
@@ -497,7 +537,7 @@ export default function HomePage() {
       </header>
 
 
-      <main className="flex-1">
+      <main className="flex-1 pt-[88px]">
         {/* Hero Section */}
         <section className="relative w-full h-[100px] flex items-center justify-center px-4 overflow-hidden bg-primary">
           <div className="absolute inset-0 opacity-30">
@@ -529,13 +569,13 @@ export default function HomePage() {
               {brands.map((brand) => (
                 <div
                   key={brand}
-                  className="group flex flex-col items-center gap-2 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-accent hover:shadow-lg transition-all cursor-pointer"
+                  className="flex flex-col items-center gap-2 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700"
                 >
                   <div className="w-full h-14 flex items-center justify-center p-2">
                     <img
                       src={getBrandLogo(brand)}
                       alt={`Logo ${brand}`}
-                      className="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform"
+                      className="max-w-full max-h-full object-contain"
                     />
                   </div>
                   <span className="font-semibold text-xs text-center text-slate-600 dark:text-slate-400">{brand}</span>
@@ -563,8 +603,8 @@ export default function HomePage() {
             <div className="flex flex-col gap-0.5">
               <h3 className="text-xl font-bold text-primary dark:text-slate-100">CATÁLOGO DE MOTOS</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                {activeFilterCount > 0
-                  ? <>{motorcycles.length} <span className="text-[#f97316]">resultado{motorcycles.length !== 1 ? 's' : ''}</span> con filtros activos</>
+                {activeFilterCount > 0 || committedSearch
+                  ? <>{motorcycles.length} <span className="text-[#f97316]">resultado{motorcycles.length !== 1 ? 's' : ''}</span>{committedSearch ? <> para <em>"{committedSearch}"</em></> : ' con filtros activos'}</>
                   : <>{motorcycles.length} motocicletas disponibles</>
                 }
               </p>

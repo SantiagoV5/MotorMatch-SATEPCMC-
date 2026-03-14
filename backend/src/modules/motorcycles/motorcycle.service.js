@@ -6,7 +6,7 @@ const prisma = require('../../config/database');
  * @returns {Promise<Array>} Lista de motocicletas
  */
 async function getAllMotorcycles(filters = {}) {
-  const { brand, minPrice, maxPrice, minCc, maxCc, limit = 100 } = filters;
+  const { brand, minPrice, maxPrice, minCc, maxCc, search, limit = 100 } = filters;
 
   const where = {
     isActive: true,
@@ -26,6 +26,15 @@ async function getAllMotorcycles(filters = {}) {
     where.engineCc = {};
     if (minCc) where.engineCc.gte = parseInt(minCc, 10);
     if (maxCc) where.engineCc.lte = parseInt(maxCc, 10);
+  }
+
+  // Búsqueda por texto en marca, modelo y descripción (insensible a mayúsculas)
+  if (search && search.trim()) {
+    where.OR = [
+      { brand:       { contains: search.trim(), mode: 'insensitive' } },
+      { model:       { contains: search.trim(), mode: 'insensitive' } },
+      { description: { contains: search.trim(), mode: 'insensitive' } },
+    ];
   }
 
   const motorcycles = await prisma.motorcycle.findMany({

@@ -4,12 +4,13 @@ const motorcycleService = require('./motorcycle.service');
 async function getAllMotorcycles(req, res, next) {
   try {
     const filters = {
-      brand: req.query.brand,
+      brand:    req.query.brand,
       minPrice: req.query.minPrice,
       maxPrice: req.query.maxPrice,
-      minCc: req.query.minCc,
-      maxCc: req.query.maxCc,
-      limit: req.query.limit,
+      minCc:    req.query.minCc,
+      maxCc:    req.query.maxCc,
+      search:   req.query.search,
+      limit:    req.query.limit,
     };
 
     const motorcycles = await motorcycleService.getAllMotorcycles(filters);
