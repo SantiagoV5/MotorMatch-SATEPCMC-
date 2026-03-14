@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllMotorcycles, getBrands } from '../features/motorcycles/services/motorcycleService';
+import { checkMyQuestionnaire } from '../features/questionnaire/services/questionnaireService';
 import MotorcycleCard from '../features/motorcycles/components/motorcycleCard';
 import MotorcycleSkeleton from '../features/motorcycles/components/motorcycleSkeleton';
 
@@ -13,13 +14,13 @@ const MAX_PRICE = 50000000;
 export default function HomePage() {
   const navigate = useNavigate();
   const [motorcycles, setMotorcycles] = useState([]);
-  const [brandCounts, setBrandCounts] = useState({});
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [committedSearch, setCommittedSearch] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [showMatchModal, setShowMatchModal] = useState(false);
 
   // Filter states
   const [priceRange, setPriceRange] = useState([MIN_PRICE, MAX_PRICE]);
@@ -95,7 +96,6 @@ export default function HomePage() {
   // Re-fetch motorcycles from the backend whenever any filter changes
   useEffect(() => {
     loadMotorcycles();
-    loadBrandCounts();
   }, [debouncedPrice, selectedBrands, selectedDisplacement, committedSearch]);
 
   const loadMotorcycles = async () => {
@@ -152,32 +152,6 @@ export default function HomePage() {
   // Keep loadData as a simple alias so the "Reintentar" button still works
   const loadData = loadMotorcycles;
 
-  // Fetches motorcycle counts per brand using the active price/cc/search filters
-  // but WITHOUT the brand filter, so all brands always show their correct count.
-  const loadBrandCounts = async () => {
-    try {
-      const filters = {};
-      if (debouncedPrice[0] !== MIN_PRICE) filters.minPrice = debouncedPrice[0];
-      if (debouncedPrice[1] !== MAX_PRICE) filters.maxPrice = debouncedPrice[1];
-      if (selectedDisplacement && DISPLACEMENT_CC[selectedDisplacement]) {
-        const { minCc, maxCc } = DISPLACEMENT_CC[selectedDisplacement];
-        if (minCc !== null) filters.minCc = minCc;
-        if (maxCc !== null) filters.maxCc = maxCc;
-      }
-      if (committedSearch.trim()) filters.search = committedSearch.trim();
-      // No brand filter here — we want counts for ALL brands
-      const data = await getAllMotorcycles({ ...filters, limit: 500 });
-      const counts = (data || []).reduce((acc, moto) => {
-        const brand = (moto.brand || '').toUpperCase();
-        acc[brand] = (acc[brand] || 0) + 1;
-        return acc;
-      }, {});
-      setBrandCounts(counts);
-    } catch (err) {
-      console.error('Error cargando conteos por marca:', err);
-    }
-  };
-
   const handleLogout = () => {
     sessionStorage.removeItem('mm_token');
     sessionStorage.removeItem('mm_user');
@@ -187,6 +161,28 @@ export default function HomePage() {
   const handleSearch = (e) => {
     e.preventDefault();
     setCommittedSearch(searchTerm);   // triggers useEffect → loadMotorcycles
+  };
+
+  const handleMatchClick = async () => {
+    try {
+      const { exists } = await checkMyQuestionnaire();
+      if (exists) {
+        navigate('/recommendations');
+      } else {
+        setShowMatchModal(true);
+      }
+    } catch (err) {
+      if (err.response?.status === 401) {
+        // Token expirado o inválido — redirigir al login
+        navigate('/login');
+      } else if (err.response?.status === 404) {
+        // Sin cuestionario registrado
+        setShowMatchModal(true);
+      } else {
+        // Error de red u otro — no interrumpir, solo loguear
+        console.error('Error verificando cuestionario:', err);
+      }
+    }
   };
 
   const handleBrandToggle = (brand) => {
@@ -231,8 +227,12 @@ export default function HomePage() {
 
   const filterBrands = brands.length > 0 ? brands : ['YAMAHA', 'HONDA', 'BAJAJ', 'KAWASAKI'];
 
-  // brandCounts comes from a separate query without brand filter — always shows all brands
-  const countByBrand = brandCounts;
+  // ----- bike amount by brand (from currently loaded results) -----
+  const countByBrand = useMemo(() => motorcycles.reduce((acc, moto) => {
+    const brand = (moto.brand || moto.marca || '').toUpperCase();
+    acc[brand] = (acc[brand] || 0) + 1;
+    return acc;
+  }, {}), [motorcycles]);
 
 
   return (
@@ -586,7 +586,7 @@ export default function HomePage() {
         )}
 
         {/* Main CTAs */}
-        <section className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <section className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-1 md:grid-cols-3 gap-3">
           <button onClick={() => navigate('/questionnaire')} className="w-full py-2 bg-primary hover:bg-primary/95 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg">
             <span className="material-symbols-outlined text-base">quiz</span>
             COMENZAR CUESTIONARIO
@@ -595,7 +595,52 @@ export default function HomePage() {
             <span className="material-symbols-outlined text-base">explore</span>
             VER CATÁLOGO
           </button>
+          <button onClick={handleMatchClick} className="w-full py-2 bg-accent hover:bg-accent/90 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg">
+            <span className="material-symbols-outlined text-base">auto_awesome</span>
+            MATCH
+          </button>
         </section>
+
+        {/* Match — modal advertencia si no hay cuestionario */}
+        {showMatchModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-sm w-full p-7 flex flex-col gap-5 border border-slate-100 dark:border-slate-700">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-3xl text-accent">auto_awesome</span>
+                  <h3 className="font-bold text-lg text-primary dark:text-slate-100 leading-tight">
+                    ¡Primero completa tu perfil!
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowMatchModal(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors flex-shrink-0"
+                  aria-label="Cerrar"
+                >
+                  <span className="material-symbols-outlined text-xl">close</span>
+                </button>
+              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                Para que <span className="font-semibold text-accent">Match</span> pueda recomendarte las motos ideales, necesitas responder el cuestionario de perfil primero. Solo toma unos minutos.
+              </p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => { setShowMatchModal(false); navigate('/questionnaire'); }}
+                  className="w-full py-2.5 bg-accent hover:bg-accent/90 text-white rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-base">quiz</span>
+                  Ir al cuestionario
+                </button>
+                <button
+                  onClick={() => setShowMatchModal(false)}
+                  className="w-full py-2.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Seguir navegando
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Catalog Section */}
         <section className="max-w-7xl mx-auto px-4 py-3">

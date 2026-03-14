@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuestionnaire } from '../hooks/useQuestionnaire'
 
 const MIN_BUDGET = 3_000_000
@@ -20,6 +21,7 @@ function formatCOP(value) {
 
 export default function Step1Budget() {
   const { answers, updateAnswers, nextStep, totalSteps } = useQuestionnaire()
+  const navigate = useNavigate()
   const budget = answers.budget || 0
 
   const [rawInput, setRawInput] = useState(budget > 0 ? String(budget) : '')
@@ -38,10 +40,8 @@ export default function Step1Budget() {
     updateAnswers({ budget: value })
   }
 
-  function handleSkip() {
-    setRawInput('')
-    updateAnswers({ budget: 0 })
-    nextStep()
+  function handleGoHome() {
+    navigate('/')
   }
 
   return (
@@ -157,10 +157,10 @@ export default function Step1Budget() {
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-4 pt-2">
               <button
-                onClick={handleSkip}
+                onClick={handleGoHome}
                 className="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold hover:border-slate-400 transition-all"
               >
-                Saltar este paso
+                ← Volver al inicio
               </button>
               <button
                 disabled={!isValid}
