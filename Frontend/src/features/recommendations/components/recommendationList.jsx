@@ -204,11 +204,13 @@ export default function RecommendationList() {
 
       {/* Header */}
       <header className="flex items-center justify-between border-b border-[#E2E8F0] px-6 md:px-20 py-4 bg-white shadow-sm sticky top-0 z-30">
-        <div className="flex items-center gap-3 text-[#0A2463] cursor-pointer" onClick={() => navigate('/')}>
-          <div className="size-9 flex items-center justify-center bg-[#0A2463] rounded-lg text-white">
-            <span className="material-symbols-outlined text-xl">two_wheeler</span>
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+          <div className="text-primary dark:text-accent">
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 48 48">
+              <path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z"/>
+            </svg>
           </div>
-          <h2 className="text-[#0A2463] text-lg font-bold tracking-tight">MotorMatch</h2>
+          <h1 className="text-xl font-bold tracking-tight text-primary dark:text-slate-100">MotorMatch</h1>
         </div>
         <div className="flex items-center gap-3">
           {user && (
@@ -281,16 +283,23 @@ export default function RecommendationList() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-16 bg-white border-t border-[#E2E8F0] py-10 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2 text-[#64748B]">
-            <span className="material-symbols-outlined text-[#28A745]">verified</span>
-            <span className="text-sm font-medium">Recomendaciones generadas por el algoritmo MotorMatch.</span>
+      <footer className="bg-white dark:bg-background-dark border-t border-primary/10 py-12 px-4">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex flex-col items-center md:items-start gap-2">
+            <div className="flex items-center gap-2 text-primary dark:text-accent opacity-80">
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 48 48">
+                <path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z"/>
+              </svg>
+              <span className="font-bold">MotorMatch © 2026</span>
+            </div>
+            <p className="text-sm text-slate-500">Conectando pasiones, kilómetro a kilómetro.</p>
           </div>
-          <div className="flex gap-6">
-            <button onClick={() => navigate('/')} className="text-[#64748B] hover:text-[#0A2463] text-sm font-semibold transition-colors">Inicio</button>
-            <button onClick={() => navigate('/questionnaire')} className="text-[#64748B] hover:text-[#0A2463] text-sm font-semibold transition-colors">Cuestionario</button>
-          </div>
+          <nav className="flex flex-wrap justify-center gap-8">
+            <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Aviso Legal</a>
+            <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Privacidad</a>
+            <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Soporte</a>
+            <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Contacto</a>
+          </nav>
         </div>
       </footer>
     </div>
