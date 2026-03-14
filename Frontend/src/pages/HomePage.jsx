@@ -537,7 +537,7 @@ export default function HomePage() {
       </header>
 
 
-      <main className="flex-1 pt-[88px]">
+      <main className="flex-1 pt-[108px]">
         {/* Hero Section */}
         <section className="relative w-full h-[100px] flex items-center justify-center px-4 overflow-hidden bg-primary">
           <div className="absolute inset-0 opacity-30">
