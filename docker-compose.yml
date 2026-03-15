@@ -1,0 +1,120 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Docker Compose - Orquesta todos los servicios del proyecto
+# ─────────────────────────────────────────────────────────────────────────────
+# 
+# Para usar:
+#   docker-compose up              (inicia todos los servicios)
+#   docker-compose down            (detiene y elimina contenedores)
+#   docker-compose logs -f         (ve los logs en tiempo real)
+#   docker-compose logs backend    (ve los logs de un servicio específico)
+#
+
+services:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Backend - API Node.js + Express
+  # ──────────────────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: motormatch-backend
+    ports:
+      - "3000:3000"
+    environment:
+      # Supabase URLs
+      DATABASE_URL: ${DATABASE_URL}
+      DIRECT_URL: ${DIRECT_URL}
+      
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      
+      # App
+      NODE_ENV: ${NODE_ENV}
+      PORT: 3000
+      FRONTEND_URL: ${FRONTEND_URL}
+      APP_URL: ${APP_URL}
+      
+      # Email (opcional)
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+    
+    volumes:
+      # En desarrollo: hot-reload del código
+      - ./backend:/app/backend
+      - /app/backend/node_modules
+    
+    networks:
+      - motormatch-network
+    
+    depends_on:
+      - db  # Depende de la BD (si la usas localmente)
+    
+    command: npm run dev  # Ejecuta con nodemon en desarrollo
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Frontend - React + Vite (con hot-reload en desarrollo)
+  # ──────────────────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile.dev
+      args:
+        - NODE_ENV=development
+    container_name: motormatch-frontend
+    ports:
+      - "5173:5173"  # Vite dev server
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://backend:3000/api
+    volumes:
+      # Hot-reload: cualquier cambio en src se refleja inmediatamente
+      - ./Frontend/src:/app/frontend/src
+      - ./Frontend/index.html:/app/frontend/index.html
+      - ./Frontend/vite.config.js:/app/frontend/vite.config.js
+      - /app/frontend/node_modules  # Evita que se sobrescriba node_modules
+    networks:
+      - motormatch-network
+    depends_on:
+      - backend
+    # Ejecuta Vite en modo dev
+    command: npm run dev
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Base de Datos - PostgreSQL (opcional, para desarrollo sin Supabase)
+  # ──────────────────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: motormatch-db
+    environment:
+      POSTGRES_DB: motormatch
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      # Persistencia de datos en volumen
+      - db-volume:/var/lib/postgresql/data
+    networks:
+      - motormatch-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Volúmenes - Para persistencia de datos
+# ─────────────────────────────────────────────────────────────────────────────
+volumes:
+  db-volume:
+    driver: local
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Redes - Permite comunicación entre contenedores
+# ─────────────────────────────────────────────────────────────────────────────
+networks:
+  motormatch-network:
+    driver: bridge

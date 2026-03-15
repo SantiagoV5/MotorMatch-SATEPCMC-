@@ -1,118 +1,262 @@
 # MotorMatch 🏍️
+
+[![Node.js](https://img.shields.io/badge/Node.js-20+-green)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-18+-blue)](https://react.dev/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-lightblue)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Supported-blue)](https://www.docker.com/)
+
 Sistema de asesoría técnica y económica para la compra de motocicletas en Colombia.
 
 El usuario responde un cuestionario (presupuesto, uso, características físicas) y el sistema le recomienda las motos más adecuadas, con posibilidad de compararlas entre sí.
 
 ---
 
-## Stack tecnológico
+## 🚀 Inicio Rápido con Docker
 
-| Capa | Tecnología |
-|---|---|
-| Frontend | React + Vite |
-| Backend | Node.js + Express |
-| Base de datos | PostgreSQL (via Prisma ORM) |
-| Autenticación | Propia — bcryptjs + JWT (jsonwebtoken) |
-| Fuente de datos | CSV de datos.gov.co |
+La forma más fácil es usar Docker - **no necesitas instalar nada localmente**:
+
+```bash
+# 1. Configurar variables de entorno
+cp .env.example .env
+# Edita .env con tus credenciales de Supabase
+
+# 2. Asegúrate que Docker Desktop está corriendo
+
+# 3. Inicia todo (backend, frontend, DB)
+docker-compose up
+
+# 4. Accede a la aplicación
+# Frontend: http://localhost
+# Backend API: http://localhost:3000/api
+```
+
+**¡Eso es todo!** Los cambios en el código se reflejan automáticamente.
+
+### 📚 Documentación
+
+- **[QUICKSTART.md](QUICKSTART.md)** - Guía rápida (⭐ Empieza aquí)
+- **[GUIA_DOCKER.md](GUIA_DOCKER.md)** - Guía completa con todos los detalles
+- [Prisma ORM](https://www.prisma.io/docs/) - Base de datos
+- [Express.js](https://expressjs.com/) - Backend
+- [React](https://react.dev/) - Frontend
+- [Docker](https://docs.docker.com/) - Containerización
 
 ---
 
-## Estructura del proyecto
+## Stack Tecnológico
+
+| Capa | Tecnología | Descripción |
+|---|---|---|
+| **Frontend** | React 18 + Vite | SPA moderna con HMR en desarrollo |
+| **Backend** | Node.js 20 + Express | API RESTful con autenticación JWT |
+| **Database** | PostgreSQL (Supabase) | ORM: Prisma |
+| **Auth** | bcryptjs + JWT | Seguridad de contraseñas y sesiones |
+| **DevOps** | Docker + Docker Compose | Containerización y orquestación |
+
+---
+
+## 📦 Estructura del Proyecto
 
 ```
 MotorMatch/
 ├── backend/
 │   ├── prisma/
-│   │   └── schema.prisma        # Modelos: User, Motorcycle, SavedResult
+│   │   └── schema.prisma           # Modelos de BD (User, Motorcycle, etc)
 │   ├── scripts/
-│   │   ├── importBikes.js       # Carga CSV → PostgreSQL
-│   │   ├── enrichBike.js        # Enriquece motos con precios/datos estimados
-│   │   └── updatePrices.js      # Actualización periódica de precios
-│   └── src/
-│       ├── config/
-│       │   ├── database.js      # Instancia de PrismaClient
-│       │   └── environment.js   # Variables de entorno validadas
-│       ├── middlewares/         # Auth JWT, errores, validación
-│       └── modules/
-│           ├── auth/            # Registro, login, tokens JWT
-│           ├── motorcycles/     # CRUD + enriquecimiento de motos
-│           ├── questionnaire/   # Lógica del cuestionario
-│           ├── recommendations/ # Algoritmo de recomendación
-│           └── users/           # Perfil y resultados guardados
-└── Frontend/
-    └── src/
-        └── features/
-            ├── auth/            # Login / Registro
-            ├── motorcycles/     # Catálogo y detalle
-            ├── questionnaire/   # Wizard de 3 pasos
-            ├── recommendations/ # Lista de recomendaciones con score
-            ├── comparison/      # Tabla comparativa de motos
-            └── filters/         # Filtros por precio, CC, etc.
+│   │   ├── importBikes.js          # Importación desde CSV
+│   │   ├── enrichBike.js           # Enriquecimiento de datos
+│   │   └── updatePrices.js         # Actualización de precios
+│   ├── src/
+│   │   ├── config/                 # Configuraciónde DB y env
+│   │   ├── middlewares/            # Auth JWT, errores, validación
+│   │   ├── modules/                # Módulos (auth, motorcycles, etc)
+│   │   └── utils/                  # Utilities, logger, mailer
+│   ├── Dockerfile                  # Docker para backend
+│   └── package.json
+│
+├── Frontend/
+│   ├── src/
+│   │   ├── features/               # Módulos (auth, motorcycles, etc)
+│   │   ├── pages/                  # Páginas principales
+│   │   ├── shared/                 # Componentes y hooks reutilizables
+│   │   └── App.jsx
+│   ├── Dockerfile                  # Docker multi-stage
+│   ├── nginx.conf                  # Configuración Nginx
+│   ├── vite.config.js
+│   └── package.json
+│
+├── docker-compose.yml              # Desarrollo (con hot-reload)
+├── docker-compose.prod.yml         # Producción (optimizado)
+├── .env.example                    # Template de configuración
+└── README.md                       # Este archivo
 ```
 
 ---
 
-## Configuración inicial (Backend)
+## 📋 Comandos Docker Principales
 
-### 1. Requisitos previos
-- Node.js v18+
-- PostgreSQL (local, [Supabase](https://supabase.com), [Railway](https://railway.app) o [Neon](https://neon.tech))
+### Desarrollo
 
-### 2. Variables de entorno
+```bash
+# Iniciar todo
+docker-compose up
+
+# Ver logs en tiempo real
+docker-compose logs -f
+
+# Detener todo
+docker-compose down
+
+# Reconstruir después de cambios importante (Dockerfile)
+docker-compose up --build
+```
+
+### Ejecutar Comandos
+
+```bash
+# Migraciones de BD
+docker-compose exec backend npm run db:migrate
+
+# Popular BD con motos
+docker-compose exec backend npm run import-bikes
+
+# Abrir Prisma Studio (BD visual)
+docker-compose exec backend npm run db:studio
+```
+
+### Producción
+
+```bash
+# Usar configuración de producción
+docker-compose -f docker-compose.prod.yml up -d
+
+# Ver estado
+docker-compose -f docker-compose.prod.yml ps
+
+# Detener
+docker-compose -f docker-compose.prod.yml down
+```
+
+---
+
+## ⚙️ Configuración sin Docker (Local)
+
+Si prefieres desarrollo local sin Docker:
+
+### Backend
+
 ```bash
 cd backend
 cp .env.example .env
-# Editar .env con los valores reales
-```
+# Edita .env con credenciales reales
 
-Generar un `JWT_SECRET` seguro:
-```bash
-node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
-```
-
-### 3. Instalar dependencias
-```bash
 npm install
-```
-
-### 4. Crear tablas en la base de datos
-```bash
 npm run db:migrate
+npm run import-bikes
+npm run dev  # Inicia en http://localhost:3000
 ```
 
-### 5. Popular la base de datos con motos
-```bash
-npm run import-bikes   # Importa desde scripts/data/motosColombia.csv
-npm run enrich-bikes   # Agrega precios, consumo, altura de asiento, etc.
-```
+### Frontend
 
-### 6. Iniciar el servidor
 ```bash
-npm run dev   # Desarrollo (nodemon)
-npm start     # Producción
+cd Frontend
+npm install
+npm run dev  # Inicia en http://localhost:5173
 ```
 
 ---
 
-## Seguridad de la autenticación
+## 🔐 Seguridad
 
-- Las contraseñas se almacenan **hasheadas con bcryptjs** (factor de coste 12), nunca en texto plano.
-- Las sesiones se manejan con **JWT firmados con HS256** y expiración configurable (`JWT_EXPIRES_IN`).
-- El `JWT_SECRET` **nunca** debe subirse al repositorio (está en `.gitignore`).
-- Las rutas de catálogo y recomendaciones son **públicas** (no requieren login).
-- Solo guardar resultados y acceder al perfil requiere **token JWT válido**.
+- **Contraseñas**: Hasheadas con bcryptjs (factor 12)
+- **Sesiones**: JWT con HS256, expiración configurable
+- **Variables sensibles**: En `.env` (nunca en Git)
+- **CORS**: Configurado para frontend en `docker-compose.yml`
 
 ---
 
-## Scripts disponibles (Backend)
+## 📝 Variables de Entorno (.env)
 
-| Comando | Descripción |
+Ver [.env.example](.env.example) para lista completa. Las principales:
+
+```bash
+NODE_ENV=development
+DATABASE_URL="postgresql://..."      # Supabase
+DIRECT_URL="postgresql://..."        # Supabase (migraciones)
+JWT_SECRET=tu_secreto_largo_aqui
+FRONTEND_URL=http://localhost
+SMTP_HOST=smtp.gmail.com              # Email (opcional)
+SMTP_PASS=tu_app_password
+```
+
+---
+
+## 🛠️ Scripts Disponibles
+
+### Backend
+
+| Script | Descripción |
 |---|---|
-| `npm run dev` | Servidor en modo desarrollo con recarga automática |
-| `npm start` | Servidor en modo producción |
-| `npm run import-bikes` | Importa motos desde CSV a PostgreSQL |
-| `npm run enrich-bikes` | Enriquece motos con datos estimados |
-| `npm run update-prices` | Actualiza precios en la BD |
-| `npm run db:migrate` | Crea/actualiza tablas en PostgreSQL |
-| `npm run db:generate` | Regenera el cliente de Prisma |
-| `npm run db:studio` | Abre Prisma Studio (UI visual de la BD) |
+| `npm run dev` | Desarrollo con nodemon |
+| `npm start` | Producción |
+| `npm run db:migrate` | Aplicar migraciones |
+| `npm run db:generate` | Regenerar Prisma |
+| `npm run db:studio` | Abrir Prisma Studio |
+| `npm run import-bikes` | Importar motos desde CSV |
+| `npm run enrich-bikes` | Enriquecer datos de motos |
+
+### Frontend
+
+| Script | Descripción |
+|---|---|
+| `npm run dev` | Développement avec Vite HMR |
+| `npm run build` | Build para producción |
+| `npm run preview` | Preview del build |
+
+---
+
+## 🐛 Troubleshooting
+
+**Los contenedores no inician:**
+```bash
+docker-compose down -v
+docker-compose up --build
+```
+
+**Error de conexión a Supabase:**
+- Verifica `DATABASE_URL` y `DIRECT_URL` en `.env`
+- Comprueba que son URLs válidas y accesibles
+
+**Frontend no ve cambios después de editar:**
+```bash
+# En Docker, frontend se compila. Reconstruye:
+docker-compose down
+docker-compose up --build
+```
+
+**Backend crashea por Prisma:**
+```bash
+docker-compose exec backend npm run db:generate
+```
+
+---
+
+## 📚 Documentación
+
+- [Prisma ORM](https://www.prisma.io/docs/) - Base de datos
+- [Express.js](https://expressjs.com/) - Backend
+- [React](https://react.dev/) - Frontend
+- [Docker](https://docs.docker.com/) - Containerización
+- [Supabase](https://supabase.com/docs) - PostgreSQL en la nube
+
+---
+
+## 👥 Equipo
+
+Desarrollado como parte del bootcamp de desarrollo web.
+
+---
+
+## 📄 Licencia
+
+MIT License - ver [LICENSE](LICENSE)

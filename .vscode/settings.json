@@ -1,0 +1,22 @@
+{
+  "files.exclude": {
+    "**/.dockerignore": false
+  },
+  "[dockerignore]": {
+    "editor.defaultFormatter": null,
+    "editor.formatOnSave": false
+  },
+  "files.associations": {
+    ".dockerignore": "gitignore"
+  },
+  "[ignore]": {
+    "editor.trimAutoWhitespace": true
+  },
+  "python.linting.enabled": false,
+  "javascript.validate.enable": false,
+  "[javascript]": {
+    "editor.defaultFormatter": null
+  },
+  "eslint.enable": false,
+  "editor.codeActionsOnSave": {}
+}
