@@ -1,0 +1,24 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Dockerfile.dev para Frontend (Desarrollo con Hot-Reload)
+# ─────────────────────────────────────────────────────────────────────────────
+
+FROM node:20-alpine
+
+WORKDIR /app/frontend
+
+# Copia package.json
+COPY package*.json ./
+
+# Instala dependencias (incluye devDependencies para Vite)
+RUN npm install --legacy-peer-deps
+
+# Expone puerto de Vite
+EXPOSE 5173
+
+# Copia el código
+COPY . .
+
+# Ejecuta Vite en modo desarrollo (con HMR)
+# --host permite acceder desde otros contenedores
+# --port configura el puerto
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]

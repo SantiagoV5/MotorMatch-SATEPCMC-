@@ -1,0 +1,79 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.prod.yml - Configuración optimizada para PRODUCCIÓN
+# ─────────────────────────────────────────────────────────────────────────────
+# 
+# Para usar en producción:
+#   docker-compose -f docker-compose.prod.yml up -d
+#
+
+services:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Backend - Node.js (SIN nodemon, SIN volúmenes)
+  # ──────────────────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: motormatch-backend-prod
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      DIRECT_URL: ${DIRECT_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      FRONTEND_URL: ${FRONTEND_URL}
+      APP_URL: ${APP_URL}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+    networks:
+      - motormatch-network
+    # Sin volúmenes: usa la imagen compilada
+    # Sin depends_on: la BD es externa (Supabase)
+    # Comando: npm start (no npm run dev)
+    command: npm start
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Frontend - Nginx (compilado, ultraligero)
+  # ──────────────────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile  # Usa el multi-stage build (NO Dockerfile.dev)
+    container_name: motormatch-frontend-prod
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"  # HTTPS (configura tu certificado SSL)
+    networks:
+      - motormatch-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    # Sin volúmenes: la aplicación está compilada en la imagen
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Nota: En producción NO incluimos la BD aquí
+  # Usamos Supabase (BD compatible con PostgreSQL en la nube)
+  # ──────────────────────────────────────────────────────────────────────────
+
+networks:
+  motormatch-network:
+    driver: bridge
