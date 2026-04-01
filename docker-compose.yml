@@ -68,7 +68,7 @@ services:
       - "5173:5173"  # Vite dev server
     environment:
       - NODE_ENV=development
-      - VITE_API_URL=http://backend:3000/api
+      - VITE_API_URL=http://backend:3000
     volumes:
       # Hot-reload: cualquier cambio en src se refleja inmediatamente
       - ./Frontend/src:/app/frontend/src
