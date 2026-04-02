@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuestionnaire } from '../hooks/useQuestionnaire'
+import Header from '../../../shared/components/layout/header';
 
 const MIN_BUDGET = 3_000_000
 
@@ -46,19 +47,7 @@ export default function Step1Budget() {
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#F5F7FA] font-display text-slate-800">
-
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-slate-200 px-6 md:px-10 py-4 bg-white/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined text-3xl text-[#FF6B35]">two_wheeler</span>
-          <h2 className="text-[#1E2A3A] text-xl font-bold leading-tight tracking-tight">MotorMatch</h2>
-        </div>
-        <div className="hidden md:flex items-center gap-4">
-          <button className="flex min-w-[120px] cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-[#1E2A3A] text-white text-sm font-bold hover:opacity-90 transition-all">
-            Mi Perfil
-          </button>
-        </div>
-      </header>
+      <Header sticky={false} />
 
       <main className="flex flex-1 justify-center py-12 px-4 md:px-0">
         <div className="flex flex-col max-w-[800px] w-full flex-1">

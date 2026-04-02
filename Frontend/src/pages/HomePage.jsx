@@ -4,6 +4,7 @@ import { getAllMotorcycles, getBrands } from '../features/motorcycles/services/m
 import { checkMyQuestionnaire } from '../features/questionnaire/services/questionnaireService';
 import MotorcycleCard from '../features/motorcycles/components/motorcycleCard';
 import MotorcycleSkeleton from '../features/motorcycles/components/motorcycleSkeleton';
+import Header from '../shared/components/layout/header';
 
 
 // ----- price range constants for the slider -----
@@ -151,12 +152,6 @@ export default function HomePage() {
 
   // Keep loadData as a simple alias so the "Reintentar" button still works
   const loadData = loadMotorcycles;
-
-  const handleLogout = () => {
-    sessionStorage.removeItem('mm_token');
-    sessionStorage.removeItem('mm_user');
-    navigate('/login');
-  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -456,86 +451,54 @@ export default function HomePage() {
       </aside>
 
 
-      {/* Navigation Bar */}
-      <header className="fixed top-0 left-0 z-30 w-full bg-white dark:bg-background-dark border-b border-primary/10 px-4 md:px-6 py-3 shadow-sm">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between gap-4 mb-3">
-            <div className="flex items-center gap-2">
-              <div className="text-primary dark:text-accent">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 48 48">
-                  <path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z"></path>
-                </svg>
-              </div>
-              <h1 className="text-xl font-bold tracking-tight text-primary dark:text-slate-100">MotorMatch</h1>
-            </div>
-            <div className="flex items-center gap-3">
-              {user && (
-                <>
-                  <span className="hidden md:block text-sm text-slate-600 dark:text-slate-400">
-                    Hola, <span className="font-semibold text-primary dark:text-accent">{user.name}</span>
-                  </span>
-                  <button
-                    onClick={handleLogout}
-                    className="px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-accent transition-colors"
-                  >
-                    Cerrar sesión
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="flex items-center gap-2 p-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-            <span className="material-symbols-outlined text-slate-400 ml-2 text-xl">search</span>
-            <input
-              className="flex-1 bg-transparent border-none focus:ring-0 text-slate-900 dark:text-slate-100 text-sm placeholder:text-slate-400"
-              placeholder="Buscar motos por marca, modelo o características..."
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => { setSearchTerm(''); setCommittedSearch(''); }}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                aria-label="Limpiar búsqueda"
-              >
-                <span className="material-symbols-outlined text-xl">close</span>
-              </button>
-            )}
-            <button
-              type="submit"
-              className="bg-accent hover:bg-accent/90 text-white px-4 py-1.5 rounded-md font-bold text-sm transition-colors"
-            >
-              Buscar
-            </button>
-
-
-            {/* Filter Button */}
+      {/* Navigation Bar — componente compartido con barra de búsqueda como children */}
+      <Header>
+        <form onSubmit={handleSearch} className="flex items-center gap-2 p-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+          <span className="material-symbols-outlined text-slate-400 ml-2 text-xl">search</span>
+          <input
+            className="flex-1 bg-transparent border-none focus:ring-0 text-slate-900 dark:text-slate-100 text-sm placeholder:text-slate-400"
+            placeholder="Buscar motos por marca, modelo o características..."
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
             <button
               type="button"
-              onClick={() => setIsFilterOpen(true)}
-              className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold text-sm border transition-colors ${
-                activeFilterCount > 0
-                  ? 'bg-primary text-white border-primary hover:bg-primary/90'
-                  : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:border-primary hover:text-primary dark:hover:text-accent'
-              }`}
-              aria-label="Abrir filtros"
+              onClick={() => { setSearchTerm(''); setCommittedSearch(''); }}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              aria-label="Limpiar búsqueda"
             >
-              <span className="material-symbols-outlined text-base">tune</span>
-              <span className="hidden sm:inline">Filtros</span>
-              {activeFilterCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-accent text-white text-[10px] font-black rounded-full flex items-center justify-center">
-                  {activeFilterCount}
-                </span>
-              )}
+              <span className="material-symbols-outlined text-xl">close</span>
             </button>
-          </form>
-        </div>
-      </header>
-
+          )}
+          <button
+            type="submit"
+            className="bg-accent hover:bg-accent/90 text-white px-4 py-1.5 rounded-md font-bold text-sm transition-colors"
+          >
+            Buscar
+          </button>
+          {/* Filter Button */}
+          <button
+            type="button"
+            onClick={() => setIsFilterOpen(true)}
+            className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold text-sm border transition-colors ${
+              activeFilterCount > 0
+                ? 'bg-primary text-white border-primary hover:bg-primary/90'
+                : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:border-primary hover:text-primary dark:hover:text-accent'
+            }`}
+            aria-label="Abrir filtros"
+          >
+            <span className="material-symbols-outlined text-base">tune</span>
+            <span className="hidden sm:inline">Filtros</span>
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-accent text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </form>
+      </Header>
 
       <main className="flex-1 pt-[108px]">
         {/* Hero Section */}
