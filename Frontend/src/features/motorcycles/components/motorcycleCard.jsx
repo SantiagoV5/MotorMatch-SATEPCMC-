@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
 export default function MotorcycleCard({ motorcycle }) {
   const navigate = useNavigate();
+
+  const [isFavorite, setIsFavorite] = useState(false);
 
   const handleClick = () => {
     navigate(`/motorcycles/${motorcycle.id}`);
@@ -44,9 +47,26 @@ export default function MotorcycleCard({ motorcycle }) {
       {/* Content */}
       <div className="p-4 flex-1 flex flex-col justify-between">
         <div>
-          <h4 className="text-lg font-black text-primary dark:text-slate-100 mb-1">
-            {motorcycle.brand} {motorcycle.model}
-          </h4>
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <h4 className="text-lg font-black text-primary dark:text-slate-100 leading-tight">
+              {motorcycle.brand} {motorcycle.model}
+            </h4>
+            <button
+              onClick={(e) => { e.stopPropagation(); setIsFavorite(prev => !prev); }}
+              aria-label="Añadir a favoritos"
+              className="flex-shrink-0 p-1 rounded-full transition-colors hover:bg-accent/10"
+            >
+              <span
+                className="material-symbols-outlined text-xl transition-colors"
+                style={{
+                  fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0",
+                  color: isFavorite ? '#FF6B35' : '#94a3b8',
+                }}
+              >
+                favorite
+              </span>
+            </button>
+          </div>
           
           {/* Specs */}
           <div className="flex gap-4 text-slate-500 dark:text-slate-400 text-sm mb-3">
