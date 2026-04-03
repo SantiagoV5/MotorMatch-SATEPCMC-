@@ -28,6 +28,8 @@ model User {
   emailVerified         Boolean          @default(false) @map("email_verified")
   verificationExpiresAt DateTime?        @map("verification_expires_at")
   verificationToken     String?          @unique @map("verification_token")
+  resetPasswordToken    String?          @unique @map("reset_password_token")
+  resetPasswordExpiresAt DateTime?       @map("reset_password_expires_at")
   questionnaires        Questionnaire[]
   recommendations       Recommendation[]
   favorites             Favorite[]

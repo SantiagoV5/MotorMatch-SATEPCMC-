@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import LoginForm from './features/auth/components/loginForm'
 import RegisterForm from './features/auth/components/registerForm'
 import VerifyEmailPage from './features/auth/components/VerifyEmailPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import HomePage from './pages/HomePage'
 import { MotorcycleDetail } from './features/motorcycles/components/motorcycleDetail'
 import { QuestionnaireWizard } from './features/questionnaire'
@@ -50,7 +51,8 @@ function App() {
       } />
       <Route path="/login"    element={<LoginForm />} />
       <Route path="/register"     element={<RegisterForm />} />
-      <Route path="/verify-email"  element={<VerifyEmailPage />} />
+      <Route path="/verify-email"   element={<VerifyEmailPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="*"              element={<Navigate to="/login" replace />} />
     </Routes>
   )
