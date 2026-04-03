@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import AuthSidePanel from '../features/auth/components/AuthSidePanel'
-import apiClient from '../features/auth/services/../../../services/apiClient'
+import apiClient from '../services/apiClient'
 
 const PASSWORD_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{6,}$/
 
@@ -14,31 +14,58 @@ function Rule({ ok, text }) {
   )
 }
 
+// ── Tipos de estado del token ─────────────────────────────────────────────────
+// 'checking'  → validando el token al entrar (spinner)
+// 'valid'     → token OK, mostrar formulario
+// 'invalid'   → token ya usado (400) → redirigir con modal
+// 'expired'   → token caducado (410) → redirigir con modal
+// 'success'   → contraseña cambiada OK
+// 'error'     → error genérico del servidor
+
 export default function ResetPasswordPage() {
   const navigate              = useNavigate()
   const [params]              = useSearchParams()
   const token                 = params.get('token') || ''
 
-  const [password, setPassword]   = useState('')
-  const [confirm, setConfirm]     = useState('')
-  const [showPwd, setShowPwd]     = useState(false)
-  const [showCfm, setShowCfm]     = useState(false)
-  const [loading, setLoading]     = useState(false)
-  const [status, setStatus]       = useState(null) // 'success' | 'expired' | 'error'
-  const [msg, setMsg]             = useState('')
+  const [tokenStatus, setTokenStatus] = useState('checking')
+  const [password, setPassword]       = useState('')
+  const [confirm, setConfirm]         = useState('')
+  const [showPwd, setShowPwd]         = useState(false)
+  const [showCfm, setShowCfm]         = useState(false)
+  const [loading, setLoading]         = useState(false)
+  const [formStatus, setFormStatus]   = useState(null)  // 'success' | 'error'
+  const [serverMsg, setServerMsg]     = useState('')
 
-  // If no token, redirect immediately
+  // ── Al montar: redirigir si no hay token, o validarlo contra la BD ──────────
   useEffect(() => {
-    if (!token) navigate('/login', { replace: true })
-  }, [token])
+    if (!token) {
+      navigate('/login', { replace: true })
+      return
+    }
 
+    apiClient.get(`/auth/validate-reset-token?token=${encodeURIComponent(token)}`)
+      .then(() => setTokenStatus('valid'))
+      .catch(err => {
+        const code = err.response?.status
+        const msg  = err.response?.data?.message || ''
+        if (code === 410 || msg.toLowerCase().includes('expirado')) {
+          // Redirigir al login con flag de "expirado"
+          navigate('/login', { replace: true, state: { resetExpired: true } })
+        } else {
+          // 400 → ya usado / inválido
+          navigate('/login', { replace: true, state: { resetInvalid: true } })
+        }
+      })
+  }, [token, navigate])
+
+  // ── Validaciones de contraseña ────────────────────────────────────────────
   const rules = {
-    length:  password.length >= 6,
-    lower:   /[a-z]/.test(password),
-    upper:   /[A-Z]/.test(password),
-    number:  /\d/.test(password),
-    symbol:  /[^A-Za-z\d]/.test(password),
-    match:   password === confirm && confirm.length > 0,
+    length: password.length >= 6,
+    lower:  /[a-z]/.test(password),
+    upper:  /[A-Z]/.test(password),
+    number: /\d/.test(password),
+    symbol: /[^A-Za-z\d]/.test(password),
+    match:  password === confirm && confirm.length > 0,
   }
   const allValid = Object.values(rules).every(Boolean)
 
@@ -48,16 +75,19 @@ export default function ResetPasswordPage() {
     setLoading(true)
     try {
       const { data } = await apiClient.post('/auth/reset-password', { token, password })
-      setStatus('success')
-      setMsg(data.message)
+      setFormStatus('success')
+      setServerMsg(data.message)
     } catch (err) {
       const code = err.response?.status
-      if (code === 410 || err.response?.data?.message?.includes('expirado')) {
-        setStatus('expired')
-        setMsg('Este enlace ha expirado. Solicita uno nuevo desde la página de inicio de sesión.')
+      const msg  = err.response?.data?.message || ''
+      // Si el token expiró o fue usado entre que el usuario entró y envió el form
+      if (code === 410 || msg.toLowerCase().includes('expirado')) {
+        navigate('/login', { replace: true, state: { resetExpired: true } })
+      } else if (code === 400 && msg.toLowerCase().includes('inválido')) {
+        navigate('/login', { replace: true, state: { resetInvalid: true } })
       } else {
-        setStatus('error')
-        setMsg(err.response?.data?.message || 'Ocurrió un error. Intenta de nuevo.')
+        setFormStatus('error')
+        setServerMsg(msg || 'Ocurrió un error. Intenta de nuevo.')
       }
     } finally {
       setLoading(false)
@@ -72,6 +102,21 @@ export default function ResetPasswordPage() {
         : 'border-slate-200 dark:border-slate-800 focus:ring-primary/20 focus:border-primary',
       'bg-slate-50 dark:bg-slate-800 focus:ring-2 outline-none transition-all dark:text-white pr-12',
     ].join(' ')
+  }
+
+  // ── Pantalla de carga mientras se valida el token ─────────────────────────
+  if (tokenStatus === 'checking') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="flex flex-col items-center gap-4">
+          <svg className="animate-spin w-10 h-10 text-primary" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          <p className="text-slate-500 text-sm">Verificando enlace...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -91,28 +136,13 @@ export default function ResetPasswordPage() {
             </p>
           </div>
 
-          {/* Expired state */}
-          {status === 'expired' && (
+          {/* ── Estado: contraseña actualizada ── */}
+          {formStatus === 'success' && (
             <div className="flex flex-col items-center gap-5 py-8 text-center">
-              <span className="material-symbols-outlined text-6xl text-amber-500">schedule</span>
-              <h4 className="text-xl font-bold text-neutral-dark dark:text-slate-100">Enlace expirado</h4>
-              <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs leading-relaxed">{msg}</p>
-              <button
-                onClick={() => navigate('/login')}
-                className="mt-2 px-8 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-all"
-              >
-                Ir al inicio de sesión
-              </button>
-            </div>
-          )}
-
-          {/* Success state */}
-          {status === 'success' && (
-            <div className="flex flex-col items-center gap-5 py-8 text-center">
-              <span className="material-symbols-outlined text-6xl text-green-500">lock_reset</span>
+              <span className="material-symbols-outlined text-6xl text-green-500">check_circle</span>
               <h4 className="text-xl font-bold text-neutral-dark dark:text-slate-100">¡Contraseña actualizada!</h4>
               <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs leading-relaxed">
-                Tu contraseña ha sido actualizada exitosamente. Ya puedes iniciar sesión con tu nueva contraseña.
+                {serverMsg || 'Tu contraseña ha sido actualizada exitosamente. Ya puedes iniciar sesión.'}
               </p>
               <button
                 onClick={() => navigate('/login')}
@@ -123,11 +153,11 @@ export default function ResetPasswordPage() {
             </div>
           )}
 
-          {/* Form */}
-          {!status && (
+          {/* ── Formulario (solo si el token es válido y no hubo éxito aún) ── */}
+          {tokenStatus === 'valid' && !formStatus && (
             <form className="space-y-5" onSubmit={handleSubmit}>
 
-              {/* Password */}
+              {/* Contraseña */}
               <div>
                 <label className="block text-sm font-semibold text-neutral-dark dark:text-slate-300 mb-1.5">
                   Nueva contraseña
@@ -140,6 +170,7 @@ export default function ResetPasswordPage() {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     className={inputCls(false)}
+                    autoFocus
                   />
                   <button type="button" onClick={() => setShowPwd(p => !p)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors">
@@ -148,7 +179,7 @@ export default function ResetPasswordPage() {
                 </div>
               </div>
 
-              {/* Confirm */}
+              {/* Confirmar */}
               <div>
                 <label className="block text-sm font-semibold text-neutral-dark dark:text-slate-300 mb-1.5">
                   Confirmar contraseña
@@ -169,19 +200,20 @@ export default function ResetPasswordPage() {
                 </div>
               </div>
 
-              {/* Rules */}
+              {/* Requisitos */}
               <ul className="space-y-1.5 pt-1">
-                <Rule ok={rules.length}  text="Mínimo 6 caracteres" />
-                <Rule ok={rules.lower}   text="Al menos una minúscula" />
-                <Rule ok={rules.upper}   text="Al menos una mayúscula" />
-                <Rule ok={rules.number}  text="Al menos un número" />
-                <Rule ok={rules.symbol}  text="Al menos un símbolo (!@#$...)" />
-                <Rule ok={rules.match}   text="Las contraseñas coinciden" />
+                <Rule ok={rules.length} text="Mínimo 6 caracteres" />
+                <Rule ok={rules.lower}  text="Al menos una minúscula" />
+                <Rule ok={rules.upper}  text="Al menos una mayúscula" />
+                <Rule ok={rules.number} text="Al menos un número" />
+                <Rule ok={rules.symbol} text="Al menos un símbolo (!@#$...)" />
+                <Rule ok={rules.match}  text="Las contraseñas coinciden" />
               </ul>
 
-              {status === 'error' && (
+              {/* Error genérico del servidor */}
+              {formStatus === 'error' && (
                 <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3">
-                  {msg}
+                  {serverMsg}
                 </p>
               )}
 

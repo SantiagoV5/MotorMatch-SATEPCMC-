@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import AuthSidePanel from './AuthSidePanel'
 import useAuth from '../hooks/useAuth'
 import apiClient from '../../../services/apiClient'
@@ -13,6 +13,13 @@ function LoginForm() {
   const [touched, setTouched]           = useState({})
   const navigate                        = useNavigate()
   const { login, loading, error }       = useAuth()
+  const location                            = useLocation()
+
+  // ── Modal de enlace inválido/expirado (viene de ResetPasswordPage via navigate state) ──
+  const [tokenAlertType, setTokenAlertType] = useState(
+    // Read once from location.state — avoids re-showing on back navigation
+    location.state?.resetExpired ? 'expired' : location.state?.resetInvalid ? 'invalid' : null
+  )
 
   // ── Forgot password modal ──────────────────────────────────────────────────
   const [showForgot, setShowForgot]         = useState(false)
@@ -32,7 +39,12 @@ function LoginForm() {
       setForgotMsg(data.message)
     } catch (err) {
       setForgotStatus('error')
-      setForgotMsg(err.response?.data?.message || 'Ocurrió un error. Intenta de nuevo.')
+      const status = err.response?.status
+      if (status === 404) {
+        setForgotMsg('No encontramos ninguna cuenta registrada con ese correo electrónico.')
+      } else {
+        setForgotMsg(err.response?.data?.message || 'Ocurrió un error. Intenta de nuevo.')
+      }
     } finally {
       setForgotLoading(false)
     }
@@ -76,6 +88,53 @@ function LoginForm() {
     <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex items-center justify-center p-4">
 
       {/* ── Forgot password modal ────────────────────────────────────────────── */}
+      {/* ── Modal: enlace de recuperación expirado o ya utilizado ── */}
+      {tokenAlertType && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm p-8 flex flex-col items-center gap-5 text-center border border-slate-100 dark:border-slate-700 relative">
+            <button
+              type="button"
+              onClick={() => setTokenAlertType(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              aria-label="Cerrar"
+            >
+              <span className="material-symbols-outlined text-xl">close</span>
+            </button>
+
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${tokenAlertType === 'expired' ? 'bg-amber-100' : 'bg-red-100'}`}>
+              <span className={`material-symbols-outlined text-3xl ${tokenAlertType === 'expired' ? 'text-amber-500' : 'text-red-500'}`}>
+                {tokenAlertType === 'expired' ? 'timer_off' : 'link_off'}
+              </span>
+            </div>
+
+            <h3 className="text-xl font-bold text-primary dark:text-slate-100">
+              {tokenAlertType === 'expired' ? 'Enlace expirado' : 'Enlace no válido'}
+            </h3>
+
+            <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+              {tokenAlertType === 'expired'
+                ? 'Este enlace de recuperación ha expirado (validez de 10 minutos). Solicita uno nuevo desde aquí.'
+                : 'Este enlace de recuperación ya fue utilizado o no es válido. Puedes solicitar uno nuevo si lo necesitas.'}
+            </p>
+
+            <div className="flex flex-col gap-3 w-full mt-1">
+              <button
+                onClick={() => { setTokenAlertType(null); setShowForgot(true); }}
+                className="w-full py-2.5 bg-primary text-white rounded-lg font-bold text-sm hover:bg-primary/90 transition-colors"
+              >
+                Solicitar nuevo enlace
+              </button>
+              <button
+                onClick={() => setTokenAlertType(null)}
+                className="w-full py-2.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showForgot && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-8 flex flex-col gap-5 border border-slate-100 dark:border-slate-700">
@@ -83,7 +142,7 @@ function LoginForm() {
               <div>
                 <h3 className="text-xl font-bold text-neutral-dark dark:text-slate-100">Recuperar contraseña</h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  Ingresa tu correo y te enviaremos un enlace de recuperación válido por 10 minutos.
+                  Ingresa tu correo para enviarte un correo de recuperación.
                 </p>
               </div>
               <button onClick={closeForgot} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" aria-label="Cerrar">

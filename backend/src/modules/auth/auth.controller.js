@@ -73,4 +73,15 @@ async function resetPassword(req, res, next) {
   }
 }
 
-module.exports = { register, verifyEmail, login, resendVerification, forgotPassword, resetPassword };
+
+// GET /api/auth/validate-reset-token?token=xxx
+async function validateResetToken(req, res, next) {
+  try {
+    const result = await authService.validateResetToken({ token: req.query.token });
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { register, verifyEmail, login, resendVerification, forgotPassword, resetPassword, validateResetToken };

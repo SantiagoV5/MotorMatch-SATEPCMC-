@@ -2,7 +2,7 @@ const { Router } = require('express');
 
 const { validate }                          = require('../../middlewares/validation.middleware');
 const { registerSchema, loginSchema }       = require('./auth.validation');
-const { register, verifyEmail, login, resendVerification, forgotPassword, resetPassword } = require('./auth.controller');
+const { register, verifyEmail, login, resendVerification, forgotPassword, resetPassword, validateResetToken } = require('./auth.controller');
 
 const router = Router();
 
@@ -21,6 +21,9 @@ router.post('/resend-verification', resendVerification);
 
 // POST /api/auth/forgot-password
 router.post('/forgot-password', forgotPassword);
+
+// GET  /api/auth/validate-reset-token?token=xxx
+router.get('/validate-reset-token', validateResetToken);
 
 // POST /api/auth/reset-password
 router.post('/reset-password', resetPassword);

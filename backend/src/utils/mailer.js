@@ -202,37 +202,30 @@ async function sendPasswordResetEmail({ to, name, resetUrl }) {
       <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
         <tr><td align="center">
           <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
-            <tr>
-              <td style="background:#0a2463;padding:32px 40px;text-align:center;">
-                <h1 style="margin:0;color:#fff;font-size:24px;letter-spacing:2px;">MOTOR<span style="color:#e84855;">MATCH</span></h1>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:40px;">
-                <h2 style="margin:0 0 16px;color:#0a2463;font-size:22px;">Hola, ${name} 👋</h2>
-                <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">
-                  Recibimos una solicitud para restablecer la contraseña de tu cuenta en <strong>MotorMatch</strong>.
-                  Haz clic en el botón para continuar. Este enlace expira en <strong>10 minutos</strong>.
-                </p>
-                <div style="text-align:center;margin:32px 0;">
-                  <a href="${resetUrl}"
-                    style="display:inline-block;background:#0a2463;color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-weight:700;font-size:15px;letter-spacing:1px;">
-                    RESTABLECER CONTRASEÑA
-                  </a>
-                </div>
-                <p style="margin:24px 0 0;color:#94a3b8;font-size:13px;text-align:center;">
-                  Si no solicitaste este cambio, ignora este correo. Tu contraseña no será modificada.
-                </p>
-              </td>
-            </tr>
-            <tr>
-              <td style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
-                <p style="margin:0;color:#94a3b8;font-size:12px;">
-                  © 2026 MotorMatch · Colombia<br>
-                  Si el botón no funciona, copia este enlace: <a href="${resetUrl}" style="color:#0a2463;word-break:break-all;">${resetUrl}</a>
-                </p>
-              </td>
-            </tr>
+            <tr><td style="background:#0a2463;padding:32px 40px;text-align:center;">
+              <h1 style="margin:0;color:#fff;font-size:24px;letter-spacing:2px;">MOTOR<span style="color:#e84855;">MATCH</span></h1>
+            </td></tr>
+            <tr><td style="padding:40px;">
+              <h2 style="margin:0 0 16px;color:#0a2463;font-size:22px;">Hola, ${name} 👋</h2>
+              <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">
+                Recibimos una solicitud para restablecer la contraseña de tu cuenta en <strong>MotorMatch</strong>.
+                Haz clic en el botón para continuar. Este enlace expira en <strong>10 minutos</strong>.
+              </p>
+              <div style="text-align:center;margin:32px 0;">
+                <a href="${resetUrl}" style="display:inline-block;background:#0a2463;color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-weight:700;font-size:15px;letter-spacing:1px;">
+                  RESTABLECER CONTRASEÑA
+                </a>
+              </div>
+              <p style="margin:24px 0 0;color:#94a3b8;font-size:13px;text-align:center;">
+                Si no solicitaste este cambio, ignora este correo. Tu contraseña no será modificada.
+              </p>
+            </td></tr>
+            <tr><td style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
+              <p style="margin:0;color:#94a3b8;font-size:12px;">
+                © 2026 MotorMatch · Colombia<br>
+                Si el botón no funciona, copia este enlace: <a href="${resetUrl}" style="color:#0a2463;word-break:break-all;">${resetUrl}</a>
+              </p>
+            </td></tr>
           </table>
         </td></tr>
       </table>
@@ -270,27 +263,21 @@ async function sendPasswordChangedEmail({ to, name }) {
       <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
         <tr><td align="center">
           <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
-            <tr>
-              <td style="background:#0a2463;padding:32px 40px;text-align:center;">
-                <h1 style="margin:0;color:#fff;font-size:24px;letter-spacing:2px;">MOTOR<span style="color:#e84855;">MATCH</span></h1>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:40px;">
-                <h2 style="margin:0 0 16px;color:#0a2463;font-size:22px;">Contraseña actualizada</h2>
-                <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">
-                  Hola <strong>${name}</strong>, te confirmamos que la contraseña de tu cuenta en <strong>MotorMatch</strong> ha sido actualizada exitosamente.
-                </p>
-                <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">
-                  Si no realizaste este cambio, contacta a nuestro equipo de soporte de inmediato.
-                </p>
-              </td>
-            </tr>
-            <tr>
-              <td style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
-                <p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 MotorMatch · Colombia</p>
-              </td>
-            </tr>
+            <tr><td style="background:#0a2463;padding:32px 40px;text-align:center;">
+              <h1 style="margin:0;color:#fff;font-size:24px;letter-spacing:2px;">MOTOR<span style="color:#e84855;">MATCH</span></h1>
+            </td></tr>
+            <tr><td style="padding:40px;">
+              <h2 style="margin:0 0 16px;color:#0a2463;font-size:22px;">Contraseña actualizada</h2>
+              <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">
+                Hola <strong>${name}</strong>, te confirmamos que la contraseña de tu cuenta en <strong>MotorMatch</strong> ha sido actualizada exitosamente.
+              </p>
+              <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">
+                Si no realizaste este cambio, contacta a nuestro equipo de soporte de inmediato.
+              </p>
+            </td></tr>
+            <tr><td style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
+              <p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 MotorMatch · Colombia</p>
+            </td></tr>
           </table>
         </td></tr>
       </table>

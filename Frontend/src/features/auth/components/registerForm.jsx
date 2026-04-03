@@ -284,7 +284,7 @@ function RegisterForm() {
           {/* Footer */}
           <div className="mt-auto text-center">
             <p className="text-sm text-slate-500">
-              Ya tienes una cuenta?{' '}
+              ¿Ya tienes una cuenta?{' '}
               <button
                 type="button"
                 onClick={() => navigate('/login')}

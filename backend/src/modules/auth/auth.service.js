@@ -158,8 +158,8 @@ async function requestPasswordReset({ email }) {
   const { sendPasswordResetEmail } = require('../../utils/mailer');
   const user = await prisma.user.findUnique({ where: { email } });
 
-  // Por seguridad, siempre responde igual (no revelar si el correo existe)
-  if (!user) return { message: 'Si el correo existe, recibirás un enlace de recuperación.' };
+  // Avisar explícitamente si el correo no está registrado
+  if (!user) throw createError('No existe una cuenta registrada con ese correo electrónico.', 404);
 
   const resetToken     = crypto.randomBytes(32).toString('hex');
   const resetExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
@@ -180,7 +180,7 @@ async function requestPasswordReset({ email }) {
     logger.info(`[FALLBACK] Enlace de recuperación: ${resetUrl}`);
   }
 
-  return { message: 'Si el correo existe, recibirás un enlace de recuperación.' };
+  return { message: 'Revisa tu correo para acceder al enlace de recuperación.' };
 }
 
 // ── Restablecer contraseña ────────────────────────────────────────────────────
@@ -225,4 +225,29 @@ async function resetPassword({ token, password }) {
   return { message: 'Contraseña actualizada exitosamente.' };
 }
 
-module.exports = { register, verifyEmail, login, resendVerification, requestPasswordReset, resetPassword };
+
+// ── Validar token de recuperación (para verificar al entrar a la página) ──────
+async function validateResetToken({ token }) {
+  if (!token) throw createError('Token requerido', 400);
+
+  const user = await prisma.user.findFirst({
+    where: { resetPasswordToken: token },
+    select: { id: true, resetPasswordExpiresAt: true },
+  });
+
+  // Token no existe en BD → ya fue usado o nunca existió
+  if (!user) throw createError('El enlace ya fue utilizado o no es válido.', 400);
+
+  // Token existe pero expiró
+  if (user.resetPasswordExpiresAt < new Date()) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { resetPasswordToken: null, resetPasswordExpiresAt: null },
+    });
+    throw createError('El enlace ha expirado.', 410);
+  }
+
+  return { valid: true };
+}
+
+module.exports = { register, verifyEmail, login, resendVerification, requestPasswordReset, resetPassword, validateResetToken };
