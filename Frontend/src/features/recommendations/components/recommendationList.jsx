@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useRecommendations } from '../hooks/useRecommendations'
+import Header from '../../../shared/components/layout/header'
 
 const USAGE_LABELS = {
   ciudad:    'ciudad',
@@ -202,31 +203,7 @@ export default function RecommendationList() {
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-[#F5F7FA] font-sans text-[#1A202C]">
 
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-[#E2E8F0] px-6 md:px-20 py-4 bg-white shadow-sm sticky top-0 z-30">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-          <div className="text-primary dark:text-accent">
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 48 48">
-              <path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z"/>
-            </svg>
-          </div>
-          <h1 className="text-xl font-bold tracking-tight text-primary dark:text-slate-100">MotorMatch</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          {user && (
-            <span className="hidden md:block text-sm text-[#64748B]">
-              Hola, <span className="font-semibold text-[#0A2463]">{user.name}</span>
-            </span>
-          )}
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0A2463] text-white text-sm font-bold hover:bg-[#0A2463]/90 transition-all"
-          >
-            <span className="material-symbols-outlined text-base">home</span>
-            <span className="hidden sm:inline">Inicio</span>
-          </button>
-        </div>
-      </header>
+      <Header sticky={false} />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-10">
 

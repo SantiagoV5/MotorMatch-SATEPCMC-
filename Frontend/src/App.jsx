@@ -2,10 +2,13 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import LoginForm from './features/auth/components/loginForm'
 import RegisterForm from './features/auth/components/registerForm'
 import VerifyEmailPage from './features/auth/components/VerifyEmailPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import HomePage from './pages/HomePage'
 import { MotorcycleDetail } from './features/motorcycles/components/motorcycleDetail'
 import { QuestionnaireWizard } from './features/questionnaire'
 import RecommendationList from './features/recommendations/components/recommendationList'
+import FavoritesPage from './features/favorites/components/FavoritesPage'
+import ComparisonPage from './pages/ComparisonPage'
 
 // Protected Route Wrapper
 function ProtectedRoute({ children }) {
@@ -42,9 +45,20 @@ function App() {
           <RecommendationList />
         </ProtectedRoute>
       } />
+      <Route path="/favorites" element={
+        <ProtectedRoute>
+          <FavoritesPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/comparison" element={
+        <ProtectedRoute>
+          <ComparisonPage />
+        </ProtectedRoute>
+      } />
       <Route path="/login"    element={<LoginForm />} />
       <Route path="/register"     element={<RegisterForm />} />
-      <Route path="/verify-email"  element={<VerifyEmailPage />} />
+      <Route path="/verify-email"   element={<VerifyEmailPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="*"              element={<Navigate to="/login" replace />} />
     </Routes>
   )

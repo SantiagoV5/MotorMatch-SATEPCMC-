@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import Header from '../../../shared/components/layout/header';
+import { addFavorite, removeFavorite, getMyFavoriteIds } from '../../favorites/services/favoritesService';
 import { motorcycleService } from '../services/motorcycleService';
 
 export function MotorcycleDetail() {
@@ -8,6 +10,29 @@ export function MotorcycleDetail() {
   const [motorcycle, setMotorcycle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  // Load favorite status once motorcycle id is known.
+  // Depends on motorcycle?.id (not the whole object) to avoid infinite re-renders.
+  // ids are now plain numbers thanks to the toNumber() fix in the backend service.
+  useEffect(() => {
+    if (!motorcycle?.id) return;
+    getMyFavoriteIds()
+      .then(ids => setIsFavorite(ids.map(Number).includes(Number(motorcycle.id))))
+      .catch(() => {});
+  }, [motorcycle?.id]);
+
+  const handleFavoriteToggle = async () => {
+    const next = !isFavorite;
+    setIsFavorite(next);
+    try {
+      if (next) await addFavorite(motorcycle.id);
+      else await removeFavorite(motorcycle.id);
+    } catch (err) {
+      setIsFavorite(!next);
+      console.error('Error toggling favorite:', err);
+    }
+  };
 
   useEffect(() => {
     const fetchMotorcycle = async () => {
@@ -52,29 +77,7 @@ export function MotorcycleDetail() {
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#F5F7FA] font-['Space_Grotesk'] text-[#2C3E50] antialiased">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-slate-200 px-4 md:px-20 py-4 sticky top-0 bg-[#0A2463] text-white z-50 shadow-lg">
-        <div className="flex items-center gap-4">
-          <div className="w-8 h-8 text-[#FF6B35]">
-            <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-              <path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z" fill="currentColor"></path>
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold leading-tight tracking-tight uppercase">MotorMatch</h2>
-        </div>
-        <div className="flex flex-1 justify-end gap-6 items-center">
-          <button
-            onClick={() => navigate('/home')}
-            className="text-sm font-medium hover:text-[#FF6B35] transition-colors flex items-center gap-2"
-          >
-            <span className="material-symbols-outlined text-lg">arrow_back</span>
-            VOLVER AL CATÁLOGO
-          </button>
-          <button className="flex items-center justify-center rounded-lg w-10 h-10 bg-white/10 text-white hover:text-[#FF6B35] transition-colors">
-            <span className="material-symbols-outlined">favorite</span>
-          </button>
-        </div>
-      </header>
+      <Header sticky={false} />
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 md:px-10 py-12">
@@ -100,9 +103,26 @@ export function MotorcycleDetail() {
               <span>{motorcycle.year} Model</span>
             </nav>
 
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[#0A2463] uppercase">
-              {motorcycle.brand} {motorcycle.model} {motorcycle.year}
-            </h1>
+            <div className="flex items-start justify-between gap-4">
+              <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[#0A2463] uppercase leading-tight">
+                {motorcycle.brand} {motorcycle.model} {motorcycle.year}
+              </h1>
+              <button
+                onClick={handleFavoriteToggle}
+                aria-label="Añadir a favoritos"
+                className="flex-shrink-0 mt-1 p-2 rounded-full transition-colors hover:bg-[#FF6B35]/10"
+              >
+                <span
+                  className="material-symbols-outlined text-3xl transition-colors"
+                  style={{
+                    fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0",
+                    color: isFavorite ? '#FF6B35' : '#cbd5e1',
+                  }}
+                >
+                  favorite
+                </span>
+              </button>
+            </div>
 
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1">
@@ -128,7 +148,9 @@ export function MotorcycleDetail() {
                 <span className="material-symbols-outlined">calculate</span>
                 SIMULAR COMPRA
               </button>
-              <button className="flex-1 min-w-[200px] h-14 bg-[#0A2463] text-white rounded-xl font-bold hover:brightness-125 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#0A2463]/20">
+              <button
+                onClick={() => navigate('/comparison', { state: { prefillMoto: motorcycle } })}
+                className="flex-1 min-w-[200px] h-14 bg-[#0A2463] text-white rounded-xl font-bold hover:brightness-125 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#0A2463]/20">
                 <span className="material-symbols-outlined">compare_arrows</span>
                 COMPARAR
               </button>

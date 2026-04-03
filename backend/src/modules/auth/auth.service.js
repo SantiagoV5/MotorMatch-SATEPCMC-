@@ -152,4 +152,102 @@ async function resendVerification({ email }) {
   };
 }
 
-module.exports = { register, verifyEmail, login, resendVerification };
+
+// ── Solicitar recuperación de contraseña ──────────────────────────────────────
+async function requestPasswordReset({ email }) {
+  const { sendPasswordResetEmail } = require('../../utils/mailer');
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  // Avisar explícitamente si el correo no está registrado
+  if (!user) throw createError('No existe una cuenta registrada con ese correo electrónico.', 404);
+
+  const resetToken     = crypto.randomBytes(32).toString('hex');
+  const resetExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { resetPasswordToken: resetToken, resetPasswordExpiresAt: resetExpiresAt },
+  });
+
+  const appUrl   = process.env.APP_URL || 'http://localhost:5173';
+  const resetUrl = `${appUrl}/reset-password?token=${resetToken}`;
+
+  try {
+    await sendPasswordResetEmail({ to: email, name: user.fullName, resetUrl });
+  } catch (err) {
+    const { logger } = require('../../utils/logger');
+    logger.error(`Error enviando email de recuperación a ${email}: ${err.message}`);
+    logger.info(`[FALLBACK] Enlace de recuperación: ${resetUrl}`);
+  }
+
+  return { message: 'Revisa tu correo para acceder al enlace de recuperación.' };
+}
+
+// ── Restablecer contraseña ────────────────────────────────────────────────────
+async function resetPassword({ token, password }) {
+  const { sendPasswordChangedEmail } = require('../../utils/mailer');
+
+  if (!token) throw createError('Token requerido', 400);
+
+  const user = await prisma.user.findFirst({
+    where: { resetPasswordToken: token },
+  });
+
+  if (!user) throw createError('El enlace de recuperación es inválido o ya fue utilizado.', 400);
+
+  if (user.resetPasswordExpiresAt < new Date()) {
+    // Limpiar token expirado
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { resetPasswordToken: null, resetPasswordExpiresAt: null },
+    });
+    throw createError('El enlace ha expirado. Solicita uno nuevo.', 410);
+  }
+
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash,
+      resetPasswordToken:    null,
+      resetPasswordExpiresAt: null,
+    },
+  });
+
+  try {
+    await sendPasswordChangedEmail({ to: user.email, name: user.fullName });
+  } catch (err) {
+    const { logger } = require('../../utils/logger');
+    logger.error(`Error enviando aviso de cambio de contraseña: ${err.message}`);
+  }
+
+  return { message: 'Contraseña actualizada exitosamente.' };
+}
+
+
+// ── Validar token de recuperación (para verificar al entrar a la página) ──────
+async function validateResetToken({ token }) {
+  if (!token) throw createError('Token requerido', 400);
+
+  const user = await prisma.user.findFirst({
+    where: { resetPasswordToken: token },
+    select: { id: true, resetPasswordExpiresAt: true },
+  });
+
+  // Token no existe en BD → ya fue usado o nunca existió
+  if (!user) throw createError('El enlace ya fue utilizado o no es válido.', 400);
+
+  // Token existe pero expiró
+  if (user.resetPasswordExpiresAt < new Date()) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { resetPasswordToken: null, resetPasswordExpiresAt: null },
+    });
+    throw createError('El enlace ha expirado.', 410);
+  }
+
+  return { valid: true };
+}
+
+module.exports = { register, verifyEmail, login, resendVerification, requestPasswordReset, resetPassword, validateResetToken };
