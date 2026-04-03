@@ -9,7 +9,8 @@ const errorHandler = require('./middlewares/error.handler');
 const authRoutes        = require('./modules/auth/auth.routes');
 const motorcycleRoutes  = require('./modules/motorcycles/motorcycle.routes');
 const questionnaireRoutes = require('./modules/questionnaire/questionnaire.routes');
-const favoritesRoutes   = require('./modules/favorites/favorites.routes');
+const favoritesRoutes     = require('./modules/favorites/favorites.routes');
+const comparisonsRoutes   = require('./modules/comparisons/comparisons.routes');
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/motorcycles', motorcycleRoutes);
 app.use('/api/questionnaire', questionnaireRoutes);
 app.use('/api/favorites', favoritesRoutes);
+app.use('/api/comparisons', comparisonsRoutes);
 
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {

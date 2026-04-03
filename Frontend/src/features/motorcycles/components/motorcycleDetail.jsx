@@ -148,7 +148,9 @@ export function MotorcycleDetail() {
                 <span className="material-symbols-outlined">calculate</span>
                 SIMULAR COMPRA
               </button>
-              <button className="flex-1 min-w-[200px] h-14 bg-[#0A2463] text-white rounded-xl font-bold hover:brightness-125 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#0A2463]/20">
+              <button
+                onClick={() => navigate('/comparison', { state: { prefillMoto: motorcycle } })}
+                className="flex-1 min-w-[200px] h-14 bg-[#0A2463] text-white rounded-xl font-bold hover:brightness-125 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#0A2463]/20">
                 <span className="material-symbols-outlined">compare_arrows</span>
                 COMPARAR
               </button>

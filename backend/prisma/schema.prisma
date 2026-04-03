@@ -33,6 +33,7 @@ model User {
   questionnaires        Questionnaire[]
   recommendations       Recommendation[]
   favorites             Favorite[]
+  comparisons           Comparison[]
 
   @@map("users")
 }
@@ -131,4 +132,17 @@ model Recommendation {
 
   @@unique([userId, motorcycleId, questionnaireId], name: "unique_recommendation")
   @@map("recommendations")
+}
+
+model Comparison {
+  id             Int        @id @default(autoincrement())
+  userId         Int        @map("user_id")
+  bikeId1        Int        @map("bike_id_1")
+  bikeId2        Int?       @map("bike_id_2")
+  bikeId3        Int?       @map("bike_id_3")
+  comparisonDate DateTime   @default(now()) @map("comparison_date")
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_comparisons_user_id")
+  @@map("comparisons")
 }

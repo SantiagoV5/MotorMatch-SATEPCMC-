@@ -8,6 +8,7 @@ import { MotorcycleDetail } from './features/motorcycles/components/motorcycleDe
 import { QuestionnaireWizard } from './features/questionnaire'
 import RecommendationList from './features/recommendations/components/recommendationList'
 import FavoritesPage from './features/favorites/components/FavoritesPage'
+import ComparisonPage from './pages/ComparisonPage'
 
 // Protected Route Wrapper
 function ProtectedRoute({ children }) {
@@ -47,6 +48,11 @@ function App() {
       <Route path="/favorites" element={
         <ProtectedRoute>
           <FavoritesPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/comparison" element={
+        <ProtectedRoute>
+          <ComparisonPage />
         </ProtectedRoute>
       } />
       <Route path="/login"    element={<LoginForm />} />

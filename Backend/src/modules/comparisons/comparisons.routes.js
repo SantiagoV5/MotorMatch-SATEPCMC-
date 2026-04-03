@@ -1,0 +1,12 @@
+const { Router } = require('express');
+const { requireAuth } = require('../../middlewares/auth.middleware');
+const { createComparison } = require('./comparisons.controller');
+
+const router = Router();
+
+router.use(requireAuth);
+
+// POST /api/comparisons  — guarda una comparación
+router.post('/', createComparison);
+
+module.exports = router;
