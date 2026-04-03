@@ -5,6 +5,7 @@ import { checkMyQuestionnaire } from '../features/questionnaire/services/questio
 import MotorcycleCard from '../features/motorcycles/components/motorcycleCard';
 import MotorcycleSkeleton from '../features/motorcycles/components/motorcycleSkeleton';
 import Header from '../shared/components/layout/header';
+import { getMyFavoriteIds } from '../features/favorites/services/favoritesService';
 
 
 // ----- price range constants for the slider -----
@@ -22,6 +23,7 @@ export default function HomePage() {
   const [committedSearch, setCommittedSearch] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [showMatchModal, setShowMatchModal] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
 
   // Filter states
   const [priceRange, setPriceRange] = useState([MIN_PRICE, MAX_PRICE]);
@@ -87,7 +89,7 @@ export default function HomePage() {
     return () => clearTimeout(t);
   }, [priceRange]);
 
-  // Load brands once on mount
+  // Load brands once on mount (favoriteIds are loaded inside loadMotorcycles)
   useEffect(() => {
     getBrands()
       .then(data => setBrands(data || []))
@@ -124,24 +126,36 @@ export default function HomePage() {
       // Brand — backend accepts one brand at a time; we call once per brand and merge,
       // OR send the first selected brand if only one is chosen.
       // For multiple brands we fetch each and deduplicate by id.
+      // Fetch motorcycles and favorite IDs in parallel so they arrive together
+      let motorcycleData;
       if (selectedBrands.length === 1) {
         filters.brand = selectedBrands[0];
-        const data = await getAllMotorcycles(filters);
-        setMotorcycles(data || []);
+        const [data, ids] = await Promise.all([
+          getAllMotorcycles(filters),
+          getMyFavoriteIds().catch(() => []),
+        ]);
+        motorcycleData = data || [];
+        setFavoriteIds(new Set(ids.map(Number)));
       } else if (selectedBrands.length > 1) {
-        const results = await Promise.all(
-          selectedBrands.map(brand => getAllMotorcycles({ ...filters, brand }))
-        );
+        const [results, ids] = await Promise.all([
+          Promise.all(selectedBrands.map(brand => getAllMotorcycles({ ...filters, brand }))),
+          getMyFavoriteIds().catch(() => []),
+        ]);
         // Merge and deduplicate by id
-        const merged = Object.values(
+        motorcycleData = Object.values(
           results.flat().reduce((acc, moto) => { acc[moto.id] = moto; return acc; }, {})
         );
-        setMotorcycles(merged);
+        setFavoriteIds(new Set(ids.map(Number)));
       } else {
         // No brand filter
-        const data = await getAllMotorcycles(filters);
-        setMotorcycles(data || []);
+        const [data, ids] = await Promise.all([
+          getAllMotorcycles(filters),
+          getMyFavoriteIds().catch(() => []),
+        ]);
+        motorcycleData = data || [];
+        setFavoriteIds(new Set(ids.map(Number)));
       }
+      setMotorcycles(motorcycleData);
     } catch (err) {
       console.error('Error cargando motos:', err);
       setError('No se pudieron cargar las motos. Intenta de nuevo');
@@ -649,7 +663,19 @@ export default function HomePage() {
           {!loading && !error && motorcycles.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {motorcycles.map((motorcycle) => (
-                <MotorcycleCard key={motorcycle.id} motorcycle={motorcycle} />
+                <MotorcycleCard
+                    key={motorcycle.id}
+                    motorcycle={motorcycle}
+                    isFavorite={favoriteIds.has(motorcycle.id)}
+                    onFavoriteToggle={(id, nowFavorite) => {
+                      setFavoriteIds(prev => {
+                        const next = new Set(prev);
+                        if (nowFavorite) next.add(id);
+                        else next.delete(id);
+                        return next;
+                      });
+                    }}
+                  />
               ))}
             </div>
           )}

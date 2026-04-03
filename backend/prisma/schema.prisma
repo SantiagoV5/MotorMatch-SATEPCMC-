@@ -30,6 +30,7 @@ model User {
   verificationToken     String?          @unique @map("verification_token")
   questionnaires        Questionnaire[]
   recommendations       Recommendation[]
+  favorites             Favorite[]
 
   @@map("users")
 }
@@ -69,9 +70,23 @@ model Motorcycle {
   countryOrigin         String?          @map("country_origin") @db.VarChar(100)
   warranty              String?          @db.VarChar(200)
   recommendations       Recommendation[]
+  favorites             Favorite[]
 
   @@index([brand, model], map: "idx_motorcycles_brand_model")
   @@map("motorcycles")
+}
+
+model Favorite {
+  id           Int        @id @default(autoincrement())
+  userId       Int        @map("user_id")
+  motorcycleId Int        @map("motorcycle_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  motorcycle   Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, motorcycleId], name: "unique_user_motorcycle_favorite")
+  @@index([userId], map: "idx_favorites_user_id")
+  @@map("favorites")
 }
 
 model Questionnaire {

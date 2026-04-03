@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage'
 import { MotorcycleDetail } from './features/motorcycles/components/motorcycleDetail'
 import { QuestionnaireWizard } from './features/questionnaire'
 import RecommendationList from './features/recommendations/components/recommendationList'
+import FavoritesPage from './features/favorites/components/FavoritesPage'
 
 // Protected Route Wrapper
 function ProtectedRoute({ children }) {
@@ -40,6 +41,11 @@ function App() {
       <Route path="/recommendations" element={
         <ProtectedRoute>
           <RecommendationList />
+        </ProtectedRoute>
+      } />
+      <Route path="/favorites" element={
+        <ProtectedRoute>
+          <FavoritesPage />
         </ProtectedRoute>
       } />
       <Route path="/login"    element={<LoginForm />} />

@@ -9,6 +9,7 @@ const errorHandler = require('./middlewares/error.handler');
 const authRoutes        = require('./modules/auth/auth.routes');
 const motorcycleRoutes  = require('./modules/motorcycles/motorcycle.routes');
 const questionnaireRoutes = require('./modules/questionnaire/questionnaire.routes');
+const favoritesRoutes   = require('./modules/favorites/favorites.routes');
 
 const app = express();
 
@@ -31,6 +32,7 @@ if (NODE_ENV !== 'test') {
 app.use('/api/auth', authRoutes);
 app.use('/api/motorcycles', motorcycleRoutes);
 app.use('/api/questionnaire', questionnaireRoutes);
+app.use('/api/favorites', favoritesRoutes);
 
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {

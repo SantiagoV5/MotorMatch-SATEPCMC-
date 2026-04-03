@@ -1,11 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { addFavorite, removeFavorite } from '../../favorites/services/favoritesService';
 import PropTypes from 'prop-types';
 
-export default function MotorcycleCard({ motorcycle }) {
+export default function MotorcycleCard({ motorcycle, isFavorite = false, onFavoriteToggle }) {
   const navigate = useNavigate();
 
-  const [isFavorite, setIsFavorite] = useState(false);
+  // No local state for isFavorite — the parent (HomePage) owns the favoriteIds Set
+  // and passes the computed value directly. This avoids timing issues where the
+  // local state gets initialized before favoriteIds finishes loading from the API.
+  const [optimisticFavorite, setOptimisticFavorite] = useState(null);
+
+  // Reset optimistic state when the prop changes (e.g. after parent reloads)
+  useEffect(() => { setOptimisticFavorite(null); }, [isFavorite]);
+
+  // Use optimistic value if set (mid-request), otherwise use the prop
+  const currentFavorite = optimisticFavorite !== null ? optimisticFavorite : isFavorite;
+
+  const handleFavoriteToggle = async (e) => {
+    e.stopPropagation();
+    const next = !currentFavorite;
+    setOptimisticFavorite(next); // instant visual feedback
+    try {
+      if (next) {
+        await addFavorite(motorcycle.id);
+      } else {
+        await removeFavorite(motorcycle.id);
+      }
+      // Tell parent to update its Set so other parts of the UI stay in sync
+      if (onFavoriteToggle) onFavoriteToggle(motorcycle.id, next);
+      setOptimisticFavorite(null); // parent now owns the truth
+    } catch (err) {
+      setOptimisticFavorite(null); // revert to prop value on error
+      console.error('Error toggling favorite:', err);
+    }
+  };
 
   const handleClick = () => {
     navigate(`/motorcycles/${motorcycle.id}`);
@@ -52,15 +81,15 @@ export default function MotorcycleCard({ motorcycle }) {
               {motorcycle.brand} {motorcycle.model}
             </h4>
             <button
-              onClick={(e) => { e.stopPropagation(); setIsFavorite(prev => !prev); }}
+              onClick={handleFavoriteToggle}
               aria-label="Añadir a favoritos"
               className="flex-shrink-0 p-1 rounded-full transition-colors hover:bg-accent/10"
             >
               <span
                 className="material-symbols-outlined text-xl transition-colors"
                 style={{
-                  fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0",
-                  color: isFavorite ? '#FF6B35' : '#94a3b8',
+                  fontVariationSettings: currentFavorite ? "'FILL' 1" : "'FILL' 0",
+                  color: currentFavorite ? '#FF6B35' : '#94a3b8',
                 }}
               >
                 favorite

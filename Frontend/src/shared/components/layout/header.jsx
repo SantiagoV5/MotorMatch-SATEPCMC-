@@ -84,10 +84,13 @@ export default function Header({ children, sticky = true }) {
                     </a>
                   </li>
                   <li>
-                    <a href="#" className="flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300">
+                    <button
+                      onClick={() => navigate('/favorites')}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300"
+                    >
                       <span className="material-symbols-outlined text-lg">favorite</span>
                       <span className="text-sm font-semibold font-label">Motos favoritas</span>
-                    </a>
+                    </button>
                   </li>
                   <li>
                     <button

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../../../shared/components/layout/header';
+import { addFavorite, removeFavorite, getMyFavoriteIds } from '../../favorites/services/favoritesService';
 import { motorcycleService } from '../services/motorcycleService';
 
 export function MotorcycleDetail() {
@@ -10,6 +11,28 @@ export function MotorcycleDetail() {
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+
+  // Load favorite status once motorcycle id is known.
+  // Depends on motorcycle?.id (not the whole object) to avoid infinite re-renders.
+  // ids are now plain numbers thanks to the toNumber() fix in the backend service.
+  useEffect(() => {
+    if (!motorcycle?.id) return;
+    getMyFavoriteIds()
+      .then(ids => setIsFavorite(ids.map(Number).includes(Number(motorcycle.id))))
+      .catch(() => {});
+  }, [motorcycle?.id]);
+
+  const handleFavoriteToggle = async () => {
+    const next = !isFavorite;
+    setIsFavorite(next);
+    try {
+      if (next) await addFavorite(motorcycle.id);
+      else await removeFavorite(motorcycle.id);
+    } catch (err) {
+      setIsFavorite(!next);
+      console.error('Error toggling favorite:', err);
+    }
+  };
 
   useEffect(() => {
     const fetchMotorcycle = async () => {
@@ -85,7 +108,7 @@ export function MotorcycleDetail() {
                 {motorcycle.brand} {motorcycle.model} {motorcycle.year}
               </h1>
               <button
-                onClick={() => setIsFavorite(prev => !prev)}
+                onClick={handleFavoriteToggle}
                 aria-label="Añadir a favoritos"
                 className="flex-shrink-0 mt-1 p-2 rounded-full transition-colors hover:bg-[#FF6B35]/10"
               >
