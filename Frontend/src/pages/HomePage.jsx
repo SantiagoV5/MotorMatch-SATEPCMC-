@@ -410,7 +410,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Displacement Filter */}
+          {/* ----- Displacement Filter -----*/}
           <div>
             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3">
               Cilindraje
