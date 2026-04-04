@@ -10,7 +10,7 @@ const authRoutes        = require('./modules/auth/auth.routes');
 const motorcycleRoutes  = require('./modules/motorcycles/motorcycle.routes');
 const questionnaireRoutes = require('./modules/questionnaire/questionnaire.routes');
 const favoritesRoutes     = require('./modules/favorites/favorites.routes');
-const comparisonsRoutes   = require('./modules/comparisons/comparisons.routes');
+// const comparisonsRoutes   = require('./modules/comparisons/comparisons.routes'); // TODO: implementar módulo de comparaciones
 
 const app = express();
 
@@ -34,7 +34,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/motorcycles', motorcycleRoutes);
 app.use('/api/questionnaire', questionnaireRoutes);
 app.use('/api/favorites', favoritesRoutes);
-app.use('/api/comparisons', comparisonsRoutes);
+// app.use('/api/comparisons', comparisonsRoutes); // TODO: implementar módulo de comparaciones
 
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
