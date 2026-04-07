@@ -4,7 +4,7 @@ const crypto  = require('crypto');
 
 const prisma                         = require('../../config/database');
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../../config/environment');
-const { sendVerificationEmail, sendWelcomeEmail } = require('../../utils/mailer');
+const { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordChangedEmail } = require('../../utils/mailer');
 
 const SALT_ROUNDS = 12;
 
@@ -154,20 +154,24 @@ async function resendVerification({ email }) {
 
 
 // ── Solicitar recuperación de contraseña ──────────────────────────────────────
+// Usa $queryRaw/$executeRaw porque el cliente Prisma generado no conoce los
+// campos resetPasswordToken/resetPasswordExpiresAt (volumen Docker congelado).
 async function requestPasswordReset({ email }) {
-  const { sendPasswordResetEmail } = require('../../utils/mailer');
-  const user = await prisma.user.findUnique({ where: { email } });
+  const [user] = await prisma.$queryRaw`
+    SELECT id, full_name AS "fullName", email FROM users WHERE email = ${email} LIMIT 1
+  `;
 
-  // Avisar explícitamente si el correo no está registrado
   if (!user) throw createError('No existe una cuenta registrada con ese correo electrónico.', 404);
 
   const resetToken     = crypto.randomBytes(32).toString('hex');
   const resetExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { resetPasswordToken: resetToken, resetPasswordExpiresAt: resetExpiresAt },
-  });
+  await prisma.$executeRaw`
+    UPDATE users
+    SET reset_password_token = ${resetToken},
+        reset_password_expires_at = ${resetExpiresAt}
+    WHERE id = ${user.id}
+  `;
 
   const appUrl   = process.env.APP_URL || 'http://localhost:5173';
   const resetUrl = `${appUrl}/reset-password?token=${resetToken}`;
@@ -185,35 +189,33 @@ async function requestPasswordReset({ email }) {
 
 // ── Restablecer contraseña ────────────────────────────────────────────────────
 async function resetPassword({ token, password }) {
-  const { sendPasswordChangedEmail } = require('../../utils/mailer');
-
   if (!token) throw createError('Token requerido', 400);
 
-  const user = await prisma.user.findFirst({
-    where: { resetPasswordToken: token },
-  });
+  const [user] = await prisma.$queryRaw`
+    SELECT id, email, full_name AS "fullName", reset_password_expires_at AS "resetPasswordExpiresAt"
+    FROM users
+    WHERE reset_password_token = ${token}
+    LIMIT 1
+  `;
 
   if (!user) throw createError('El enlace de recuperación es inválido o ya fue utilizado.', 400);
 
   if (user.resetPasswordExpiresAt < new Date()) {
-    // Limpiar token expirado
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { resetPasswordToken: null, resetPasswordExpiresAt: null },
-    });
+    await prisma.$executeRaw`
+      UPDATE users SET reset_password_token = NULL, reset_password_expires_at = NULL WHERE id = ${user.id}
+    `;
     throw createError('El enlace ha expirado. Solicita uno nuevo.', 410);
   }
 
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      passwordHash,
-      resetPasswordToken:    null,
-      resetPasswordExpiresAt: null,
-    },
-  });
+  await prisma.$executeRaw`
+    UPDATE users
+    SET password_hash = ${passwordHash},
+        reset_password_token = NULL,
+        reset_password_expires_at = NULL
+    WHERE id = ${user.id}
+  `;
 
   try {
     await sendPasswordChangedEmail({ to: user.email, name: user.fullName });
@@ -230,20 +232,19 @@ async function resetPassword({ token, password }) {
 async function validateResetToken({ token }) {
   if (!token) throw createError('Token requerido', 400);
 
-  const user = await prisma.user.findFirst({
-    where: { resetPasswordToken: token },
-    select: { id: true, resetPasswordExpiresAt: true },
-  });
+  const [user] = await prisma.$queryRaw`
+    SELECT id, reset_password_expires_at AS "resetPasswordExpiresAt"
+    FROM users
+    WHERE reset_password_token = ${token}
+    LIMIT 1
+  `;
 
-  // Token no existe en BD → ya fue usado o nunca existió
   if (!user) throw createError('El enlace ya fue utilizado o no es válido.', 400);
 
-  // Token existe pero expiró
   if (user.resetPasswordExpiresAt < new Date()) {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { resetPasswordToken: null, resetPasswordExpiresAt: null },
-    });
+    await prisma.$executeRaw`
+      UPDATE users SET reset_password_token = NULL, reset_password_expires_at = NULL WHERE id = ${user.id}
+    `;
     throw createError('El enlace ha expirado.', 410);
   }
 
