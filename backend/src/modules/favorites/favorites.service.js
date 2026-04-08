@@ -1,190 +1,177 @@
 const prisma = require('../../config/database');
 
+// ─────────────────────────────────────────────────────────────────────────────
+// favorites.service.js
+//
+// Usa $queryRaw / $executeRaw en lugar del cliente Prisma generado.
+// Esto permite que la tabla `favorites` funcione aunque el cliente fue
+// generado antes de añadir el modelo (volumen Docker anónimo congela node_modules).
+// IMPORTANTE: $queryRaw devuelve INTEGER como BigInt en Node.js → toNumber().
+// ─────────────────────────────────────────────────────────────────────────────
+
+function toNumber(val) {
+  if (val === null || val === undefined) return null;
+  return Number(val);
+}
+
+function getSegment(engineCc) {
+  if (!engineCc) return 'Estándar';
+  if (engineCc <= 150) return 'Económica';
+  if (engineCc <= 300) return 'Intermedia';
+  return 'Premium';
+}
+
+function formatPrice(price, currency = 'COP') {
+  if (!price) return 'Consultar';
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(price);
+}
+
 /**
- * Obtiene todos los favoritos del usuario actual con datos completos de cada moto
- * @param {number} userId - ID del usuario autenticado
- * @returns {Promise<Array>} Array de objetos con datos completos de motos
+ * Obtiene todos los favoritos del usuario con datos completos de cada moto.
  */
 async function getMyFavorites(userId) {
-  const favorites = await prisma.favorite.findMany({
-    where: { userId },
-    include: {
-      motorcycle: {
-        select: {
-          id: true,
-          brand: true,
-          model: true,
-          year: true,
-          price: true,
-          engineCc: true,
-          imageUrl: true,
-          description: true,
-          isActive: true,
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  const rows = await prisma.$queryRaw`
+    SELECT
+      f.id            AS "favoriteId",
+      f.created_at    AS "createdAt",
+      m.id,
+      m.brand,
+      m.model,
+      m.year,
+      m.engine_cc     AS "engineCc",
+      m.power_hp      AS "powerHp",
+      m.price,
+      m.currency,
+      m.image_url     AS "imageUrl",
+      m.description,
+      m.seat_height_cm  AS "seatHeightCm",
+      m.weight_kg       AS "weightKg",
+      m.fuel_tank_liters AS "fuelTankLiters",
+      m.consumption_kmpl AS "consumptionKmpl"
+    FROM favorites f
+    JOIN motorcycles m ON m.id = f.motorcycle_id
+    WHERE f.user_id = ${userId}
+      AND m.is_active = true
+    ORDER BY f.created_at DESC
+  `;
 
-  // Retornar solo los datos de las motos
-  return favorites.map((fav) => ({
-    id: fav.motorcycle.id,
-    brand: fav.motorcycle.brand,
-    model: fav.motorcycle.model,
-    year: fav.motorcycle.year,
-    price: fav.motorcycle.price,
-    engineCc: fav.motorcycle.engineCc,
-    imageUrl: fav.motorcycle.imageUrl,
-    description: fav.motorcycle.description,
-    isActive: fav.motorcycle.isActive,
-    addedToFavoritesAt: fav.createdAt,
+  return rows.map(row => ({
+    favoriteId:      toNumber(row.favoriteId),
+    createdAt:       row.createdAt,
+    id:              toNumber(row.id),
+    brand:           row.brand,
+    model:           row.model,
+    year:            toNumber(row.year),
+    engineCc:        toNumber(row.engineCc),
+    powerHp:         toNumber(row.powerHp),
+    price:           toNumber(row.price),
+    currency:        row.currency,
+    imageUrl:        row.imageUrl,
+    description:     row.description,
+    seatHeightCm:    toNumber(row.seatHeightCm),
+    weightKg:        toNumber(row.weightKg),
+    fuelTankLiters:  toNumber(row.fuelTankLiters),
+    consumptionKmpl: toNumber(row.consumptionKmpl),
+    segment:         getSegment(toNumber(row.engineCc)),
+    priceFormatted:  formatPrice(toNumber(row.price), row.currency),
+    addedToFavoritesAt: row.createdAt,
   }));
 }
 
 /**
- * Obtiene solo los IDs de motos favoritas del usuario (para marcar corazones en catálogo)
- * @param {number} userId - ID del usuario autenticado
- * @returns {Promise<Array>} Array de IDs de motos
+ * Devuelve solo los IDs de motos favoritas como number[] (no BigInt).
  */
 async function getMyFavoriteIds(userId) {
-  const favorites = await prisma.favorite.findMany({
-    where: { userId },
-    select: { motorcycleId: true },
-  });
-
-  return favorites.map((fav) => fav.motorcycleId);
+  const rows = await prisma.$queryRaw`
+    SELECT motorcycle_id AS "motorcycleId"
+    FROM favorites
+    WHERE user_id = ${userId}
+  `;
+  return rows.map(r => toNumber(r.motorcycleId));
 }
 
 /**
- * Añade una moto a favoritos del usuario
- * @param {number} userId - ID del usuario autenticado
- * @param {number} motorcycleId - ID de la moto
- * @throws {Error} Si la moto no existe o ya está en favoritos
- * @returns {Promise<Object>} Datos del favorito creado
+ * Añade una moto a favoritos. Idempotente: no falla si ya existe.
  */
 async function addFavorite(userId, motorcycleId) {
-  // Verificar que la moto existe
-  const motorcycle = await prisma.motorcycle.findUnique({
-    where: { id: parseInt(motorcycleId, 10) },
-  });
+  const motoId = parseInt(motorcycleId, 10);
 
-  if (!motorcycle) {
-    const error = new Error('La moto especificada no existe');
-    error.statusCode = 404;
-    throw error;
+  if (isNaN(motoId)) {
+    const err = new Error('ID de motocicleta inválido');
+    err.statusCode = 400;
+    throw err;
   }
 
-  // Verificar que no ya esté en favoritos
-  const existingFavorite = await prisma.favorite.findUnique({
-    where: {
-      unique_user_motorcycle_favorite: {
-        userId,
-        motorcycleId: parseInt(motorcycleId, 10),
-      },
-    },
-  });
-
-  if (existingFavorite) {
-    const error = new Error('Esta moto ya está en tus favoritos');
-    error.statusCode = 400;
-    throw error;
+  // Verificar que la moto existe y está activa
+  const [moto] = await prisma.$queryRaw`
+    SELECT id FROM motorcycles WHERE id = ${motoId} AND is_active = true LIMIT 1
+  `;
+  if (!moto) {
+    const err = new Error('La moto especificada no existe');
+    err.statusCode = 404;
+    throw err;
   }
 
-  // Crear el favorito
-  const favorite = await prisma.favorite.create({
-    data: {
-      userId,
-      motorcycleId: parseInt(motorcycleId, 10),
-    },
-    include: {
-      motorcycle: {
-        select: {
-          id: true,
-          brand: true,
-          model: true,
-          year: true,
-          price: true,
-          engineCc: true,
-          imageUrl: true,
-          description: true,
-        },
-      },
-    },
-  });
+  // INSERT ignorando duplicado
+  await prisma.$executeRaw`
+    INSERT INTO favorites (user_id, motorcycle_id, created_at)
+    VALUES (${userId}, ${motoId}, NOW())
+    ON CONFLICT (user_id, motorcycle_id) DO NOTHING
+  `;
+
+  const [fav] = await prisma.$queryRaw`
+    SELECT id, created_at AS "createdAt", motorcycle_id AS "motorcycleId"
+    FROM favorites
+    WHERE user_id = ${userId} AND motorcycle_id = ${motoId}
+    LIMIT 1
+  `;
 
   return {
-    id: favorite.motorcycle.id,
-    brand: favorite.motorcycle.brand,
-    model: favorite.motorcycle.model,
-    year: favorite.motorcycle.year,
-    price: favorite.motorcycle.price,
-    engineCc: favorite.motorcycle.engineCc,
-    imageUrl: favorite.motorcycle.imageUrl,
-    description: favorite.motorcycle.description,
-    addedToFavoritesAt: favorite.createdAt,
+    id:              toNumber(fav.id),
+    createdAt:       fav.createdAt,
+    motorcycleId:    toNumber(fav.motorcycleId),
   };
 }
 
 /**
- * Elimina una moto de los favoritos del usuario
- * @param {number} userId - ID del usuario autenticado
- * @param {number} motorcycleId - ID de la moto
- * @throws {Error} Si el favorito no existe
- * @returns {Promise<Object>} Datos del favorito eliminado
+ * Elimina una moto de favoritos.
  */
 async function removeFavorite(userId, motorcycleId) {
-  // Verificar que el favorito existe
-  const favorite = await prisma.favorite.findUnique({
-    where: {
-      unique_user_motorcycle_favorite: {
-        userId,
-        motorcycleId: parseInt(motorcycleId, 10),
-      },
-    },
-  });
+  const motoId = parseInt(motorcycleId, 10);
 
-  if (!favorite) {
-    const error = new Error('Esta moto no está en tus favoritos');
-    error.statusCode = 404;
-    throw error;
+  if (isNaN(motoId)) {
+    const err = new Error('ID de motocicleta inválido');
+    err.statusCode = 400;
+    throw err;
   }
 
-  // Eliminar el favorito
-  await prisma.favorite.delete({
-    where: {
-      unique_user_motorcycle_favorite: {
-        userId,
-        motorcycleId: parseInt(motorcycleId, 10),
-      },
-    },
-  });
+  const result = await prisma.$executeRaw`
+    DELETE FROM favorites WHERE user_id = ${userId} AND motorcycle_id = ${motoId}
+  `;
+
+  if (result === 0) {
+    const err = new Error('Esta moto no está en tus favoritos');
+    err.statusCode = 404;
+    throw err;
+  }
 
   return { message: 'Moto eliminada de favoritos' };
 }
 
 /**
- * Verifica si una moto está en favoritos del usuario
- * @param {number} userId - ID del usuario autenticado
- * @param {number} motorcycleId - ID de la moto
- * @returns {Promise<boolean>} true si está en favoritos, false si no
+ * Verifica si una moto está en favoritos del usuario.
  */
 async function isFavorite(userId, motorcycleId) {
-  const favorite = await prisma.favorite.findUnique({
-    where: {
-      unique_user_motorcycle_favorite: {
-        userId,
-        motorcycleId: parseInt(motorcycleId, 10),
-      },
-    },
-  });
-
-  return !!favorite;
+  const motoId = parseInt(motorcycleId, 10);
+  const rows = await prisma.$queryRaw`
+    SELECT id FROM favorites WHERE user_id = ${userId} AND motorcycle_id = ${motoId} LIMIT 1
+  `;
+  return rows.length > 0;
 }
 
-module.exports = {
-  getMyFavorites,
-  getMyFavoriteIds,
-  addFavorite,
-  removeFavorite,
-  isFavorite,
-};
+module.exports = { getMyFavorites, getMyFavoriteIds, addFavorite, removeFavorite, isFavorite };
