@@ -12,6 +12,7 @@ import ComparisonPage from './pages/ComparisonPage'
 import ComparisonHistoryPage from './pages/ComparisonHistoryPage'
 import { SimulationsHistoryPage } from './pages/SimulationsHistoryPage'
 import FinancialTipsPage from './pages/FinancialTipsPage'
+import MarketAnalysisPage from './pages/MarketAnalysisPage'
 
 // Protected Route Wrapper
 function ProtectedRoute({ children }) {
@@ -71,6 +72,11 @@ function App() {
       <Route path="/financial-tips" element={
         <ProtectedRoute>
           <FinancialTipsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/market-analysis" element={
+        <ProtectedRoute>
+          <MarketAnalysisPage />
         </ProtectedRoute>
       } />
       <Route path="/login"    element={<LoginForm />} />
