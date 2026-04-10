@@ -11,6 +11,7 @@ const motorcycleRoutes  = require('./modules/motorcycles/motorcycle.routes');
 const questionnaireRoutes = require('./modules/questionnaire/questionnaire.routes');
 const favoritesRoutes     = require('./modules/favorites/favorites.routes');
 const comparisonsRoutes   = require('./modules/comparisons/comparisons.routes');
+const costSimulatorRoutes = require('./modules/costSimulator/costSimulator.routes');
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use('/api/motorcycles', motorcycleRoutes);
 app.use('/api/questionnaire', questionnaireRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/comparisons', comparisonsRoutes);
+app.use('/api/cost-simulator', costSimulatorRoutes);
 
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {

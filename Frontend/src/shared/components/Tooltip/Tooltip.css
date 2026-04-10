@@ -1,0 +1,131 @@
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-trigger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #2563eb;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.tooltip-trigger:hover {
+  background-color: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+}
+
+.tooltip-content {
+  position: absolute;
+  background-color: #1a1a1a;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  white-space: normal;
+  max-width: 250px;
+  word-wrap: break-word;
+}
+
+.tooltip-content::before {
+  content: '';
+  position: absolute;
+  border-style: solid;
+}
+
+/* ─── Position: Top (default) ─────────────────────────────────── */
+
+.tooltip-top {
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.tooltip-top::before {
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px 6px 0 6px;
+  border-color: #1a1a1a transparent transparent transparent;
+}
+
+/* ─── Position: Bottom ───────────────────────────────────────── */
+
+.tooltip-bottom {
+  top: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.tooltip-bottom::before {
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 6px 6px 6px;
+  border-color: transparent transparent #1a1a1a transparent;
+}
+
+/* ─── Position: Right ───────────────────────────────────────── */
+
+.tooltip-right {
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.tooltip-right::before {
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 6px 6px 6px 0;
+  border-color: transparent #1a1a1a transparent transparent;
+}
+
+/* ─── Position: Left ───────────────────────────────────────── */
+
+.tooltip-left {
+  right: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.tooltip-left::before {
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 6px 0 6px 6px;
+  border-color: transparent transparent transparent #1a1a1a;
+}
+
+/* ─── Tooltip Title & Text ───────────────────────────────────── */
+
+.tooltip-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.tooltip-text {
+  font-weight: 400;
+  white-space: pre-wrap;
+}
+
+/* ─── Responsive ────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .tooltip-content {
+    max-width: 200px;
+    font-size: 12px;
+  }
+}

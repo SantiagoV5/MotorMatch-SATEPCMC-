@@ -10,6 +10,7 @@ import RecommendationList from './features/recommendations/components/recommenda
 import FavoritesPage from './features/favorites/components/FavoritesPage'
 import ComparisonPage from './pages/ComparisonPage'
 import ComparisonHistoryPage from './pages/ComparisonHistoryPage'
+import { SimulationsHistoryPage } from './pages/SimulationsHistoryPage'
 
 // Protected Route Wrapper
 function ProtectedRoute({ children }) {
@@ -59,6 +60,11 @@ function App() {
       <Route path="/comparison-history" element={
         <ProtectedRoute>
           <ComparisonHistoryPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/simulations-history" element={
+        <ProtectedRoute>
+          <SimulationsHistoryPage />
         </ProtectedRoute>
       } />
       <Route path="/login"    element={<LoginForm />} />

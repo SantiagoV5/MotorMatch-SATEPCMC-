@@ -27,4 +27,28 @@ function requireAuth(req, res, next) {
   }
 }
 
-module.exports = { requireAuth };
+/**
+ * Middleware que permite autenticación opcional.
+ * Si el usuario proporciona un token válido, se adjunta en req.user.
+ * Si no hay token o es inválido, continúa sin error.
+ */
+function optionalAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next(); // Continuar sin usuario
+  }
+
+  const token = authHeader.slice(7);
+
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.user = { id: payload.sub, email: payload.email };
+  } catch (err) {
+    // Ignorar errores de token y continuar
+  }
+
+  next();
+}
+
+module.exports = { requireAuth, optionalAuth };
