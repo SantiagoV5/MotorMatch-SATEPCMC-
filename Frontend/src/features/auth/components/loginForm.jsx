@@ -10,6 +10,7 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail]               = useState('')
   const [password, setPassword]         = useState('')
+  const [rememberMe, setRememberMe]     = useState(false)
   const [touched, setTouched]           = useState({})
   const navigate                        = useNavigate()
   const { login, loading, error }       = useAuth()
@@ -67,7 +68,7 @@ function LoginForm() {
     setTouched({ email: true, password: true })
     if (!EMAIL_RE.test(email) || !password) return
     try {
-      await login(email, password)
+      await login(email, password, rememberMe)
       navigate('/')
     } catch {
       // el error queda capturado en useAuth().error
@@ -281,7 +282,12 @@ function LoginForm() {
             {/* Recordarme + Olvidaste */}
             <div className="flex items-center justify-between pt-1">
               <label className="flex items-center gap-2 cursor-pointer group">
-                <input type="checkbox" className="size-4 rounded border-slate-300 text-primary focus:ring-primary" />
+                <input 
+                  type="checkbox" 
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="size-4 rounded border-slate-300 text-primary focus:ring-primary" 
+                />
                 <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-neutral-dark transition-colors">Recordarme</span>
               </label>
               <button type="button" onClick={() => setShowForgot(true)} className="text-sm font-medium text-accent hover:underline">¿Olvidaste tu contraseña?</button>

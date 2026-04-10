@@ -150,6 +150,67 @@
   font-size: 18px;
 }
 
+/* ─── Monthly Income Section ─────────────────────────────────────────── */
+
+.monthly-income-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: #f0f4ff;
+  border-radius: 8px;
+  border-left: 4px solid #2563eb;
+}
+
+.income-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.income-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.currency-symbol {
+  font-weight: 600;
+  color: #64748b;
+  font-size: 16px;
+}
+
+.income-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.income-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.currency-code {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  min-width: 35px;
+}
+
+.income-note {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+  font-style: italic;
+}
+
 /* ─── Cost Breakdown ─────────────────────────────────────────────────── */
 
 .cost-breakdown {
@@ -311,6 +372,78 @@
 
 .btn-secondary:hover:not(:disabled) {
   background-color: #d5d5d5;
+}
+
+/* ─── Indicador Financiero ──────────────────────────────────────────── */
+
+.financial-health-indicator {
+  margin-top: 20px;
+  padding: 16px;
+  border-left: 4px solid #2563eb;
+  background-color: #f8fafc;
+  border-radius: 8px;
+}
+
+.health-header {
+  margin-bottom: 12px;
+}
+
+.health-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.health-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.health-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.health-row span {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.health-message {
+  padding: 12px;
+  border-radius: 6px;
+  border-left: 3px solid;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #1e293b;
+  margin: 12px 0;
+}
+
+.financial-advice-link {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.financial-advice-link a {
+  display: inline-block;
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.financial-advice-link a:hover {
+  background-color: #fee2e2;
+  color: #b91c1c;
 }
 
 /* ─── Responsive ────────────────────────────────────────────────────── */

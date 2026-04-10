@@ -18,8 +18,9 @@ export const getCalculationInfo = async () => {
  * @param {number} motorcycleId - ID de la moto
  * @param {Object} customValues - Valores editados por el usuario {soatCost, registrationCost, vehicleTaxCost}
  * @param {number} userId - ID del usuario (opcional)
+ * @param {number} monthlyIncome - Ingresos mensuales (opcional)
  */
-export const calculateCostSimulation = async (motorcycleId, customValues = {}, userId = null) => {
+export const calculateCostSimulation = async (motorcycleId, customValues = {}, userId = null, monthlyIncome = null) => {
   try {
     const params = {
       motorcycleId,
@@ -27,6 +28,9 @@ export const calculateCostSimulation = async (motorcycleId, customValues = {}, u
     };
     if (userId) {
       params.userId = userId;
+    }
+    if (monthlyIncome) {
+      params.monthlyIncome = monthlyIncome;
     }
     const response = await apiClient.get('/cost-simulator/calculate', { params });
     return response.data.data;

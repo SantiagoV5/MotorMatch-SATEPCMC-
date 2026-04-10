@@ -13,15 +13,19 @@ const { getCalculationInfo } = require('../../utils/costCalculator');
  */
 async function calculate(req, res, next) {
   try {
-    const { motorcycleId, soatCost, registrationCost, vehicleTaxCost, userId: queryUserId } =
+    const { motorcycleId, soatCost, registrationCost, vehicleTaxCost, userId: queryUserId, monthlyIncome: queryMonthlyIncome } =
       req.query;
 
     // Usar userId del middleware (si está autenticado) o del parámetro query
     const userId = req.user?.id || (queryUserId ? parseInt(queryUserId) : null);
+    const monthlyIncome = queryMonthlyIncome ? parseFloat(queryMonthlyIncome) : null;
+
+    console.log('📊 [CostSimulator] monthlyIncome recibido:', queryMonthlyIncome, '→ parseado:', monthlyIncome);
 
     const simulation = await calculateCostSimulation({
       motorcycleId: parseInt(motorcycleId),
       userId,
+      monthlyIncome,
       soatCost:
         soatCost !== undefined ? parseFloat(soatCost) : null,
       registrationCost:

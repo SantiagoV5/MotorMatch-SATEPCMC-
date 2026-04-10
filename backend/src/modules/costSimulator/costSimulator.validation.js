@@ -23,6 +23,10 @@ const calculateSimulationSchema = Joi.object({
   userId: Joi.number().integer().optional().messages({
     'number.base': 'userId debe ser un número',
   }),
+  monthlyIncome: Joi.number().min(0).optional().messages({
+    'number.base': 'monthlyIncome debe ser un número',
+    'number.min': 'monthlyIncome no puede ser negativo',
+  }),
 });
 
 /**

@@ -5,10 +5,10 @@
 
 /**
  * Calcula el costo del SOAT basado en el cilindraje
- * Rangos según normativa colombiana (valores aproximados 2026):
- * - Menores a 200cc: ~$75,000
- * - 200cc a 400cc: ~$125,000
- * - Mayores a 400cc: ~$180,000
+ * Valores según categorías de cilindraje:
+ * - Menor a 100cc: $256,200
+ * - 100cc a 200cc: $343,300
+ * - Mayor a 200cc: $761,400
  *
  * @param {number} engineCc - Cilindraje del motor
  * @returns {number} Costo del SOAT en COP
@@ -16,15 +16,15 @@
 function calculateSOAT(engineCc) {
   if (!engineCc) {
     // Valor por defecto si no hay información
-    return 125000;
+    return 343300;
   }
 
-  if (engineCc < 200) {
-    return 75000;
-  } else if (engineCc <= 400) {
-    return 125000;
+  if (engineCc < 100) {
+    return 256200;
+  } else if (engineCc <= 200) {
+    return 343300;
   } else {
-    return 180000;
+    return 761400;
   }
 }
 
@@ -121,10 +121,10 @@ function validateBudget(totalCost, userBudget) {
   const percentageOfBudget = (total / budget) * 100;
 
   return {
-    budgetExceeded: percentageOfBudget > 30, // Costo excede 30% del presupuesto
+    budgetExceeded: percentageOfBudget > 130, // Costo excede 130% del presupuesto (30% arriba del límite)
     budgetExceededPercent: Math.round(percentageOfBudget),
     message:
-      percentageOfBudget > 30
+      percentageOfBudget > 130
         ? `⚠️ El valor de esta moto excede el presupuesto de $${budget.toLocaleString('es-CO')} que respondiste en tu cuestionario. Deberías considerar otras opciones.`
         : null,
   };
@@ -140,7 +140,7 @@ function getCalculationInfo() {
     soat: {
       title: "SOAT (Seguro Obligatorio de Accidentes de Tránsito)",
       description:
-        "Seguro obligatorio. Varía según cilindraje:\n- < 200cc: $75,000\n- 200-400cc: $125,000\n- > 400cc: $180,000",
+        "Seguro obligatorio. Varía según cilindraje:\n- Menor a 100cc: $256,200\n- 100cc a 200cc: $343,300\n- Mayor a 200cc: $761,400",
       editable: true,
     },
     registration: {

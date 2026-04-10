@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './CostSimulatorModal.css';
 import { calculateCostSimulation, saveCostSimulation, getCalculationInfo } from '../services/costSimulatorService';
 import Tooltip from '../../../shared/components/Tooltip/Tooltip';
 
 export default function CostSimulatorModal({ motorcycle, userBudget, userId, isOpen, onClose, onSave }) {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [simulation, setSimulation] = useState(null);
   const [calculationInfo, setCalculationInfo] = useState({});
@@ -17,6 +19,31 @@ export default function CostSimulatorModal({ motorcycle, userBudget, userId, isO
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [monthlyIncomeDisplay, setMonthlyIncomeDisplay] = useState('');
+
+  // Función para formatear números con separadores de miles
+  const formatNumberWithSeparators = (value) => {
+    if (!value) return '';
+    // Remover puntos existentes y conversión a número
+    const cleaned = value.toString().replace(/\./g, '');
+    // Agregar separadores cada 3 dígitos
+    return cleaned.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  // Función para obtener el valor numérico real
+  const getMonthlyIncomeValue = () => {
+    return monthlyIncomeDisplay ? parseFloat(monthlyIncomeDisplay.replace(/\./g, '')) : null;
+  };
+
+  const handleMonthlyIncomeChange = (e) => {
+    const input = e.target.value;
+    if (input === '') {
+      setMonthlyIncomeDisplay('');
+    } else if (/^\d+$/.test(input.replace(/\./g, ''))) {
+      // Solo permitir números
+      setMonthlyIncomeDisplay(formatNumberWithSeparators(input.replace(/\./g, '')));
+    }
+  };
 
   useEffect(() => {
     if (isOpen && motorcycle) {
@@ -25,11 +52,21 @@ export default function CostSimulatorModal({ motorcycle, userBudget, userId, isO
     }
   }, [isOpen, motorcycle, userId]);
 
+  // Recalcular cuando cambien los ingresos
+  useEffect(() => {
+    if (simulation) {
+      const incomeValue = getMonthlyIncomeValue();
+      calculateCostSimulation(motorcycle.id, editedValues, userId, incomeValue)
+        .then(setSimulation)
+        .catch(err => console.error('Error al recalcular:', err));
+    }
+  }, [monthlyIncomeDisplay]);
+
   const loadSimulation = async () => {
     try {
       setLoading(true);
       setError('');
-      const result = await calculateCostSimulation(motorcycle.id, editedValues, userId);
+      const result = await calculateCostSimulation(motorcycle.id, editedValues, userId, getMonthlyIncomeValue());
       setSimulation(result);
     } catch (err) {
       setError('Error al calcular la simulación de costos');
@@ -121,6 +158,28 @@ export default function CostSimulatorModal({ motorcycle, userBudget, userId, isO
                 <h3>{motorcycle.brand} {motorcycle.model} {motorcycle.year}</h3>
                 <p className="price">
                   Precio base: <strong>${Number(motorcycle.price).toLocaleString('es-CO')} COP</strong>
+                </p>
+              </div>
+
+              {/* Campo de ingresos mensuales */}
+              <div className="monthly-income-section">
+                <label htmlFor="monthlyIncome" className="income-label">
+                  💰 Tus ingresos mensuales (opcional)
+                </label>
+                <div className="income-input-group">
+                  <span className="currency-symbol">$</span>
+                  <input
+                    id="monthlyIncome"
+                    type="text"
+                    value={monthlyIncomeDisplay}
+                    onChange={handleMonthlyIncomeChange}
+                    placeholder="Ej: 3000000"
+                    className="income-input"
+                  />
+                  <span className="currency-code">COP</span>
+                </div>
+                <p className="income-note">
+                  Esto nos ayuda a mostrarte indicadores de salud financiera.
                 </p>
               </div>
 
@@ -246,6 +305,46 @@ export default function CostSimulatorModal({ motorcycle, userBudget, userId, isO
                   </div>
                 )}
               </div>
+
+              {/* Indicador Financiero */}
+              {simulation.healthIndicator && (
+                <div className="financial-health-indicator" style={{ borderLeftColor: simulation.color }}>
+                  <div className="health-header">
+                    <h4>{simulation.healthIndicator}</h4>
+                  </div>
+                  
+                  {simulation.monthlyCost && (
+                    <div className="health-details">
+                      <div className="health-row">
+                        <span>Costo estimado mensual:</span>
+                        <strong>${Number(simulation.monthlyCost).toLocaleString('es-CO')} COP</strong>
+                      </div>
+                      <div className="health-row">
+                        <span>% de tus ingresos:</span>
+                        <strong style={{ color: simulation.color }}>{simulation.percentage}%</strong>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="health-message" style={{ backgroundColor: `${simulation.color}15`, borderColor: simulation.color }}>
+                    {simulation.message}
+                  </div>
+                  
+                  {simulation.risk === 'high' && (
+                    <div className="financial-advice-link">
+                      <button
+                        onClick={() => {
+                          onClose();
+                          navigate('/financial-tips');
+                        }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', textDecoration: 'none', padding: 0 }}
+                      >
+                        📖 Ver consejos para compra responsable →
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           ) : null}
         </div>

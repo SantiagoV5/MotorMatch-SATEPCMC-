@@ -3,6 +3,10 @@ const {
   calculateTotalCost,
   validateBudget,
 } = require('../../utils/costCalculator');
+const {
+  calculateMonthlyCost,
+  calculateFinancialHealth,
+} = require('../../utils/financialIndicator');
 
 const prisma = new PrismaClient();
 
@@ -14,6 +18,7 @@ const prisma = new PrismaClient();
 async function calculateCostSimulation({
   motorcycleId,
   userId = null,
+  monthlyIncome = null,
   soatCost = null,
   registrationCost = null,
   vehicleTaxCost = null,
@@ -46,11 +51,21 @@ async function calculateCostSimulation({
     budgetExceededPercent: null,
     message: null,
   };
+  
+  // Indicador financiero
+  let financialHealth = {
+    healthIndicator: null,
+    percentage: null,
+    message: null,
+    risk: 'unknown',
+    color: '#94a3b8',
+    monthlyCost: null,
+  };
 
   if (userId) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, budgetRange: true },
+      select: { id: true, budgetRange: true, monthlyIncome: true },
     });
     
     if (user?.budgetRange) {
@@ -60,6 +75,25 @@ async function calculateCostSimulation({
         budgetExceeded: validation.budgetExceeded,
         budgetExceededPercent: validation.budgetExceededPercent,
         message: validation.message,
+      };
+    }
+    
+    // Calcular indicador financiero - usar monthlyIncome del parámetro o del usuario
+    const effectiveMonthlyIncome = monthlyIncome || user?.monthlyIncome;
+    if (effectiveMonthlyIncome) {
+      const monthlyCost = calculateMonthlyCost(
+        costCalculation.motorPrice,
+        costCalculation.soatCost
+      );
+      console.log('💰 [FinancialHealth] Cálculo:', {
+        monthlyCost,
+        effectiveMonthlyIncome,
+        percentage: (Number(monthlyCost) / Number(effectiveMonthlyIncome) * 100).toFixed(2) + '%'
+      });
+      const health = calculateFinancialHealth(monthlyCost, effectiveMonthlyIncome);
+      financialHealth = {
+        ...health,
+        monthlyCost,
       };
     }
   } else {
@@ -77,6 +111,7 @@ async function calculateCostSimulation({
     userId,
     ...costCalculation,
     ...budgetValidation,
+    ...financialHealth,
     userEditedValues: Object.keys(userEditedValues).length > 0 ? userEditedValues : null,
   };
 }

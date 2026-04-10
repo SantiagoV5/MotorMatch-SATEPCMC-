@@ -21,6 +21,7 @@ model User {
   ridingExperience      String?          @map("riding_experience") @db.VarChar(20)
   preferredBrands       String[]         @map("preferred_brands")
   budgetRange           Json?            @map("budget_range")
+  monthlyIncome         Decimal?         @map("monthly_income") @db.Decimal(15, 2)
   isActive              Boolean          @default(true) @map("is_active")
   lastLogin             DateTime?        @map("last_login")
   createdAt             DateTime         @default(now()) @map("created_at")
