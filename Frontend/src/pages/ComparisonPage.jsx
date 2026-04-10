@@ -15,7 +15,7 @@ function formatCOP(price) {
 
 const MAX_SLOTS = 3;
 
-// ── Skeleton de tarjeta en el picker ──────────────────────────────────────────
+// ── Skeleton del picker ───────────────────────────────────────────────────────
 function PickerSkeleton() {
   return (
     <div className="animate-pulse flex items-center gap-4 p-3 rounded-xl border border-outline-variant/20 bg-surface-container-low">
@@ -28,53 +28,39 @@ function PickerSkeleton() {
   );
 }
 
-// ── Modal picker de motos ─────────────────────────────────────────────────────
+// ── Modal picker ──────────────────────────────────────────────────────────────
 function MotoPicker({ onSelect, onClose, alreadySelected }) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch]       = useState('');
   const [committed, setCommitted] = useState('');
-  const [motos, setMotos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const inputRef = useRef(null);
+  const [motos, setMotos]         = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const inputRef                  = useRef(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   const load = useCallback(async (term) => {
     setLoading(true);
     try {
-      const filters = term.trim() ? { search: term.trim() } : {};
-      const data = await getAllMotorcycles(filters);
+      const data = await getAllMotorcycles(term.trim() ? { search: term.trim() } : {});
       setMotos(data || []);
-    } catch {
-      setMotos([]);
-    } finally {
-      setLoading(false);
-    }
+    } catch { setMotos([]); }
+    finally   { setLoading(false); }
   }, []);
 
   useEffect(() => { load(committed); }, [committed, load]);
-
-  function handleSearch(e) {
-    e.preventDefault();
-    setCommitted(search);
-  }
 
   const visible = motos.filter(m => !alreadySelected.includes(m.id));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl flex flex-col max-h-[80vh] overflow-hidden border border-outline-variant/20">
-
-        {/* Header del modal */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-outline-variant/15">
           <h3 className="font-headline text-lg font-bold text-primary">Añadir moto</h3>
-          <button onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-full hover:bg-slate-100">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-full hover:bg-slate-100">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
-
-        {/* Barra de búsqueda */}
-        <form onSubmit={handleSearch} className="px-6 py-3 border-b border-outline-variant/10">
+        <form onSubmit={e => { e.preventDefault(); setCommitted(search); }} className="px-6 py-3 border-b border-outline-variant/10">
           <div className="flex items-center gap-2 bg-surface-container rounded-lg px-3 py-2 border border-outline-variant/20">
             <span className="material-symbols-outlined text-outline text-xl">search</span>
             <input
@@ -85,45 +71,32 @@ function MotoPicker({ onSelect, onClose, alreadySelected }) {
               className="flex-1 bg-transparent border-none outline-none text-sm text-on-surface placeholder:text-outline"
             />
             {search && (
-              <button type="button" onClick={() => { setSearch(''); setCommitted(''); }}
-                className="text-outline hover:text-on-surface transition-colors">
+              <button type="button" onClick={() => { setSearch(''); setCommitted(''); }} className="text-outline hover:text-on-surface transition-colors">
                 <span className="material-symbols-outlined text-base">close</span>
               </button>
             )}
-            <button type="submit"
-              className="bg-primary text-white px-3 py-1 rounded-md text-xs font-bold hover:bg-primary/90 transition-colors">
+            <button type="submit" className="bg-primary text-white px-3 py-1 rounded-md text-xs font-bold hover:bg-primary/90 transition-colors">
               Buscar
             </button>
           </div>
         </form>
-
-        {/* Lista de motos */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
           {loading
             ? [...Array(5)].map((_, i) => <PickerSkeleton key={i} />)
             : visible.length === 0
-              ? (
-                <div className="flex flex-col items-center py-12 text-center gap-3">
-                  <span className="material-symbols-outlined text-5xl text-slate-300">search_off</span>
-                  <p className="text-slate-400 text-sm">No se encontraron motos</p>
-                </div>
-              )
+              ? <div className="flex flex-col items-center py-12 text-center gap-3"><span className="material-symbols-outlined text-5xl text-slate-300">search_off</span><p className="text-slate-400 text-sm">No se encontraron motos</p></div>
               : visible.map(moto => (
                 <div key={moto.id}
                   className="flex items-center gap-4 p-3 rounded-xl border border-outline-variant/20 hover:border-primary/30 hover:bg-primary/5 transition-all cursor-pointer group"
                   onClick={() => onSelect(moto)}>
-                  <img
-                    src={moto.imageUrl || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=200&h=140&fit=crop'}
-                    alt={`${moto.brand} ${moto.model}`}
-                    className="w-20 h-14 object-contain rounded-lg bg-slate-50 flex-shrink-0"
-                  />
+                  <img src={moto.imageUrl || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=200&h=140&fit=crop'}
+                    alt={`${moto.brand} ${moto.model}`} className="w-20 h-14 object-contain rounded-lg bg-slate-50 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-outline uppercase tracking-wider">{moto.brand}</p>
                     <p className="font-headline font-black text-primary text-base leading-tight truncate">{moto.model}</p>
                     {moto.year && <p className="text-xs text-slate-400">{moto.year}</p>}
                   </div>
-                  <button
-                    onClick={e => { e.stopPropagation(); onSelect(moto); }}
+                  <button onClick={e => { e.stopPropagation(); onSelect(moto); }}
                     className="flex-shrink-0 bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-primary/90 transition-colors opacity-0 group-hover:opacity-100">
                     Añadir
                   </button>
@@ -135,24 +108,22 @@ function MotoPicker({ onSelect, onClose, alreadySelected }) {
   );
 }
 
-// ── Fila de comparación ───────────────────────────────────────────────────────
+// ── Atributos de la tabla comparativa ────────────────────────────────────────
 const ROWS = [
-  { key: 'price',          label: 'Precio',             format: (v) => formatCOP(v) },
-  { key: 'engineCc',       label: 'Cilindraje',         format: (v) => v ? `${v} cc` : '—' },
-  { key: 'powerHp',        label: 'Potencia',           format: (v) => v ? `${Number(v)} HP` : '—' },
-  { key: 'weightKg',       label: 'Peso',               format: (v) => v ? `${Number(v)} kg` : '—' },
-  { key: 'seatHeightCm',   label: 'Altura de asiento',  format: (v) => v ? `${v} cm` : '—' },
-  { key: 'consumptionKmpl',label: 'Consumo',            format: (v) => v ? `${Number(v)} km/l` : '—' },
-  { key: 'transmission',   label: 'Transmisión',        format: (v) => v || '—' },
+  { key: 'price',           label: 'Precio',            format: v => formatCOP(v) },
+  { key: 'engineCc',        label: 'Cilindraje',        format: v => v ? `${v} cc` : '—' },
+  { key: 'powerHp',         label: 'Potencia',          format: v => v ? `${Number(v)} HP` : '—' },
+  { key: 'weightKg',        label: 'Peso',              format: v => v ? `${Number(v)} kg` : '—' },
+  { key: 'seatHeightCm',    label: 'Altura de asiento', format: v => v ? `${v} cm` : '—' },
+  { key: 'consumptionKmpl', label: 'Consumo',           format: v => v ? `${Number(v)} km/l` : '—' },
+  { key: 'transmission',    label: 'Transmisión',       format: v => v || '—' },
 ];
 
 // ── Slot vacío ────────────────────────────────────────────────────────────────
 function EmptySlot({ onClick }) {
   return (
-    <div
-      onClick={onClick}
-      className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed border-outline-variant/40 bg-surface-container-low/30 hover:border-accent/60 hover:bg-accent/5 transition-all cursor-pointer group min-h-[260px]"
-    >
+    <div onClick={onClick}
+      className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed border-outline-variant/40 bg-surface-container-low/30 hover:border-accent/60 hover:bg-accent/5 transition-all cursor-pointer group min-h-[260px]">
       <div className="w-14 h-14 rounded-full border-2 border-dashed border-outline/30 flex items-center justify-center group-hover:border-accent group-hover:bg-accent/10 transition-all">
         <span className="material-symbols-outlined text-3xl text-outline group-hover:text-accent transition-colors">add</span>
       </div>
@@ -163,22 +134,19 @@ function EmptySlot({ onClick }) {
   );
 }
 
-// ── Tarjeta de moto en la comparación ────────────────────────────────────────
-function MotoCard({ moto, onRemove, navigate, highlights }) {
+// ── Tarjeta de moto ───────────────────────────────────────────────────────────
+// `highlights` es {} mientras no se ha comparado, o {price: id, engineCc: id} tras comparar.
+// `animating` es true justo al activar la comparación (dispara la animación de entrada).
+function MotoCard({ moto, onRemove, navigate, highlights, animating }) {
   return (
     <div className="flex flex-col rounded-2xl overflow-hidden border border-outline-variant/20 bg-surface-container-lowest shadow-sm">
-      {/* Imagen + botón eliminar */}
+      {/* Imagen */}
       <div className="relative h-44 bg-slate-50">
-        <img
-          src={moto.imageUrl || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=400&h=280&fit=crop'}
-          alt={`${moto.brand} ${moto.model}`}
-          className="w-full h-full object-contain p-3"
-        />
-        <button
-          onClick={onRemove}
+        <img src={moto.imageUrl || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=400&h=280&fit=crop'}
+          alt={`${moto.brand} ${moto.model}`} className="w-full h-full object-contain p-3" />
+        <button onClick={onRemove}
           className="absolute top-3 right-3 bg-accent/10 hover:bg-accent text-accent hover:text-white p-1.5 rounded-full transition-all"
-          aria-label="Quitar de comparación"
-        >
+          aria-label="Quitar de comparación">
           <span className="material-symbols-outlined text-sm">close</span>
         </button>
       </div>
@@ -194,14 +162,13 @@ function MotoCard({ moto, onRemove, navigate, highlights }) {
       {ROWS.map(row => {
         const isHighlighted = highlights?.[row.key] === moto.id;
         return (
-          <div
-            key={row.key}
-            className={`px-5 py-3 border-b border-outline-variant/10 flex flex-col gap-0.5 transition-colors ${
+          <div key={row.key}
+            className={`px-5 py-3 border-b border-outline-variant/10 flex flex-col gap-0.5 transition-all duration-500 ${
               isHighlighted ? 'bg-accent/10' : ''
-            }`}
+            } ${animating && isHighlighted ? 'animate-pulse' : ''}`}
           >
             <span className="text-[10px] font-bold uppercase tracking-widest text-outline">{row.label}</span>
-            <span className={`font-headline text-base font-bold ${isHighlighted ? 'text-accent' : 'text-primary'}`}>
+            <span className={`font-headline text-base font-bold transition-colors duration-500 ${isHighlighted ? 'text-accent' : 'text-primary'}`}>
               {row.format(moto[row.key])}
               {isHighlighted && (
                 <span className="ml-2 text-[10px] font-bold text-accent uppercase tracking-wider">
@@ -215,10 +182,8 @@ function MotoCard({ moto, onRemove, navigate, highlights }) {
 
       {/* CTA */}
       <div className="px-5 py-4">
-        <button
-          onClick={() => navigate(`/motorcycles/${moto.id}`)}
-          className="w-full bg-primary text-white py-2.5 rounded-xl font-bold uppercase tracking-widest text-[11px] hover:bg-primary/90 transition-colors"
-        >
+        <button onClick={() => navigate(`/motorcycles/${moto.id}`)}
+          className="w-full bg-primary text-white py-2.5 rounded-xl font-bold uppercase tracking-widest text-[11px] hover:bg-primary/90 transition-colors">
           Ver detalle
         </button>
       </div>
@@ -228,74 +193,87 @@ function MotoCard({ moto, onRemove, navigate, highlights }) {
 
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function ComparisonPage() {
-  const navigate   = useNavigate();
-  const location   = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Prefill desde ficha técnica (una moto) o desde historial (array de 3 slots)
   const prefillMoto  = location.state?.prefillMoto  || null;
   const prefillSlots = location.state?.prefillSlots || null;
+  // Si viene del historial, la comparación ya fue guardada — no volver a guardar
+  const fromHistory  = Boolean(prefillSlots);
 
-  const [slots, setSlots] = useState(() => {
-    if (prefillSlots) return prefillSlots;                        // desde historial
-    if (prefillMoto)  return [prefillMoto, null, null];           // desde ficha técnica
+  const [slots, setSlots]       = useState(() => {
+    if (prefillSlots) return prefillSlots;
+    if (prefillMoto)  return [prefillMoto, null, null];
     return [null, null, null];
   });
-  const [pickerSlot, setPickerSlot] = useState(null);   // índice del slot que se está llenando
-  const [saved, setSaved]           = useState(false);   // si ya se guardó la comparación actual
-  const savedRef                    = useRef('');  // guarda la key 'id1,id2[,id3]' ya persistida
+  const [pickerSlot, setPickerSlot] = useState(null);
 
-  // ── Si los slots vienen del historial, enriquecer con datos completos ──────
-  // prefillSlots solo trae {id, brand, model, imageUrl, engineCc}.
-  // MotoCard necesita price, transmission, seatHeightCm, etc.
+  // Estado de la comparación
+  const [compared, setCompared]   = useState(fromHistory); // true = ya se comparó (resaltar)
+  const [animating, setAnimating] = useState(false);       // true durante la animación
+  const [saved, setSaved]         = useState(false);       // feedback "guardado"
+  const [saving, setSaving]       = useState(false);
+
+  // ── Enriquecer slots del historial con datos completos ────────────────────
   useEffect(() => {
     if (!prefillSlots) return;
-    const enrichSlots = async () => {
+    const enrich = async () => {
       const enriched = await Promise.all(
-        prefillSlots.map(moto =>
-          moto ? getMotorcycleById(moto.id).catch(() => moto) : null
-        )
+        prefillSlots.map(m => m ? getMotorcycleById(m.id).catch(() => m) : null)
       );
       setSlots(enriched);
     };
-    enrichSlots();
-  }, []); // solo al montar
+    enrich();
+  }, []);
 
-  // Motos activas (no null)
-  const activeMotos = slots.filter(Boolean);
-
-  // ── Calcular highlights cuando hay 2+ motos ──────────────────────────────
-  const highlights = {};
-  if (activeMotos.length >= 2) {
-    // Precio más bajo → highlight
-    const withPrice = activeMotos.filter(m => m.price != null);
-    if (withPrice.length >= 2) {
-      const cheapest = withPrice.reduce((a, b) => Number(a.price) < Number(b.price) ? a : b);
-      highlights.price = cheapest.id;
-    }
-    // Cilindraje más alto → highlight
-    const withCc = activeMotos.filter(m => m.engineCc != null);
-    if (withCc.length >= 2) {
-      const biggest = withCc.reduce((a, b) => a.engineCc > b.engineCc ? a : b);
-      highlights.engineCc = biggest.id;
+  // Al cambiar los slots manualmente, resetear la comparación
+  // (excepto al enriquecer desde historial donde fromHistory = true)
+  function resetComparison() {
+    if (!fromHistory) {
+      setCompared(false);
+      setAnimating(false);
+      setSaved(false);
     }
   }
 
-  // ── Guardar comparación en BD ────────────────────────────────────────────
-  // savedRef guarda la combinación de IDs ya guardada (no solo un booleano)
-  // así cuando se añade una 3ª moto se detecta que la combinación cambió y vuelve a guardar.
-  useEffect(() => {
-    const ids = activeMotos.map(m => m.id);
-    const key = ids.join(',');
-    if (ids.length < 2) {
-      savedRef.current = '';
-      setSaved(false);
-      return;
+  const activeMotos = slots.filter(Boolean);
+
+  // ── Calcular highlights (solo cuando compared = true) ────────────────────
+  const highlights = {};
+  if (compared && activeMotos.length >= 2) {
+    const withPrice = activeMotos.filter(m => m.price != null);
+    if (withPrice.length >= 2) {
+      highlights.price = withPrice.reduce((a, b) => Number(a.price) < Number(b.price) ? a : b).id;
     }
-    if (savedRef.current === key) return;   // ya guardamos exactamente esta combinación
-    savedRef.current = key;
-    setSaved(true);
-    saveComparison(ids).catch(() => { savedRef.current = ''; setSaved(false); });
-  }, [activeMotos.map(m => m?.id).join(',')]);
+    const withCc = activeMotos.filter(m => m.engineCc != null);
+    if (withCc.length >= 2) {
+      highlights.engineCc = withCc.reduce((a, b) => a.engineCc > b.engineCc ? a : b).id;
+    }
+  }
+
+  // ── Botón "Realizar comparación" ──────────────────────────────────────────
+  async function handleCompare() {
+    if (activeMotos.length < 2) return;
+
+    // 1. Activar highlights con animación
+    setCompared(true);
+    setAnimating(true);
+    setTimeout(() => setAnimating(false), 800); // animación dura ~800ms
+
+    // 2. Guardar en BD (solo si no viene del historial)
+    if (!fromHistory) {
+      setSaving(true);
+      try {
+        await saveComparison(activeMotos.map(m => m.id));
+        setSaved(true);
+      } catch (err) {
+        console.error('Error guardando comparación:', err);
+      } finally {
+        setSaving(false);
+      }
+    }
+  }
 
   function handleSelect(moto) {
     setSlots(prev => {
@@ -304,27 +282,28 @@ export default function ComparisonPage() {
       return next;
     });
     setPickerSlot(null);
+    resetComparison();
   }
 
   function handleRemove(idx) {
     setSlots(prev => {
       const next = [...prev];
       next[idx] = null;
-      // Compactar para que no queden huecos en medio
       const filled = next.filter(Boolean);
       return [...filled, ...Array(MAX_SLOTS - filled.length).fill(null)];
     });
-    savedRef.current = '';
-    setSaved(false);
+    resetComparison();
   }
 
   function handleClear() {
     setSlots([null, null, null]);
-    savedRef.current = '';
+    setCompared(false);
+    setAnimating(false);
     setSaved(false);
   }
 
   const alreadySelected = slots.filter(Boolean).map(m => m.id);
+  const canCompare = activeMotos.length >= 2;
 
   return (
     <div className="min-h-screen bg-surface font-body text-on-surface">
@@ -339,26 +318,26 @@ export default function ComparisonPage() {
               Batalla a <span className="text-accent italic">dos ruedas</span>
             </h1>
             <p className="mt-4 text-on-surface-variant max-w-xl font-medium text-sm leading-relaxed">
-              Compara hasta 3 motocicletas en tiempo real. Se resalta el <span className="font-bold text-accent">mayor cilindraje</span> y el <span className="font-bold text-accent">mejor precio</span>.
+              Añade 2 o 3 motos y presiona <span className="font-bold text-accent">Realizar comparación</span> para ver el ganador en cada atributo.
             </p>
           </div>
           {activeMotos.length > 0 && (
             <div className="flex items-center gap-3 self-start md:self-auto">
-            <button
-              onClick={() => navigate('/comparison-history')}
-              className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest border border-primary/20 px-4 py-2 rounded-lg hover:bg-primary/5 transition-colors"
-            >
-              <span className="material-symbols-outlined text-sm">history</span>
-              Historial
-            </button>
-            <button
-              onClick={handleClear}
-              className="flex items-center gap-2 text-accent font-bold text-xs uppercase tracking-widest border border-accent/20 px-4 py-2 rounded-lg hover:bg-accent/5 transition-colors"
-            >
-              <span className="material-symbols-outlined text-sm">delete_sweep</span>
-              Limpiar comparación
-            </button>
-          </div>
+              <button
+                onClick={() => navigate('/comparison-history')}
+                className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest border border-primary/20 px-4 py-2 rounded-lg hover:bg-primary/5 transition-colors"
+              >
+                <span className="material-symbols-outlined text-sm">history</span>
+                Historial
+              </button>
+              <button
+                onClick={handleClear}
+                className="flex items-center gap-2 text-accent font-bold text-xs uppercase tracking-widest border border-accent/20 px-4 py-2 rounded-lg hover:bg-accent/5 transition-colors"
+              >
+                <span className="material-symbols-outlined text-sm">delete_sweep</span>
+                Limpiar
+              </button>
+            </div>
           )}
         </div>
 
@@ -371,7 +350,8 @@ export default function ComparisonPage() {
                 moto={moto}
                 onRemove={() => handleRemove(idx)}
                 navigate={navigate}
-                highlights={activeMotos.length >= 2 ? highlights : {}}
+                highlights={compared ? highlights : {}}
+                animating={animating}
               />
             ) : (
               <EmptySlot key={idx} onClick={() => setPickerSlot(idx)} />
@@ -379,12 +359,45 @@ export default function ComparisonPage() {
           )}
         </div>
 
-        {/* ── Indicador guardado ── */}
-        {saved && (
-          <p className="mt-6 text-center text-xs text-slate-400 flex items-center justify-center gap-1">
-            <span className="material-symbols-outlined text-sm text-green-400">check_circle</span>
-            Comparación guardada en tu historial
-          </p>
+        {/* ── Botón "Realizar comparación" ── */}
+        {canCompare && (
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <button
+              onClick={handleCompare}
+              disabled={saving}
+              className="flex items-center gap-3 px-10 py-4 rounded-2xl font-headline font-bold uppercase tracking-widest text-sm text-white transition-all active:scale-95 disabled:opacity-60 shadow-lg"
+              style={{ backgroundColor: '#FF6B35' }}
+            >
+              {saving ? (
+                <>
+                  <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-base">compare_arrows</span>
+                  Realizar comparación
+                </>
+              )}
+            </button>
+
+            {/* Feedback de guardado */}
+            {saved && !saving && (
+              <p className="text-xs text-slate-400 flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm text-green-400">check_circle</span>
+                Comparación guardada en tu historial
+              </p>
+            )}
+            {fromHistory && compared && (
+              <p className="text-xs text-slate-400 flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm text-blue-400">info</span>
+                Comparación del historial — pulsa de nuevo para guardar una nueva entrada
+              </p>
+            )}
+          </div>
         )}
 
       </main>
@@ -399,10 +412,10 @@ export default function ComparisonPage() {
       )}
 
       {/* Footer */}
-      <footer className="bg-white dark:bg-background-dark border-t border-primary/10 py-12 px-4 mt-8">
+      <footer className="bg-white border-t border-primary/10 py-12 px-4 mt-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex flex-col items-center md:items-start gap-2">
-            <div className="flex items-center gap-2 text-primary dark:text-accent opacity-80">
+            <div className="flex items-center gap-2 text-primary opacity-80">
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 48 48">
                 <path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z" />
               </svg>
@@ -411,10 +424,10 @@ export default function ComparisonPage() {
             <p className="text-sm text-slate-500">Conectando pasiones, kilómetro a kilómetro.</p>
           </div>
           <nav className="flex flex-wrap justify-center gap-8">
-            <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Aviso Legal</a>
-            <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Privacidad</a>
-            <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Soporte</a>
-            <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Contacto</a>
+            <a className="text-slate-600 hover:text-accent font-medium transition-colors" href="#">Aviso Legal</a>
+            <a className="text-slate-600 hover:text-accent font-medium transition-colors" href="#">Privacidad</a>
+            <a className="text-slate-600 hover:text-accent font-medium transition-colors" href="#">Soporte</a>
+            <a className="text-slate-600 hover:text-accent font-medium transition-colors" href="#">Contacto</a>
           </nav>
         </div>
       </footer>
