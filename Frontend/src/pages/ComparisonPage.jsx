@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../shared/components/layout/header';
-import { getAllMotorcycles } from '../features/motorcycles/services/motorcycleService';
+import { getAllMotorcycles, getMotorcycleById } from '../features/motorcycles/services/motorcycleService';
 import { saveComparison } from '../features/comparison/services/comparisonService';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -231,13 +231,34 @@ export default function ComparisonPage() {
   const navigate   = useNavigate();
   const location   = useLocation();
 
-  // Si se viene desde la ficha técnica, location.state.prefillMoto trae la moto
-  const prefill    = location.state?.prefillMoto || null;
+  // Prefill desde ficha técnica (una moto) o desde historial (array de 3 slots)
+  const prefillMoto  = location.state?.prefillMoto  || null;
+  const prefillSlots = location.state?.prefillSlots || null;
 
-  const [slots, setSlots]           = useState(() => prefill ? [prefill, null, null] : [null, null, null]);
+  const [slots, setSlots] = useState(() => {
+    if (prefillSlots) return prefillSlots;                        // desde historial
+    if (prefillMoto)  return [prefillMoto, null, null];           // desde ficha técnica
+    return [null, null, null];
+  });
   const [pickerSlot, setPickerSlot] = useState(null);   // índice del slot que se está llenando
   const [saved, setSaved]           = useState(false);   // si ya se guardó la comparación actual
-  const savedRef                    = useRef(false);
+  const savedRef                    = useRef('');  // guarda la key 'id1,id2[,id3]' ya persistida
+
+  // ── Si los slots vienen del historial, enriquecer con datos completos ──────
+  // prefillSlots solo trae {id, brand, model, imageUrl, engineCc}.
+  // MotoCard necesita price, transmission, seatHeightCm, etc.
+  useEffect(() => {
+    if (!prefillSlots) return;
+    const enrichSlots = async () => {
+      const enriched = await Promise.all(
+        prefillSlots.map(moto =>
+          moto ? getMotorcycleById(moto.id).catch(() => moto) : null
+        )
+      );
+      setSlots(enriched);
+    };
+    enrichSlots();
+  }, []); // solo al montar
 
   // Motos activas (no null)
   const activeMotos = slots.filter(Boolean);
@@ -259,18 +280,21 @@ export default function ComparisonPage() {
     }
   }
 
-  // ── Guardar comparación en BD (una sola vez cuando hay 2+ motos) ─────────
+  // ── Guardar comparación en BD ────────────────────────────────────────────
+  // savedRef guarda la combinación de IDs ya guardada (no solo un booleano)
+  // así cuando se añade una 3ª moto se detecta que la combinación cambió y vuelve a guardar.
   useEffect(() => {
     const ids = activeMotos.map(m => m.id);
+    const key = ids.join(',');
     if (ids.length < 2) {
-      savedRef.current = false;
+      savedRef.current = '';
       setSaved(false);
       return;
     }
-    if (savedRef.current) return;
-    savedRef.current = true;
+    if (savedRef.current === key) return;   // ya guardamos exactamente esta combinación
+    savedRef.current = key;
     setSaved(true);
-    saveComparison(ids).catch(() => { savedRef.current = false; setSaved(false); });
+    saveComparison(ids).catch(() => { savedRef.current = ''; setSaved(false); });
   }, [activeMotos.map(m => m?.id).join(',')]);
 
   function handleSelect(moto) {
@@ -290,13 +314,13 @@ export default function ComparisonPage() {
       const filled = next.filter(Boolean);
       return [...filled, ...Array(MAX_SLOTS - filled.length).fill(null)];
     });
-    savedRef.current = false;
+    savedRef.current = '';
     setSaved(false);
   }
 
   function handleClear() {
     setSlots([null, null, null]);
-    savedRef.current = false;
+    savedRef.current = '';
     setSaved(false);
   }
 
@@ -318,10 +342,11 @@ export default function ComparisonPage() {
               Compara hasta 3 motocicletas en tiempo real. Se resalta el <span className="font-bold text-accent">mayor cilindraje</span> y el <span className="font-bold text-accent">mejor precio</span>.
             </p>
           </div>
-          <div className="flex items-center gap-3 self-start md:self-auto">
+          {activeMotos.length > 0 && (
+            <div className="flex items-center gap-3 self-start md:self-auto">
             <button
-              title="Próximamente"
-              className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest border border-primary/20 px-4 py-2 rounded-lg hover:bg-primary/5 transition-colors opacity-70"
+              onClick={() => navigate('/comparison-history')}
+              className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest border border-primary/20 px-4 py-2 rounded-lg hover:bg-primary/5 transition-colors"
             >
               <span className="material-symbols-outlined text-sm">history</span>
               Historial
@@ -334,6 +359,7 @@ export default function ComparisonPage() {
               Limpiar comparación
             </button>
           </div>
+          )}
         </div>
 
         {/* ── Grid de slots ── */}

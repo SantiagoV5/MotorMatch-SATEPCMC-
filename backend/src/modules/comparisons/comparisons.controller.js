@@ -1,5 +1,11 @@
-const { saveComparison } = require('./comparisons.service');
+const {
+  saveComparison,
+  getComparisonHistory,
+  deleteComparison,
+  deleteAllComparisons,
+} = require('./comparisons.service');
 
+// POST /api/comparisons
 async function createComparison(req, res, next) {
   try {
     const { bikeIds } = req.body;
@@ -8,9 +14,31 @@ async function createComparison(req, res, next) {
     }
     const result = await saveComparison(req.user.id, bikeIds);
     res.status(201).json({ data: result });
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 }
 
-module.exports = { createComparison };
+// GET /api/comparisons
+async function listComparisons(req, res, next) {
+  try {
+    const history = await getComparisonHistory(req.user.id);
+    res.json({ data: history });
+  } catch (err) { next(err); }
+}
+
+// DELETE /api/comparisons/:id
+async function removeComparison(req, res, next) {
+  try {
+    const result = await deleteComparison(req.user.id, req.params.id);
+    res.json({ data: result });
+  } catch (err) { next(err); }
+}
+
+// DELETE /api/comparisons
+async function clearComparisons(req, res, next) {
+  try {
+    const result = await deleteAllComparisons(req.user.id);
+    res.json({ data: result });
+  } catch (err) { next(err); }
+}
+
+module.exports = { createComparison, listComparisons, removeComparison, clearComparisons };
