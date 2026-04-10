@@ -9,6 +9,7 @@ import { QuestionnaireWizard } from './features/questionnaire'
 import RecommendationList from './features/recommendations/components/recommendationList'
 import FavoritesPage from './features/favorites/components/FavoritesPage'
 import ComparisonPage from './pages/ComparisonPage'
+import ComparisonHistoryPage from './pages/ComparisonHistoryPage'
 
 // Protected Route Wrapper
 function ProtectedRoute({ children }) {
@@ -53,6 +54,11 @@ function App() {
       <Route path="/comparison" element={
         <ProtectedRoute>
           <ComparisonPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/comparison-history" element={
+        <ProtectedRoute>
+          <ComparisonHistoryPage />
         </ProtectedRoute>
       } />
       <Route path="/login"    element={<LoginForm />} />

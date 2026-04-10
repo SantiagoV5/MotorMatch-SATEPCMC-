@@ -70,7 +70,7 @@ export default function Header({ children, sticky = true }) {
             </button>
 
             {/* Dropdown */}
-            <div className="absolute right-0 top-full mt-2 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right z-[60]">
+            <div className="absolute right-0 top-full mt-2 w-72 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right z-[60]">
               <div
                 className="bg-white rounded-xl p-4 border border-slate-100"
                 style={{ boxShadow: '0px 4px 24px rgba(25,28,30,0.06)' }}
@@ -100,6 +100,15 @@ export default function Header({ children, sticky = true }) {
                     >
                       <span className="material-symbols-outlined text-lg">favorite</span>
                       <span className="text-sm font-semibold font-label">Motos favoritas</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => navigate('/comparison-history')}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300"
+                    >
+                      <span className="material-symbols-outlined text-lg">history</span>
+                      <span className="text-sm font-semibold font-label">Historial de comparaciones</span>
                     </button>
                   </li>
                   <li>
