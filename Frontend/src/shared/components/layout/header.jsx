@@ -113,6 +113,24 @@ export default function Header({ children, sticky = true }) {
                   </li>
                   <li>
                     <button
+                      onClick={() => navigate('/simulations-history')}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300"
+                    >
+                      <span className="material-symbols-outlined text-lg">calculate</span>
+                      <span className="text-sm font-semibold font-label">Historial de simulaciones</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => navigate('/market-analysis')}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300"
+                    >
+                      <span className="material-symbols-outlined text-lg">show_chart</span>
+                      <span className="text-sm font-semibold font-label">Análisis de Mercado</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-error hover:bg-error/5 transition-all duration-300"
                     >

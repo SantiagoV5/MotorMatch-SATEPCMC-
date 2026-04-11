@@ -10,10 +10,13 @@ import RecommendationList from './features/recommendations/components/recommenda
 import FavoritesPage from './features/favorites/components/FavoritesPage'
 import ComparisonPage from './pages/ComparisonPage'
 import ComparisonHistoryPage from './pages/ComparisonHistoryPage'
+import { SimulationsHistoryPage } from './pages/SimulationsHistoryPage'
+import FinancialTipsPage from './pages/FinancialTipsPage'
+import MarketAnalysisPage from './pages/MarketAnalysisPage'
 
 // Protected Route Wrapper
 function ProtectedRoute({ children }) {
-  const token = sessionStorage.getItem('mm_token')
+  const token = sessionStorage.getItem('mm_token') || localStorage.getItem('mm_token')
   if (!token) return <Navigate to="/login" replace />
   return children
 }
@@ -59,6 +62,21 @@ function App() {
       <Route path="/comparison-history" element={
         <ProtectedRoute>
           <ComparisonHistoryPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/simulations-history" element={
+        <ProtectedRoute>
+          <SimulationsHistoryPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/financial-tips" element={
+        <ProtectedRoute>
+          <FinancialTipsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/market-analysis" element={
+        <ProtectedRoute>
+          <MarketAnalysisPage />
         </ProtectedRoute>
       } />
       <Route path="/login"    element={<LoginForm />} />

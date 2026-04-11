@@ -21,6 +21,7 @@ model User {
   ridingExperience      String?          @map("riding_experience") @db.VarChar(20)
   preferredBrands       String[]         @map("preferred_brands")
   budgetRange           Json?            @map("budget_range")
+  monthlyIncome         Decimal?         @map("monthly_income") @db.Decimal(15, 2)
   isActive              Boolean          @default(true) @map("is_active")
   lastLogin             DateTime?        @map("last_login")
   createdAt             DateTime         @default(now()) @map("created_at")
@@ -34,6 +35,7 @@ model User {
   recommendations       Recommendation[]
   favorites             Favorite[]
   comparisons           Comparison[]
+  costSimulations       CostSimulation[]
 
   @@map("users")
 }
@@ -74,6 +76,7 @@ model Motorcycle {
   warranty              String?          @db.VarChar(200)
   recommendations       Recommendation[]
   favorites             Favorite[]
+  costSimulations       CostSimulation[]
 
   @@index([brand, model], map: "idx_motorcycles_brand_model")
   @@map("motorcycles")
@@ -145,4 +148,26 @@ model Comparison {
 
   @@index([userId], map: "idx_comparisons_user_id")
   @@map("comparisons")
+}
+
+model CostSimulation {
+  id                    Int        @id @default(autoincrement())
+  userId                Int?       @map("user_id")
+  motorcycleId          Int        @map("motorcycle_id")
+  motorPrice            Decimal    @map("motor_price") @db.Decimal(12, 2)
+  soatCost              Decimal    @map("soat_cost") @db.Decimal(10, 2)
+  registrationCost      Decimal    @map("registration_cost") @db.Decimal(10, 2)
+  vehicleTaxCost        Decimal    @map("vehicle_tax_cost") @db.Decimal(10, 2)
+  managementCost        Decimal    @default(150000) @map("management_cost") @db.Decimal(10, 2)
+  totalCost             Decimal    @map("total_cost") @db.Decimal(12, 2)
+  budgetExceeded        Boolean    @default(false) @map("budget_exceeded")
+  budgetExceededPercent Int?       @map("budget_exceeded_percent")
+  userEditedValues      Json?      @map("user_edited_values") // Almacenar qué valores editó el usuario
+  savedAt               DateTime   @default(now()) @map("saved_at")
+  user                  User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  motorcycle            Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_cost_simulations_user_id")
+  @@index([motorcycleId], map: "idx_cost_simulations_motorcycle_id")
+  @@map("cost_simulations")
 }

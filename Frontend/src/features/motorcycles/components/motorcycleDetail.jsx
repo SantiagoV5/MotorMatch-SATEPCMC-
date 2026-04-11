@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../../../shared/components/layout/header';
 import { addFavorite, removeFavorite, getMyFavoriteIds } from '../../favorites/services/favoritesService';
 import { motorcycleService } from '../services/motorcycleService';
+import { CostSimulatorModal } from '../../costSimulator';
 
 export function MotorcycleDetail() {
   const { id } = useParams();
@@ -11,6 +12,9 @@ export function MotorcycleDetail() {
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
+  const [userBudget, setUserBudget] = useState(null);
+  const [userId, setUserId] = useState(null);
 
   // Load favorite status once motorcycle id is known.
   // Depends on motorcycle?.id (not the whole object) to avoid infinite re-renders.
@@ -21,6 +25,26 @@ export function MotorcycleDetail() {
       .then(ids => setIsFavorite(ids.map(Number).includes(Number(motorcycle.id))))
       .catch(() => {});
   }, [motorcycle?.id]);
+
+  // Get user profile info for budget
+  useEffect(() => {
+    const getUserBudget = async () => {
+      try {
+        // Get user from sessionStorage (same as useAuth)
+        const userDataStr = sessionStorage.getItem('mm_user');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          setUserId(userData.id);
+          if (userData.budgetRange?.max) {
+            setUserBudget(userData.budgetRange.max);
+          }
+        }
+      } catch (err) {
+        console.error('Error getting user budget:', err);
+      }
+    };
+    getUserBudget();
+  }, []);
 
   const handleFavoriteToggle = async () => {
     const next = !isFavorite;
@@ -144,9 +168,11 @@ export function MotorcycleDetail() {
             </div>
 
             <div className="flex flex-wrap gap-4 pt-4">
-              <button className="flex-1 min-w-[200px] h-14 bg-[#FF6B35] text-white rounded-xl font-bold hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF6B35]/20">
+              <button 
+                onClick={() => setIsSimulatorOpen(true)}
+                className="flex-1 min-w-[200px] h-14 bg-[#FF6B35] text-white rounded-xl font-bold hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF6B35]/20">
                 <span className="material-symbols-outlined">calculate</span>
-                SIMULAR COMPRA
+                SIMULAR COSTOS
               </button>
               <button
                 onClick={() => navigate('/comparison', { state: { prefillMoto: motorcycle } })}
@@ -157,6 +183,16 @@ export function MotorcycleDetail() {
             </div>
           </div>
         </section>
+
+        {/* Cost Simulator Modal */}
+        <CostSimulatorModal
+          motorcycle={motorcycle}
+          userBudget={userBudget}
+          userId={userId}
+          isOpen={isSimulatorOpen}
+          onClose={() => setIsSimulatorOpen(false)}
+          onSave={(simulation) => console.log('Simulación guardada:', simulation)}
+        />
 
         {/* Ficha Técnica */}
         <section className="mb-20">

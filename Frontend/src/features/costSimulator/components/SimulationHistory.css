@@ -1,0 +1,253 @@
+.simulation-history {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.simulation-history h2 {
+  margin: 0 0 24px 0;
+  font-size: 24px;
+  color: #1a1a1a;
+}
+
+.loading,
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.empty-state p {
+  margin: 12px 0;
+  font-size: 16px;
+}
+
+.simulations-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* ─── Simulations List ──────────────────────────────────────── */
+
+.simulations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.simulation-card {
+  background: white;
+  border: 2px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.simulation-card:hover {
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+}
+
+.simulation-card.active {
+  border-color: #2563eb;
+  background-color: #f0f7ff;
+}
+
+.simulation-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.simulation-card-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #1a1a1a;
+}
+
+.simulation-card-header .year {
+  background-color: #e5e5e5;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #666;
+}
+
+.simulation-card-body {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.price-row,
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: #666;
+}
+
+.total-row strong.total {
+  font-size: 16px;
+  color: #2563eb;
+}
+
+.budget-warning {
+  background-color: #ffe;
+  border: 1px solid #ffc;
+  color: #880;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.simulation-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #e5e5e5;
+}
+
+.simulation-card-footer small {
+  color: #999;
+  font-size: 12px;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.simulation-card:hover .delete-btn {
+  opacity: 1;
+}
+
+.delete-btn:hover {
+  transform: scale(1.2);
+}
+
+/* ─── Simulation Details ───────────────────────────────────── */
+
+.simulation-details {
+  background: white;
+  border: 2px solid #2563eb;
+  border-radius: 8px;
+  padding: 24px;
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+}
+
+.simulation-details h3 {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  color: #1a1a1a;
+}
+
+.details-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+}
+
+.detail-item label {
+  font-weight: 500;
+  color: #666;
+  font-size: 14px;
+}
+
+.detail-item value {
+  font-weight: 600;
+  color: #1a1a1a;
+  font-family: monospace;
+}
+
+.detail-item.total {
+  background: linear-gradient(135deg, #f0f7ff 0%, #f8fbff 100%);
+  border: 1px solid #2563eb;
+  padding: 16px;
+  margin-top: 12px;
+}
+
+.detail-item.total value {
+  font-size: 18px;
+  color: #2563eb;
+}
+
+.detail-info {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e5e5;
+  text-align: center;
+  color: #999;
+}
+
+.edited-note {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #efe;
+  border: 1px solid #cfc;
+  border-radius: 6px;
+  color: #060;
+  font-size: 13px;
+}
+
+/* ─── Responsive ───────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .simulations-container {
+    grid-template-columns: 1fr;
+  }
+
+  .simulations-list {
+    max-height: 400px;
+  }
+
+  .simulation-details {
+    position: relative;
+    top: auto;
+  }
+}
+
+/* ─── Scrollbar Styling ────────────────────────────────────── */
+
+.simulations-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.simulations-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.simulations-list::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 10px;
+}
+
+.simulations-list::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}

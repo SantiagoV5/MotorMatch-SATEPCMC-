@@ -3,26 +3,38 @@ import { login as loginService, register as registerService } from '../services/
 
 const TOKEN_KEY = 'mm_token'
 const USER_KEY  = 'mm_user'
+const REMEMBER_KEY = 'mm_remember'
 
 function useAuth() {
-  const [user, setUser]       = useState(() => JSON.parse(sessionStorage.getItem(USER_KEY) || 'null'))
-  const [token, setToken]     = useState(() => sessionStorage.getItem(TOKEN_KEY) || null)
+  const [user, setUser]       = useState(() => JSON.parse(sessionStorage.getItem(USER_KEY) || localStorage.getItem(USER_KEY) || 'null'))
+  const [token, setToken]     = useState(() => sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || null)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
 
-  function persist(newToken, newUser) {
-    sessionStorage.setItem(TOKEN_KEY, newToken)
-    sessionStorage.setItem(USER_KEY, JSON.stringify(newUser))
+  function persist(newToken, newUser, rememberMe = false) {
+    const storage = rememberMe ? localStorage : sessionStorage
+    const otherStorage = rememberMe ? sessionStorage : localStorage
+    
+    // Guardar en el storage correcto
+    storage.setItem(TOKEN_KEY, newToken)
+    storage.setItem(USER_KEY, JSON.stringify(newUser))
+    storage.setItem(REMEMBER_KEY, rememberMe.toString())
+    
+    // Limpiar el otro storage
+    otherStorage.removeItem(TOKEN_KEY)
+    otherStorage.removeItem(USER_KEY)
+    otherStorage.removeItem(REMEMBER_KEY)
+    
     setToken(newToken)
     setUser(newUser)
   }
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, rememberMe = false) => {
     setLoading(true)
     setError(null)
     try {
       const data = await loginService(email, password)
-      persist(data.token, data.user)
+      persist(data.token, data.user, rememberMe)
       return data
     } catch (err) {
       const message = err.response?.data?.message || 'Error al iniciar sesión'
@@ -53,6 +65,9 @@ function useAuth() {
   const logout = useCallback(() => {
     sessionStorage.removeItem(TOKEN_KEY)
     sessionStorage.removeItem(USER_KEY)
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(USER_KEY)
+    localStorage.removeItem(REMEMBER_KEY)
     setToken(null)
     setUser(null)
   }, [])

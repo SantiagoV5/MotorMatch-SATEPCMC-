@@ -50,6 +50,14 @@ async function processQuestionnaire(userId, data) {
     })
   }
 
+  // Actualizar budgetRange en el usuario
+  const budgetRange = budget > 0 ? { min: 0, max: budget } : null
+  await prisma.user.update({
+    where: { id: userId },
+    data: { budgetRange },
+  })
+  console.log(`✅ [Questionnaire] Presupuesto del usuario #${userId} actualizado: ${budgetRange ? `$0 - $${budget}` : 'Sin presupuesto'}`)
+
   // 2. Generar recomendaciones
   const recommendations = await generateRecommendations(userId, questionnaire.id, {
     budget,
