@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useRecommendations } from '../hooks/useRecommendations'
+import useAuth from '../../auth/hooks/useAuth'
 import Header from '../../../shared/components/layout/header'
 
 const USAGE_LABELS = {
@@ -145,7 +146,7 @@ function AlternativeCard({ rec, navigate }) {
 export default function RecommendationList() {
   const navigate = useNavigate()
   const { recommendations, questionnaire, loading, error } = useRecommendations()
-  const user = JSON.parse(sessionStorage.getItem('mm_user') || 'null')
+  const { user } = useAuth()
 
   if (loading) {
     return (
@@ -195,7 +196,7 @@ export default function RecommendationList() {
   const alternatives = rest.slice(0, 3)
 
   // Build personalised subtitle from questionnaire data
-  const userName = user?.name?.split(' ')[0] || 'usuario'
+  const userName = user?.name || user?.fullName || 'usuario'
   const budget   = questionnaire?.budget   ? formatCOP(questionnaire.budget)   : null
   const usage    = questionnaire?.usageType ? USAGE_LABELS[questionnaire.usageType] || questionnaire.usageType : null
   const height   = questionnaire?.heightCm  ? `${questionnaire.heightCm}cm`    : null
