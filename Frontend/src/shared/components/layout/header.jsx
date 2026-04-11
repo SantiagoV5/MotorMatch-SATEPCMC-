@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import useAuth from '../../../features/auth/hooks/useAuth';
 
 /**
  * Header compartido de MotorMatch.
@@ -10,11 +11,11 @@ import { useNavigate } from 'react-router-dom';
  */
 export default function Header({ children, sticky = true }) {
   const navigate = useNavigate();
-  const user = JSON.parse(sessionStorage.getItem('mm_user') || 'null');
+  const { user, logout } = useAuth();
+  const displayName = user?.name || user?.fullName || 'Usuario';
 
   const handleLogout = () => {
-    sessionStorage.removeItem('mm_token');
-    sessionStorage.removeItem('mm_user');
+    logout();
     navigate('/login');
   };
 
@@ -43,6 +44,11 @@ export default function Header({ children, sticky = true }) {
               </div>
               <h1 className="text-xl font-bold tracking-tight text-primary">MotorMatch</h1>
             </div>
+            {user && (
+              <span className="hidden lg:inline-flex items-center rounded-full border border-primary/10 bg-primary/5 px-3 py-1 text-sm font-semibold text-primary max-w-[240px] truncate">
+                ¡Hola, {displayName}!
+              </span>
+            )}
             <button
               onClick={() => navigate('/comparison')}
               className="flex items-center gap-1.5 px-3 py-1.5 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-sm hover:opacity-90 active:scale-95"
@@ -55,12 +61,6 @@ export default function Header({ children, sticky = true }) {
 
           {/* Lado derecho: saludo + menú desplegable */}
           <div className="relative group flex items-center gap-4">
-            {user && (
-              <span className="hidden md:block font-label text-sm font-semibold text-on-surface">
-                Hola, {user.name?.split(' ')[0]}
-              </span>
-            )}
-
             {/* Botón trigger */}
             <button
               aria-label="Abrir menú de usuario"
@@ -77,7 +77,7 @@ export default function Header({ children, sticky = true }) {
               >
                 <div className="mb-4 pb-4 border-b border-slate-50">
                   <p className="text-primary font-bold font-headline">
-                    {user?.name?.split(' ')[0] || 'Usuario'}
+                    {displayName}
                   </p>
                 </div>
                 <ul className="space-y-1">

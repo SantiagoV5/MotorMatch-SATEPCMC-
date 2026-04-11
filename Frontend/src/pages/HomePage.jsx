@@ -216,6 +216,9 @@ export default function HomePage() {
   const getBrandLogo = (brand) => {
     const logos = {
       'AKT': 'https://cloudfront-us-east-1.images.arcpublishing.com/elespectador/4FRZGTJONRENZGGGUP4HPFLP3Q.jpg',
+      'BMW': 'https://upload.wikimedia.org/wikipedia/commons/4/44/BMW.svg',
+      'DUCATI': 'https://upload.wikimedia.org/wikipedia/commons/6/66/Ducati_red_logo.PNG',
+      'KTM': 'https://ktm-bikes.co/cdn/shop/files/KTM_Logo-2016-RGB_2C_onDark_Transparent_Vertical_edacb7ef-328c-4735-b2ee-4cfd95e356c2.png?v=1726938283',
       'SUZUKI': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Suzuki_Motor_Corporation_logo.svg/1280px-Suzuki_Motor_Corporation_logo.svg.png',
       'YAMAHA': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmPoWWy2WFpEU_4oOCu_mqO_LkUkEbVGODqw&s',
       'BAJAJ': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSw3RzT2dBxuMpDYb8k__NMPOZju_joi5RHEg&s',
@@ -223,6 +226,8 @@ export default function HomePage() {
       'TVS': 'https://i.pinimg.com/736x/15/50/91/155091f7e6e708676b72a12f6717983e.jpg',
       'KAWASAKI': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Kawasaki_Logo_vert.svg',
       'VICTORY': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfxPD26PLGfdHYqAbAWfA3Pzepy1UOIvk_hQ&s'
+      
+
     };
     return logos[brand.toUpperCase()] || null;
   };
