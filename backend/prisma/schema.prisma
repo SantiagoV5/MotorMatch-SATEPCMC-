@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -36,6 +37,8 @@ model User {
   favorites             Favorite[]
   comparisons           Comparison[]
   costSimulations       CostSimulation[]
+  shareEvents           ShareEvent[]
+  feedbacks             Feedback[]
 
   @@map("users")
 }
@@ -113,6 +116,7 @@ model Questionnaire {
   createdAt            DateTime         @default(now()) @map("created_at")
   user                 User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
   recommendations      Recommendation[]
+  feedbacks            Feedback[]
 
   @@map("questionnaires")
 }
@@ -170,4 +174,36 @@ model CostSimulation {
   @@index([userId], map: "idx_cost_simulations_user_id")
   @@index([motorcycleId], map: "idx_cost_simulations_motorcycle_id")
   @@map("cost_simulations")
+}
+
+model ShareEvent {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  channel      String   @default("whatsapp") @db.VarChar(30)
+  source       String   @db.VarChar(50)
+  itemCount    Int?     @map("item_count")
+  messageLength Int?    @map("message_length")
+  createdAt    DateTime @default(now()) @map("created_at")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_share_events_user_id")
+  @@index([source], map: "idx_share_events_source")
+  @@map("share_events")
+}
+
+model Feedback {
+  id                    Int         @id @default(autoincrement())
+  userId                Int         @map("user_id")
+  questionnaireId       Int         @map("questionnaire_id")
+  recommendationSignature String    @map("recommendation_signature") @db.VarChar(255)
+  isUseful              Boolean     @map("is_useful")
+  improvement           String?     @db.VarChar(200)
+  createdAt             DateTime    @default(now()) @map("created_at")
+  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionnaire         Questionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionnaireId, recommendationSignature], name: "unique_feedback_per_generation")
+  @@index([userId], map: "idx_feedback_user_id")
+  @@index([questionnaireId], map: "idx_feedback_questionnaire_id")
+  @@map("feedback")
 }

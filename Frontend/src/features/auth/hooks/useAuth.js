@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { login as loginService, register as registerService } from '../services/authService'
 
 const TOKEN_KEY = 'mm_token'
@@ -10,6 +10,22 @@ function useAuth() {
   const [token, setToken]     = useState(() => sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || null)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
+
+  useEffect(() => {
+    const handleUserUpdate = (event) => {
+      setUser(event.detail)
+    }
+
+    window.addEventListener('mm:user-updated', handleUserUpdate)
+    return () => window.removeEventListener('mm:user-updated', handleUserUpdate)
+  }, [])
+
+  function resolveStorage() {
+    const remember = localStorage.getItem(REMEMBER_KEY)
+    if (remember === 'true') return localStorage
+    if (remember === 'false') return sessionStorage
+    return sessionStorage.getItem(TOKEN_KEY) ? sessionStorage : localStorage
+  }
 
   function persist(newToken, newUser, rememberMe = false) {
     const storage = rememberMe ? localStorage : sessionStorage
@@ -27,6 +43,14 @@ function useAuth() {
     
     setToken(newToken)
     setUser(newUser)
+    window.dispatchEvent(new CustomEvent('mm:user-updated', { detail: newUser }))
+  }
+
+  function updateUser(nextUser) {
+    const storage = resolveStorage()
+    storage.setItem(USER_KEY, JSON.stringify(nextUser))
+    setUser(nextUser)
+    window.dispatchEvent(new CustomEvent('mm:user-updated', { detail: nextUser }))
   }
 
   const login = useCallback(async (email, password, rememberMe = false) => {
@@ -70,9 +94,10 @@ function useAuth() {
     localStorage.removeItem(REMEMBER_KEY)
     setToken(null)
     setUser(null)
+    window.dispatchEvent(new CustomEvent('mm:user-updated', { detail: null }))
   }, [])
 
-  return { user, token, loading, error, login, register, logout }
+  return { user, token, loading, error, login, register, logout, updateUser }
 }
 
 export default useAuth

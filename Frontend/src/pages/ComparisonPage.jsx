@@ -3,6 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../shared/components/layout/header';
 import { getAllMotorcycles, getMotorcycleById } from '../features/motorcycles/services/motorcycleService';
 import { saveComparison } from '../features/comparison/services/comparisonService';
+import ShareWhatsAppModal from '../shared/components/ShareWhatsAppModal';
+import { getAppUrl } from '../shared/utils/whatsappShare';
+import { trackShareUsage } from '../shared/services/shareAnalyticsService';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -214,6 +217,7 @@ export default function ComparisonPage() {
   const [animating, setAnimating] = useState(false);       // true durante la animación
   const [saved, setSaved]         = useState(false);       // feedback "guardado"
   const [saving, setSaving]       = useState(false);
+  const [shareOpen, setShareOpen]  = useState(false);
 
   // ── Enriquecer slots del historial con datos completos ────────────────────
   useEffect(() => {
@@ -304,6 +308,20 @@ export default function ComparisonPage() {
 
   const alreadySelected = slots.filter(Boolean).map(m => m.id);
   const canCompare = activeMotos.length >= 2;
+  const shareBaseUrl = getAppUrl();
+
+  const shareMessage = [
+    'MotorMatch',
+    '',
+    'Estoy comparando estas motos:',
+    ...activeMotos.map((moto, index) => {
+      return `${index + 1}. ${moto.brand} ${moto.model} - ${formatCOP(moto.price)} - ${moto.engineCc || '—'} cc`
+    }),
+    '',
+    '¿Qué opinas de estas opciones? Ayúdame a decidir.',
+    '',
+    `Explora la app aquí: ${shareBaseUrl}`,
+  ].join('\n')
 
   return (
     <div className="min-h-screen bg-surface font-body text-on-surface">
@@ -391,6 +409,15 @@ export default function ComparisonPage() {
                 Comparación guardada en tu historial
               </p>
             )}
+
+            <button
+              onClick={() => setShareOpen(true)}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#25D366] text-white font-black uppercase tracking-widest text-xs hover:brightness-95 transition-all active:scale-95 shadow-md"
+            >
+              <span className="material-symbols-outlined text-sm">share</span>
+              📱 COMPARTIR POR WHATSAPP
+            </button>
+
             {fromHistory && compared && (
               <p className="text-xs text-slate-400 flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm text-blue-400">info</span>
@@ -410,6 +437,21 @@ export default function ComparisonPage() {
           alreadySelected={alreadySelected}
         />
       )}
+
+      <ShareWhatsAppModal
+        isOpen={shareOpen}
+        title="Compartir comparación por WhatsApp"
+        description="Edita el mensaje antes de enviarlo."
+        initialMessage={shareMessage}
+        onClose={() => setShareOpen(false)}
+        onSend={(message) => {
+          void trackShareUsage({
+            source: 'comparison',
+            itemCount: activeMotos.length,
+            messageLength: message.length,
+          })
+        }}
+      />
 
       {/* Footer */}
       <footer className="bg-white border-t border-primary/10 py-12 px-4 mt-8">

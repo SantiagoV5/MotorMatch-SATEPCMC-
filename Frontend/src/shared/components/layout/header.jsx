@@ -82,10 +82,10 @@ export default function Header({ children, sticky = true }) {
                 </div>
                 <ul className="space-y-1">
                   <li>
-                    <a href="#" className="flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300">
+                    <button type="button" onClick={() => navigate('/profile')} className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300">
                       <span className="material-symbols-outlined text-lg">person</span>
-                      <span className="text-sm font-semibold font-label">Ver perfil</span>
-                    </a>
+                      <span className="text-sm font-semibold font-label">Mi perfil</span>
+                    </button>
                   </li>
                   <li>
                     <a href="#" className="flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300">

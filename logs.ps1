@@ -1,15 +1,10 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# logs.ps1 - Ver logs de Docker Compose
-# ─────────────────────────────────────────────────────────────────────────────
-# 
-# Uso:
-#   .\logs.ps1              # Todos los logs (sigue cambios con -f)
-#   .\logs.ps1 -service backend    # Solo logs del backend
-#   .\logs.ps1 -service frontend   # Solo logs del frontend
-#   .\logs.ps1 -service db         # Solo logs de la base de datos
-#   .\logs.ps1 -lines 50    # Últimas 50 líneas
-#   .\logs.ps1 -prod        # Usar docker-compose.prod.yml
-#
+# Ver logs de Docker Compose
+# Uso: .\logs.ps1 [opciones]
+#   -service backend  : Solo logs del backend
+#   -service frontend : Solo logs del frontend
+#   -service db       : Solo logs de la BD
+#   -lines 50         : Ultimas N lineas
+#   -prod             : Usar docker-compose.prod.yml
 
 param(
     [string]$service = "",
@@ -18,13 +13,20 @@ param(
     [switch]$no_follow
 )
 
-Write-Host "📋 Mostrando logs de MotorMatch..." -ForegroundColor Green
+# Asegurar que Docker esta corriendo
+& .\ensure-docker.ps1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "No se puede continuar sin Docker" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Mostrando logs de MotorMatch..." -ForegroundColor Green
 
 if ($prod) {
-    Write-Host "📦 Modo PRODUCCIÓN" -ForegroundColor Cyan
+    Write-Host "Modo PRODUCCION" -ForegroundColor Cyan
     $compose = "docker-compose -f docker-compose.prod.yml"
 } else {
-    Write-Host "💻 Modo DESARROLLO" -ForegroundColor Cyan
+    Write-Host "Modo DESARROLLO" -ForegroundColor Cyan
     $compose = "docker-compose"
 }
 
@@ -43,7 +45,7 @@ if ($service -ne "") {
     $cmd.Add($service) | Out-Null
 }
 
-Write-Host "`n🔍 Presiona Ctrl+C para detener los logs" -ForegroundColor Yellow
+Write-Host "`nPresiona Ctrl+C para detener los logs" -ForegroundColor Yellow
 Write-Host ""
 
 # Ejecutar comando

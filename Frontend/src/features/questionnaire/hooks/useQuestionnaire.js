@@ -14,10 +14,20 @@ export function useQuestionnaire() {
       const result = await submitQuestionnaire(ctx.answers)
       return result
     } catch (err) {
-      const msg =
-        err.response?.data?.details?.[0] ||
-        err.response?.data?.message ||
-        'Error al enviar el cuestionario'
+      // Obtener mensaje de error detallado
+      let msg = 'Error al enviar el cuestionario'
+      if (err.response?.data?.details && Array.isArray(err.response.data.details)) {
+        // Joi devuelve un array de objetos con "message"
+        msg = err.response.data.details.map(d => d.message || d).join('; ')
+      } else if (err.response?.data?.message) {
+        msg = err.response.data.message
+      } else if (err.response?.status === 400) {
+        msg = 'Datos inválidos. Verifica todos los campos.'
+      } else if (err.response?.status === 401) {
+        msg = 'Sesión expirada. Por favor inicia sesión nuevamente.'
+      }
+      
+      console.error('Error enviando cuestionario:', err.response?.data || err.message)
       setError(msg)
       throw err
     } finally {

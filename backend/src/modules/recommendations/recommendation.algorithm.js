@@ -11,6 +11,9 @@ function scoreMotorcycle(motorcycle, userProfile) {
   const reasons = []
   const warnings = []
   let score = 0
+  const preferredBrands = Array.isArray(userProfile.preferredBrands)
+    ? userProfile.preferredBrands.map(brand => String(brand).toUpperCase())
+    : []
 
   // ─── PRESUPUESTO (40 pts) ─────────────────────────────────────────────────
   const motoPrice = parseFloat(motorcycle.price || 0)
@@ -127,6 +130,15 @@ function scoreMotorcycle(motorcycle, userProfile) {
   } else {
     // Sin tipo de uso definido → puntaje neutro
     score += 12
+  }
+
+  // ─── MARCA PREFERIDA (10 pts) ─────────────────────────────────────────────
+  if (preferredBrands.length > 0) {
+    const motoBrand = String(motorcycle.brand || '').toUpperCase()
+    if (preferredBrands.includes(motoBrand)) {
+      score += 10
+      reasons.push('Coincide con una de tus marcas preferidas')
+    }
   }
 
   return {

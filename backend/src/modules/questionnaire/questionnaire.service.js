@@ -11,6 +11,14 @@ const { generateRecommendations } = require('../recommendations/recommendation.s
 async function processQuestionnaire(userId, data) {
   const budget = data.budget ? parseFloat(data.budget) : 0
 
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      heightCm: true,
+      preferredBrands: true,
+    },
+  })
+
   const questionnaireData = {
     userId,
     budget,
@@ -64,9 +72,10 @@ async function processQuestionnaire(userId, data) {
     includesSoat:         data.includesSoat,
     includesRegistration: data.includesRegistration,
     usageType:            data.usageType,
-    heightCm:             data.heightCm,
+    heightCm:             currentUser?.heightCm || data.heightCm,
     weightKg:             data.weightKg,
     comfortWithHeavy:     data.comfortWithHeavy,
+    preferredBrands:      currentUser?.preferredBrands || [],
   })
 
   // 3. Actualizar cuestionario con IDs de recomendaciones

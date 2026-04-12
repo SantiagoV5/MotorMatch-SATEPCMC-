@@ -16,7 +16,7 @@ export function useRecommendations() {
         // Shape from submitQuestionnaire: { questionnaire, recommendations }
         if (parsed.recommendations) {
           setRecommendations(parsed.recommendations)
-          // questionnaire object has budget, usageType, heightCm
+          // questionnaire object has id, budget, usageType, heightCm
           setQuestionnaire(parsed.questionnaire || null)
           setLoading(false)
           return

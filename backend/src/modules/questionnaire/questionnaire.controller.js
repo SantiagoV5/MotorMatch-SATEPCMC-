@@ -49,7 +49,7 @@ async function getMyRecommendations(req, res, next) {
       prisma.questionnaire.findFirst({
         where: { userId: req.user.id },
         orderBy: { createdAt: 'desc' },
-        select: { budget: true, usageType: true, heightCm: true },
+        select: { id: true, budget: true, usageType: true, heightCm: true },
       }),
     ])
     res.json({ recommendations, questionnaire })

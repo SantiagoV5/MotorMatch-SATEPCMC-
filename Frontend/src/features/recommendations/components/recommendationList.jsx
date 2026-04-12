@@ -1,7 +1,13 @@
+import { useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useRecommendations } from '../hooks/useRecommendations'
+import { createFeedback, getMyFeedback } from '../services/feedbackService'
 import useAuth from '../../auth/hooks/useAuth'
 import Header from '../../../shared/components/layout/header'
+import ShareWhatsAppModal from '../../../shared/components/ShareWhatsAppModal'
+import { getAppUrl } from '../../../shared/utils/whatsappShare'
+import { trackShareUsage } from '../../../shared/services/shareAnalyticsService'
 
 const USAGE_LABELS = {
   ciudad:    'ciudad',
@@ -143,10 +149,143 @@ function AlternativeCard({ rec, navigate }) {
   )
 }
 
+function FeedbackSection({ questionnaireId }) {
+  const [useful, setUseful] = useState(null)
+  const [improvement, setImprovement] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [status, setStatus] = useState('idle')
+  const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    if (!questionnaireId) return
+
+    let active = true
+
+    async function loadFeedback() {
+      try {
+        const existing = await getMyFeedback(questionnaireId)
+        if (!active || !existing) return
+
+        setUseful(existing.isUseful)
+        setImprovement(existing.improvement || '')
+        setStatus('submitted')
+        setMessage('Ya habías enviado tu opinión para estas recomendaciones.')
+      } catch {
+        if (active) setStatus('idle')
+      }
+    }
+
+    void loadFeedback()
+
+    return () => {
+      active = false
+    }
+  }, [questionnaireId])
+
+  async function handleSubmit() {
+    if (useful === null || !questionnaireId) return
+
+    try {
+      setLoading(true)
+      setMessage('')
+      await createFeedback({
+        questionnaireId,
+        isUseful: useful,
+        improvement: useful ? null : improvement,
+      })
+      setStatus('submitted')
+      setMessage('Gracias por tu feedback. Nos ayuda a mejorar las recomendaciones.')
+    } catch (err) {
+      const responseMessage = err?.response?.data?.message || 'No se pudo guardar tu feedback.'
+      setMessage(responseMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!questionnaireId) return null
+
+  if (status === 'submitted') {
+    return (
+      <section className="mt-12 rounded-2xl border border-[#D9E2EC] bg-white p-6 md:p-8 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="material-symbols-outlined text-[#28A745] text-3xl">thumb_up</span>
+          <div>
+            <h3 className="text-[#0A2463] text-xl font-black">Gracias por tu opinión</h3>
+            <p className="mt-1 text-sm text-[#64748B]">{message}</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="mt-12 rounded-2xl border border-[#D9E2EC] bg-white p-6 md:p-8 shadow-sm">
+      <div className="flex flex-col gap-2 mb-5">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#FF6B35]">Tu opinión</p>
+        <h3 className="text-[#0A2463] text-2xl font-black">¿Te fueron útiles estas recomendaciones?</h3>
+        <p className="text-sm text-[#64748B]">Tu respuesta nos ayuda a afinar el motor de recomendaciones.</p>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={() => setUseful(true)}
+          className={`px-5 py-3 rounded-xl border font-bold transition-all ${useful === true ? 'border-[#28A745] bg-[#28A745]/10 text-[#1F7A36]' : 'border-[#E2E8F0] bg-white text-[#1A202C] hover:border-[#28A745]/40'}`}
+        >
+          Sí, fueron útiles
+        </button>
+        <button
+          type="button"
+          onClick={() => setUseful(false)}
+          className={`px-5 py-3 rounded-xl border font-bold transition-all ${useful === false ? 'border-[#FF6B35] bg-[#FF6B35]/10 text-[#C84D1C]' : 'border-[#E2E8F0] bg-white text-[#1A202C] hover:border-[#FF6B35]/40'}`}
+        >
+          No, necesito mejores opciones
+        </button>
+      </div>
+
+      {useful === false && (
+        <div className="mt-5">
+          <label className="block text-sm font-bold text-[#1A202C] mb-2" htmlFor="feedback-improvement">
+            ¿Qué te gustaría mejorar? Opcional
+          </label>
+          <textarea
+            id="feedback-improvement"
+            value={improvement}
+            onChange={(e) => setImprovement(e.target.value.slice(0, 200))}
+            maxLength={200}
+            rows={4}
+            placeholder="Cuéntanos si quieres más opciones, otro presupuesto, otra cilindrada..."
+            className="w-full rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 text-sm text-[#1A202C] outline-none transition-colors focus:border-[#FF6B35]"
+          />
+          <div className="mt-2 text-right text-xs text-[#64748B]">{improvement.length}/200</div>
+        </div>
+      )}
+
+      {message && status !== 'submitted' && (
+        <p className="mt-4 text-sm font-medium text-[#C84D1C]">{message}</p>
+      )}
+
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={loading || useful === null}
+          className={`px-6 py-3 rounded-xl font-black text-white transition-all ${loading || useful === null ? 'bg-slate-300 cursor-not-allowed' : 'bg-[#0A2463] hover:bg-[#081d4f]'}`}
+        >
+          {loading ? 'Enviando...' : 'Enviar feedback'}
+        </button>
+        <span className="text-sm text-[#64748B]">Solo podrás calificar este conjunto una vez.</span>
+      </div>
+    </section>
+  )
+}
+
 export default function RecommendationList() {
   const navigate = useNavigate()
   const { recommendations, questionnaire, loading, error } = useRecommendations()
   const { user } = useAuth()
+  const [shareOpen, setShareOpen] = useState(false)
 
   if (loading) {
     return (
@@ -200,6 +339,22 @@ export default function RecommendationList() {
   const budget   = questionnaire?.budget   ? formatCOP(questionnaire.budget)   : null
   const usage    = questionnaire?.usageType ? USAGE_LABELS[questionnaire.usageType] || questionnaire.usageType : null
   const height   = questionnaire?.heightCm  ? `${questionnaire.heightCm}cm`    : null
+  const shareBaseUrl = getAppUrl()
+  const shareRecommendations = recommendations.slice(0, 3)
+
+  const shareMessage = [
+    'MotorMatch',
+    '',
+    'Estas son mis 3 mejores recomendaciones:',
+    ...shareRecommendations.map((rec, index) => {
+      const moto = rec.motorcycle
+      return `${index + 1}. ${moto.brand} ${moto.model} - ${formatCOP(moto.price)}`
+    }),
+    '',
+    '¿Qué opinas de estas opciones? Ayúdame a decidir.',
+    '',
+    `Explora la app aquí: ${shareBaseUrl}`,
+  ].join('\n')
 
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-[#F5F7FA] font-sans text-[#1A202C]">
@@ -226,13 +381,23 @@ export default function RecommendationList() {
               </p>
             )}
           </div>
-          <button
-            onClick={() => { sessionStorage.removeItem('mm_recommendations'); navigate('/questionnaire') }}
-            className="flex items-center gap-2 px-5 py-3 rounded-lg bg-white border border-[#E2E8F0] text-[#1A202C] hover:bg-slate-50 transition-colors text-sm font-bold uppercase tracking-wide shadow-sm whitespace-nowrap"
-          >
-            <span className="material-symbols-outlined text-lg">restart_alt</span>
-            REINICIAR CUESTIONARIO
-          </button>
+          <div className="flex flex-col items-stretch md:items-end gap-3">
+            <button
+              onClick={() => { sessionStorage.removeItem('mm_recommendations'); navigate('/questionnaire') }}
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-white border border-[#E2E8F0] text-[#1A202C] hover:bg-slate-50 transition-colors text-sm font-bold uppercase tracking-wide shadow-sm whitespace-nowrap"
+            >
+              <span className="material-symbols-outlined text-lg">restart_alt</span>
+              REINICIAR CUESTIONARIO
+            </button>
+
+            <button
+              onClick={() => setShareOpen(true)}
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-[#25D366] text-white hover:brightness-95 transition-colors text-sm font-black uppercase tracking-wide shadow-sm whitespace-nowrap w-full md:w-auto"
+            >
+              <span className="material-symbols-outlined text-lg">share</span>
+              COMPARTIR POR WHATSAPP
+            </button>
+          </div>
         </div>
 
         {/* Best match */}
@@ -258,7 +423,24 @@ export default function RecommendationList() {
           </section>
         )}
 
+        <FeedbackSection questionnaireId={questionnaire?.id} />
+
       </main>
+
+      <ShareWhatsAppModal
+        isOpen={shareOpen}
+        title="Compartir recomendaciones por WhatsApp"
+        description="Edita el mensaje antes de enviarlo a tu familia o amigos."
+        initialMessage={shareMessage}
+        onClose={() => setShareOpen(false)}
+        onSend={(message) => {
+          void trackShareUsage({
+            source: 'recommendations',
+            itemCount: shareRecommendations.length,
+            messageLength: message.length,
+          })
+        }}
+      />
 
       {/* Footer */}
       <footer className="bg-white dark:bg-background-dark border-t border-primary/10 py-12 px-4">

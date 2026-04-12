@@ -10,9 +10,12 @@ const authRoutes        = require('./modules/auth/auth.routes');
 const motorcycleRoutes  = require('./modules/motorcycles/motorcycle.routes');
 const questionnaireRoutes = require('./modules/questionnaire/questionnaire.routes');
 const favoritesRoutes     = require('./modules/favorites/favorites.routes');
+const usersRoutes         = require('./modules/users/user.routes');
 const comparisonsRoutes   = require('./modules/comparisons/comparisons.routes');
 const costSimulatorRoutes = require('./modules/costSimulator/costSimulator.routes');
 const marketAnalysisRoutes = require('./modules/marketAnalysis/marketAnalysis.routes');
+const analyticsRoutes     = require('./modules/analytics/share.routes');
+const feedbackRoutes      = require('./modules/feedback/feedback.routes');
 
 const app = express();
 
@@ -36,9 +39,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/motorcycles', motorcycleRoutes);
 app.use('/api/questionnaire', questionnaireRoutes);
 app.use('/api/favorites', favoritesRoutes);
+app.use('/api/users', usersRoutes);
 app.use('/api/comparisons', comparisonsRoutes);
 app.use('/api/cost-simulator', costSimulatorRoutes);
 app.use('/api/market-analysis', marketAnalysisRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {

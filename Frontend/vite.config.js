@@ -1,6 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+function resolveApiProxyTarget() {
+  const rawTarget = process.env.VITE_API_URL || 'http://backend:3000';
+  return rawTarget.replace(/\/api\/?$/, '');
+}
+
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -15,9 +20,9 @@ export default defineConfig({
     // Proxy: redirige las llamadas /api/* al backend
     proxy: {
       '/api': {
-        // En Docker: 'backend' es el nombre del servicio
-        // En desarrollo local: 'localhost:3000'
-        target: process.env.VITE_API_URL || 'http://backend:3000',
+        // Si VITE_API_URL llega con /api al final, lo recortamos para evitar
+        // peticiones duplicadas como /api/api/auth/login.
+        target: resolveApiProxyTarget(),
         changeOrigin: true,
       },
     },
