@@ -4,8 +4,10 @@
   "description": "MotorMatch API - Sistema de recomendación de motocicletas para Colombia",
   "main": "src/server.js",
   "scripts": {
+    "predev": "prisma generate",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "prestart": "prisma generate",
     "import-bikes": "node scripts/importBikes.js",
     "enrich-bikes": "node scripts/enrichBike.js",
     "update-prices": "node scripts/updatePrices.js",
