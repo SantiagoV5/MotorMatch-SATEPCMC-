@@ -15,9 +15,10 @@ function toNumber(val) {
 }
 
 function getSegment(engineCc) {
-  if (!engineCc) return 'Estándar';
-  if (engineCc <= 150) return 'Económica';
-  if (engineCc <= 300) return 'Intermedia';
+  const cc = Number(engineCc);
+
+  if (!Number.isFinite(cc) || cc <= 250) return 'Económica';
+  if (cc <= 600) return 'Intermedia';
   return 'Premium';
 }
 

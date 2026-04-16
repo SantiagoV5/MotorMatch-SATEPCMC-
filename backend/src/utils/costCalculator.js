@@ -140,25 +140,25 @@ function getCalculationInfo() {
     soat: {
       title: "SOAT (Seguro Obligatorio de Accidentes de Tránsito)",
       description:
-        "Seguro obligatorio. Varía según cilindraje:\n- Menor a 100cc: $256,200\n- 100cc a 200cc: $343,300\n- Mayor a 200cc: $761,400",
+        "Se asigna automáticamente según el cilindraje porque el SOAT en Colombia tiene tarifas reguladas por norma. Para esta moto se usa la franja correspondiente:\n- Menor a 100cc: $256,200\n- 100cc a 200cc: $343,300\n- Mayor a 200cc: $761,400",
       editable: true,
     },
     registration: {
       title: "Matrícula",
       description:
-        "Costo de registro vehicular. Se calcula como el 1.5% del valor de la motocicleta.",
+        "Se calcula como el 1.5% del valor de la motocicleta porque esa es la referencia usada para estimar el costo de matrícula y registro inicial.",
       editable: true,
     },
     vehicleTax: {
       title: "Impuesto Vehicular (Primer Año)",
       description:
-        "Gravamen municipal sobre el valor del vehículo. Se calcula como el 1% del valor de la motocicleta.",
+        "Se calcula como el 1% del valor comercial de la motocicleta porque esa es la base usada para estimar el impuesto vehicular del primer año.",
       editable: true,
     },
     management: {
       title: "Tramitación",
       description:
-        "Honorarios por gestión y trámites administrativos ante entidades estatales.",
+        "Se usa un valor fijo estimado para cubrir trámites, gestión y gastos administrativos del proceso de compra.",
       editable: false,
     },
   };

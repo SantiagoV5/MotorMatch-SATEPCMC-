@@ -4,11 +4,47 @@ import './CostSimulatorModal.css';
 import { calculateCostSimulation, saveCostSimulation, getCalculationInfo } from '../services/costSimulatorService';
 import Tooltip from '../../../shared/components/Tooltip/Tooltip';
 
+const DEFAULT_CALCULATION_INFO = {
+  soat: {
+    title: 'SOAT (Seguro Obligatorio de Accidentes de Tránsito)',
+    description:
+      'Se asigna automáticamente según el cilindraje porque el SOAT en Colombia tiene tarifas reguladas por norma. Para esta moto se usa la franja correspondiente:\n- Menor a 100cc: $256,200\n- 100cc a 200cc: $343,300\n- Mayor a 200cc: $761,400',
+    editable: true,
+  },
+  registration: {
+    title: 'Matrícula',
+    description:
+      'Se calcula como el 1.5% del valor de la motocicleta porque esa es la referencia usada para estimar el costo de matrícula y registro inicial.',
+    editable: true,
+  },
+  vehicleTax: {
+    title: 'Impuesto Vehicular (Primer Año)',
+    description:
+      'Se calcula como el 1% del valor comercial de la motocicleta porque esa es la base usada para estimar el impuesto vehicular del primer año.',
+    editable: true,
+  },
+  management: {
+    title: 'Tramitación',
+    description:
+      'Se usa un valor fijo estimado para cubrir trámites, gestión y gastos administrativos del proceso de compra.',
+    editable: false,
+  },
+};
+
+function mergeCalculationInfo(info) {
+  return {
+    soat: { ...DEFAULT_CALCULATION_INFO.soat, ...(info?.soat || {}) },
+    registration: { ...DEFAULT_CALCULATION_INFO.registration, ...(info?.registration || {}) },
+    vehicleTax: { ...DEFAULT_CALCULATION_INFO.vehicleTax, ...(info?.vehicleTax || {}) },
+    management: { ...DEFAULT_CALCULATION_INFO.management, ...(info?.management || {}) },
+  };
+}
+
 export default function CostSimulatorModal({ motorcycle, userBudget, userId, isOpen, onClose, onSave }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [simulation, setSimulation] = useState(null);
-  const [calculationInfo, setCalculationInfo] = useState({});
+  const [calculationInfo, setCalculationInfo] = useState(DEFAULT_CALCULATION_INFO);
   
   // Valores editables por el usuario
   const [editedValues, setEditedValues] = useState({
@@ -79,9 +115,10 @@ export default function CostSimulatorModal({ motorcycle, userBudget, userId, isO
   const loadCalculationInfo = async () => {
     try {
       const info = await getCalculationInfo();
-      setCalculationInfo(info);
+      setCalculationInfo(mergeCalculationInfo(info));
     } catch (err) {
       console.error('Error al cargar información de cálculos:', err);
+      setCalculationInfo(DEFAULT_CALCULATION_INFO);
     }
   };
 
@@ -199,11 +236,9 @@ export default function CostSimulatorModal({ motorcycle, userBudget, userId, isO
                 <div className="cost-item">
                   <div className="label-with-tooltip">
                     <label>SOAT</label>
-                    {calculationInfo.soat && (
-                      <Tooltip title={calculationInfo.soat.title}>
+                      <Tooltip position="bottom" title={calculationInfo.soat.title}>
                         {calculationInfo.soat.description}
                       </Tooltip>
-                    )}
                   </div>
                   <input
                     type="number"
@@ -224,11 +259,9 @@ export default function CostSimulatorModal({ motorcycle, userBudget, userId, isO
                 <div className="cost-item">
                   <div className="label-with-tooltip">
                     <label>Matrícula (1.5%)</label>
-                    {calculationInfo.registration && (
-                      <Tooltip title={calculationInfo.registration.title}>
+                      <Tooltip position="bottom" title={calculationInfo.registration.title}>
                         {calculationInfo.registration.description}
                       </Tooltip>
-                    )}
                   </div>
                   <input
                     type="number"
@@ -249,11 +282,9 @@ export default function CostSimulatorModal({ motorcycle, userBudget, userId, isO
                 <div className="cost-item">
                   <div className="label-with-tooltip">
                     <label>Impuesto Vehicular (1%)</label>
-                    {calculationInfo.vehicleTax && (
-                      <Tooltip title={calculationInfo.vehicleTax.title}>
+                      <Tooltip position="bottom" title={calculationInfo.vehicleTax.title}>
                         {calculationInfo.vehicleTax.description}
                       </Tooltip>
-                    )}
                   </div>
                   <input
                     type="number"
@@ -274,11 +305,9 @@ export default function CostSimulatorModal({ motorcycle, userBudget, userId, isO
                 <div className="cost-item">
                   <div className="label-with-tooltip">
                     <label>Tramitación</label>
-                    {calculationInfo.management && (
-                      <Tooltip title={calculationInfo.management.title}>
+                      <Tooltip position="bottom" title={calculationInfo.management.title}>
                         {calculationInfo.management.description}
                       </Tooltip>
-                    )}
                   </div>
                   <div className="cost-value read-only">
                     ${Number(simulation.managementCost).toLocaleString('es-CO')} COP

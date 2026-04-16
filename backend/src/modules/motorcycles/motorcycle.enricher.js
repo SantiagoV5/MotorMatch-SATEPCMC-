@@ -19,7 +19,7 @@ class MotorcycleEnricher {
     };
 
     // Guard: cilindraje null se trata como segmento bajo (principiante por defecto)
-    const segmento = !cilindraje || cilindraje <= 200 ? 'bajo' : (cilindraje <= 400 ? 'medio' : 'alto');
+    const segmento = !cilindraje || cilindraje <= 250 ? 'bajo' : (cilindraje <= 600 ? 'medio' : 'alto');
     const precios = preciosPorMarca[marca.toUpperCase()] || preciosPorMarca['BAJAJ'];
 
     return {
