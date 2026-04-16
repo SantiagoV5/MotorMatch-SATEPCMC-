@@ -7,17 +7,15 @@ export const MAX_PRICE = 50000000;
 
 // ── Mapeo de opciones de cilindraje a parámetros del backend ────────────────
 export const DISPLACEMENT_CC = {
-  low:     { minCc: 50,  maxCc: 200  },
-  mid:     { minCc: 201, maxCc: 400  },
-  high:    { minCc: 401, maxCc: 600  },
-  premium: { minCc: 601, maxCc: null },
+  economica: { minCc: 0,   maxCc: 250 },
+  intermedia: { minCc: 251, maxCc: 600 },
+  premium:    { minCc: 601, maxCc: null },
 };
 
 export const DISPLACEMENT_OPTIONS = [
-  { label: 'Bajo (50cc - 200cc)',   subtitle: 'Ideal para principiantes', value: 'low'     },
-  { label: 'Medio (201cc - 400cc)', subtitle: 'Para uso mixto',           value: 'mid'     },
-  { label: 'Alto (401cc - 600cc)',  subtitle: 'Experiencia intermedia',   value: 'high'    },
-  { label: 'Premium (601cc+)',      subtitle: 'Alta cilindrada',          value: 'premium' },
+  { label: 'Económica',  subtitle: 'Baja cilindrada',   value: 'economica'  },
+  { label: 'Intermedia', subtitle: 'Cilindrada media',  value: 'intermedia' },
+  { label: 'Premium',    subtitle: 'Alta cilindrada',   value: 'premium'    },
 ];
 
 // ── Hook principal ───────────────────────────────────────────────────────────

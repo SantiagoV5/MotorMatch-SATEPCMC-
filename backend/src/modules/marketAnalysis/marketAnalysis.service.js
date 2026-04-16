@@ -36,17 +36,16 @@ async function getPopularBrands() {
 
 /**
  * Obtiene precios promedio por segmento de cilindrada
- * Segmentos: Bajo (0-125cc), Medio (126-250cc), Alto (251-500cc), Premium (500+cc)
+ * Segmentos: Económica, Intermedia y Premium
  */
 async function getSegmentPrices() {
   try {
     const segments = await prisma.$queryRaw`
       SELECT 
         CASE 
-          WHEN engine_cc <= 125 THEN 'Bajo (0-125cc)'
-          WHEN engine_cc > 125 AND engine_cc <= 250 THEN 'Medio (126-250cc)'
-          WHEN engine_cc > 250 AND engine_cc <= 500 THEN 'Alto (251-500cc)'
-          ELSE 'Premium (500+cc)'
+          WHEN COALESCE(engine_cc, 0) <= 250 THEN 'Económica'
+          WHEN engine_cc <= 600 THEN 'Intermedia'
+          ELSE 'Premium'
         END as segment,
         COUNT(*) as motorcycle_count,
         ROUND(AVG(price)::numeric, 0) as avg_price,
@@ -56,23 +55,20 @@ async function getSegmentPrices() {
       WHERE is_active = true AND price > 0
       GROUP BY 
         CASE 
-          WHEN engine_cc <= 125 THEN 1
-          WHEN engine_cc > 125 AND engine_cc <= 250 THEN 2
-          WHEN engine_cc > 250 AND engine_cc <= 500 THEN 3
-          ELSE 4
+          WHEN COALESCE(engine_cc, 0) <= 250 THEN 1
+          WHEN engine_cc <= 600 THEN 2
+          ELSE 3
         END,
         CASE 
-          WHEN engine_cc <= 125 THEN 'Bajo (0-125cc)'
-          WHEN engine_cc > 125 AND engine_cc <= 250 THEN 'Medio (126-250cc)'
-          WHEN engine_cc > 250 AND engine_cc <= 500 THEN 'Alto (251-500cc)'
-          ELSE 'Premium (500+cc)'
+          WHEN COALESCE(engine_cc, 0) <= 250 THEN 'Económica'
+          WHEN engine_cc <= 600 THEN 'Intermedia'
+          ELSE 'Premium'
         END
       ORDER BY 
         CASE 
-          WHEN engine_cc <= 125 THEN 1
-          WHEN engine_cc > 125 AND engine_cc <= 250 THEN 2
-          WHEN engine_cc > 250 AND engine_cc <= 500 THEN 3
-          ELSE 4
+          WHEN COALESCE(engine_cc, 0) <= 250 THEN 1
+          WHEN engine_cc <= 600 THEN 2
+          ELSE 3
         END
     `;
 

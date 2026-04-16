@@ -76,10 +76,9 @@ export default function HomePage() {
 
   // Map displacement option values to minCc/maxCc the backend understands
   const DISPLACEMENT_CC = {
-    low:     { minCc: 50,  maxCc: 200  },
-    mid:     { minCc: 201, maxCc: 400  },
-    high:    { minCc: 401, maxCc: 600  },
-    premium: { minCc: 601, maxCc: null },
+    economica: { minCc: 0,   maxCc: 250 },
+    intermedia: { minCc: 251, maxCc: 600 },
+    premium:    { minCc: 601, maxCc: null },
   };
 
   // Debounced price range — avoids firing a request on every pixel while dragging
@@ -233,10 +232,9 @@ export default function HomePage() {
   };
 
   const displacementOptions = [
-    { label: 'Bajo (50cc - 200cc)',   subtitle: 'Ideal para principiantes', value: 'low'     },
-    { label: 'Medio (201cc - 400cc)', subtitle: 'Para uso mixto',           value: 'mid'     },
-    { label: 'Alto (401cc - 600cc)',  subtitle: 'Experiencia intermedia',   value: 'high'    },
-    { label: 'Premium (601cc+)',      subtitle: 'Alta cilindrada',          value: 'premium' },
+    { label: 'Económica',  subtitle: 'Baja cilindrada',  value: 'economica'  },
+    { label: 'Intermedia', subtitle: 'Cilindrada media', value: 'intermedia' },
+    { label: 'Premium',    subtitle: 'Alta cilindrada',  value: 'premium'    },
   ];
 
   const filterBrands = brands.length > 0 ? brands : ['YAMAHA', 'HONDA', 'BAJAJ', 'KAWASAKI'];
