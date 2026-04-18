@@ -97,8 +97,10 @@ export function MotorcycleDetail() {
     );
   }
 
-  // Combinar imagen principal con galería (máximo 2 imágenes)
-  const allImages = [motorcycle.imageUrl, ...(motorcycle.galleryImages || [])].filter(Boolean).slice(0, 2);
+  // Combinar imagen principal con galería y evitar duplicados.
+  const allImages = Array.from(
+    new Set([motorcycle.imageUrl, ...(motorcycle.galleryImages || [])].filter(Boolean))
+  );
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#F5F7FA] font-['Space_Grotesk'] text-[#2C3E50] antialiased">

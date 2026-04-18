@@ -5,7 +5,7 @@ import { DISPLACEMENT_OPTIONS } from '../hooks/useFilters';
  * Permite deseleccionar la opción activa haciendo clic de nuevo.
  *
  * Props:
- *  - selectedDisplacement  string  valor actualmente seleccionado ('low' | 'mid' | 'high' | 'premium' | '')
+ *  - selectedDisplacement  string  valor actualmente seleccionado ('economica' | 'intermedia' | 'premium' | '')
  *  - onSelect              función que recibe el value de la opción clickeada
  */
 export default function CcFilter({ selectedDisplacement, onSelect }) {

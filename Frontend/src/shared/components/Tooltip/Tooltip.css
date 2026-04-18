@@ -1,30 +1,41 @@
-.tooltip-container {
+.app-tooltip-container {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
 }
 
-.tooltip-trigger {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
+.app-tooltip-trigger {
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  cursor: help;
   color: #2563eb;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
   transition: all 0.2s;
 }
 
-.tooltip-trigger:hover {
-  background-color: rgba(37, 99, 235, 0.1);
+.app-tooltip-trigger:hover {
+  background-color: rgba(37, 99, 235, 0.16);
   color: #1d4ed8;
+  transform: translateY(-1px);
 }
 
-.tooltip-content {
+.app-tooltip-trigger:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.app-tooltip-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.app-tooltip-content {
   position: absolute;
   background-color: #0f172a;
   color: #f1f5f9;
@@ -35,12 +46,13 @@
   z-index: 9999;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   white-space: normal;
-  max-width: 520px;
+  max-width: min(320px, calc(100vw - 48px));
   word-wrap: break-word;
   border: 1px solid rgba(148, 163, 184, 0.2);
+  pointer-events: auto;
 }
 
-.tooltip-content::before {
+.app-tooltip-content::before {
   content: '';
   position: absolute;
   border-style: solid;
@@ -48,13 +60,13 @@
 
 /* ─── Position: Top (default) ─────────────────────────────────── */
 
-.tooltip-top {
+.app-tooltip-top {
   bottom: calc(100% + 12px);
   left: 50%;
   transform: translateX(-50%);
 }
 
-.tooltip-top::before {
+.app-tooltip-top::before {
   bottom: -6px;
   left: 50%;
   transform: translateX(-50%);
@@ -64,13 +76,13 @@
 
 /* ─── Position: Bottom ───────────────────────────────────────── */
 
-.tooltip-bottom {
+.app-tooltip-bottom {
   top: calc(100% + 12px);
   left: 50%;
   transform: translateX(-50%);
 }
 
-.tooltip-bottom::before {
+.app-tooltip-bottom::before {
   top: -6px;
   left: 50%;
   transform: translateX(-50%);
@@ -80,13 +92,13 @@
 
 /* ─── Position: Right ───────────────────────────────────────── */
 
-.tooltip-right {
+.app-tooltip-right {
   left: calc(100% + 12px);
   top: 50%;
   transform: translateY(-50%);
 }
 
-.tooltip-right::before {
+.app-tooltip-right::before {
   left: -6px;
   top: 50%;
   transform: translateY(-50%);
@@ -96,13 +108,13 @@
 
 /* ─── Position: Left ───────────────────────────────────────── */
 
-.tooltip-left {
+.app-tooltip-left {
   right: calc(100% + 12px);
   top: 50%;
   transform: translateY(-50%);
 }
 
-.tooltip-left::before {
+.app-tooltip-left::before {
   right: -6px;
   top: 50%;
   transform: translateY(-50%);
@@ -112,14 +124,14 @@
 
 /* ─── Tooltip Title & Text ───────────────────────────────────── */
 
-.tooltip-title {
+.app-tooltip-title {
   font-weight: 700;
   margin-bottom: 8px;
   font-size: 15px;
   color: #e2e8f0;
 }
 
-.tooltip-text {
+.app-tooltip-text {
   font-weight: 400;
   white-space: pre-wrap;
 }
@@ -127,7 +139,7 @@
 /* ─── Responsive ────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
-  .tooltip-content {
+  .app-tooltip-content {
     max-width: 280px;
     font-size: 13px;
     padding: 14px 18px;
