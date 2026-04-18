@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../shared/components/layout/header';
 import { getAllMotorcycles, getMotorcycleById } from '../features/motorcycles/services/motorcycleService';
 import { saveComparison } from '../features/comparison/services/comparisonService';
+import { ComparisonPDF } from '../features/comparison/components/ComparisonPDF';
+import { PDFDownloadLink, pdf } from '@react-pdf/renderer';
 import ShareWhatsAppModal from '../shared/components/ShareWhatsAppModal';
 import { getAppUrl } from '../shared/utils/whatsappShare';
 import { trackShareUsage } from '../shared/services/shareAnalyticsService';
@@ -323,6 +325,26 @@ export default function ComparisonPage() {
     `Explora la app aquí: ${shareBaseUrl}`,
   ].join('\n')
 
+  // Funcionalidad extra: Compartir PDF Nativo
+  async function handleSharePDF() {
+    try {
+      const blob = await pdf(<ComparisonPDF motos={activeMotos} rows={ROWS} highlights={highlights} />).toBlob();
+      const file = new File([blob], "MotorMatch_Comparacion.pdf", { type: "application/pdf" });
+      
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Comparación de Motos MotorMatch',
+          text: '¡Mira la comparación que hice en MotorMatch!',
+        });
+      } else {
+        alert("Tu dispositivo o navegador no soporta compartir archivos directamente. Por favor descarga el PDF haciendo clic en el botón 'Exportar PDF'.");
+      }
+    } catch (err) {
+      console.error('Error al compartir PDF:', err);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-surface font-body text-on-surface">
       <Header sticky={false} />
@@ -340,20 +362,51 @@ export default function ComparisonPage() {
             </p>
           </div>
           {activeMotos.length > 0 && (
-            <div className="flex items-center gap-3 self-start md:self-auto">
+            <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
               <button
                 onClick={() => navigate('/comparison-history')}
-                className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest border border-primary/20 px-4 py-2 rounded-lg hover:bg-primary/5 transition-colors"
+                className="flex items-center justify-center gap-2 text-primary font-bold text-xs uppercase tracking-widest border border-primary/20 px-3 py-2 rounded-lg hover:bg-primary/5 transition-colors"
               >
                 <span className="material-symbols-outlined text-sm">history</span>
-                Historial
+                <span className="hidden sm:inline">Historial</span>
               </button>
+              
+              {canCompare && compared && (
+                <div className="flex items-center gap-2 border-l border-primary/20 pl-3">
+                  <PDFDownloadLink 
+                    document={<ComparisonPDF motos={activeMotos} rows={ROWS} highlights={highlights} />} 
+                    fileName="MotorMatch_Comparacion.pdf"
+                    className="flex items-center justify-center gap-2 bg-slate-800 text-white font-bold text-xs uppercase tracking-widest px-3 py-2 rounded-lg hover:bg-slate-700 transition-colors"
+                  >
+                    {({ loading }) => (
+                      <>
+                        <span className="material-symbols-outlined text-sm">
+                          {loading ? 'hourglass_empty' : 'picture_as_pdf'}
+                        </span>
+                        <span className="hidden sm:inline">
+                          {loading ? 'Generando...' : 'Exportar PDF'}
+                        </span>
+                      </>
+                    )}
+                  </PDFDownloadLink>
+                  
+                  {/* Share PDF Button (Mobile optimized) */}
+                  <button
+                    onClick={handleSharePDF}
+                    title="Compartir PDF nativo"
+                    className="flex items-center justify-center bg-slate-100 text-slate-800 font-bold text-xs uppercase tracking-widest px-3 py-2 rounded-lg hover:bg-slate-200 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">ios_share</span>
+                  </button>
+                </div>
+              )}
+
               <button
                 onClick={handleClear}
-                className="flex items-center gap-2 text-accent font-bold text-xs uppercase tracking-widest border border-accent/20 px-4 py-2 rounded-lg hover:bg-accent/5 transition-colors"
+                className="flex items-center gap-2 text-accent font-bold text-xs uppercase tracking-widest border border-accent/20 px-4 py-2 rounded-lg hover:bg-accent/5 transition-colors ml-auto md:ml-0"
               >
                 <span className="material-symbols-outlined text-sm">delete_sweep</span>
-                Limpiar
+                <span className="hidden sm:inline">Limpiar</span>
               </button>
             </div>
           )}

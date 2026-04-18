@@ -24,6 +24,9 @@ const updateUserSchema = Joi.object({
     'array.min': 'Selecciona al menos una marca preferida',
     'any.required': 'Las marcas preferidas son obligatorias',
   }),
+  monthlyMileage: Joi.number().integer().min(0).max(100000).allow(null).messages({
+    'number.base': 'El kilometraje debe ser un número válido',
+  }),
 })
 
 module.exports = { updateUserSchema }

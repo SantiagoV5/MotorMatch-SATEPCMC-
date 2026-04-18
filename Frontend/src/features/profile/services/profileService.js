@@ -10,9 +10,14 @@ async function updateMyProfile(payload) {
   return data.data
 }
 
+async function updateMyMileage(mileage) {
+  const { data } = await apiClient.patch('/users/me/mileage', { monthlyMileage: mileage })
+  return data.data
+}
+
 async function getAvailableBrands() {
   const { data } = await apiClient.get('/motorcycles/brands')
   return data.data || []
 }
 
-export { getMyProfile, updateMyProfile, getAvailableBrands }
+export { getMyProfile, updateMyProfile, updateMyMileage, getAvailableBrands }
