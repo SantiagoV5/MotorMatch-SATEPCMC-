@@ -16,6 +16,17 @@ function formatDate(iso) {
   });
 }
 
+/**
+ * [NUEVO] Mapa de etiquetas y colores para los tipos de comparación.
+ * Permite mostrar el tipo de comparación de forma visual en cada tarjeta.
+ */
+const MODE_LABELS = {
+  general:   { label: 'General',   icon: 'compare_arrows', color: 'bg-blue-100 text-blue-700' },
+  economica: { label: 'Económica', icon: 'savings',        color: 'bg-green-100 text-green-700' },
+  potencia:  { label: 'Potencia',  icon: 'bolt',           color: 'bg-orange-100 text-orange-700' },
+  comodidad: { label: 'Comodidad', icon: 'accessibility',  color: 'bg-purple-100 text-purple-700' },
+};
+
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
 function CardSkeleton() {
@@ -41,8 +52,15 @@ function CardSkeleton() {
 
 // ── Tarjeta de comparación ────────────────────────────────────────────────────
 
+/**
+ * [MODIFICADO] ComparisonCard ahora muestra el tipo de comparación
+ * encima del botón "Ver comparación" usando la etiqueta del modo.
+ */
 function ComparisonCard({ comparison, onDelete, onView, deleting }) {
-  const { bikes, comparisonDate } = comparison;
+  const { bikes, comparisonDate, comparisonType } = comparison;
+
+  // [NUEVO] Obtener etiqueta e icono del tipo de comparación
+  const modeInfo = MODE_LABELS[comparisonType] || MODE_LABELS.general;
 
   return (
     <article className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col lg:flex-row transition-shadow hover:shadow-md">
@@ -86,6 +104,16 @@ function ComparisonCard({ comparison, onDelete, onView, deleting }) {
         </div>
 
         <div className="flex flex-col gap-3 mt-auto">
+          {/*
+            [NUEVO] Etiqueta del tipo de comparación.
+            Se muestra encima del botón "Ver comparación" indicando
+            con qué tipo de comparación fue realizada.
+          */}
+          <div className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold ${modeInfo.color}`}>
+            <span className="material-symbols-outlined text-sm">{modeInfo.icon}</span>
+            Comparación {modeInfo.label}
+          </div>
+
           <button
             onClick={() => onView(comparison)}
             className="w-full py-3 rounded-xl font-headline font-bold uppercase tracking-widest text-xs text-white flex items-center justify-center gap-2 transition-all active:scale-95"
@@ -159,7 +187,7 @@ export default function ComparisonHistoryPage() {
   const [history, setHistory]           = useState([]);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
-  const [deleting, setDeleting]         = useState(null);   // id de la que se está borrando
+  const [deleting, setDeleting]         = useState(null);
   const [showConfirm, setShowConfirm]   = useState(false);
   const [clearLoading, setClearLoading] = useState(false);
 
@@ -204,16 +232,26 @@ export default function ComparisonHistoryPage() {
     }
   }
 
-  // Al ver los detalles: navegar a /comparison con las motos precargadas
+  /**
+   * [MODIFICADO] Al ver los detalles de una comparación del historial,
+   * se pasa también el tipo de comparación (prefillMode) en el state
+   * para que ComparisonPage inicialice el modo correcto y ejecute la
+   * comparación con ese tipo.
+   */
   function handleView(comparison) {
-    // Buscar los datos completos de las motos del historial para pasarlos como prefill
-    // Solo tenemos datos básicos (id, brand, model, imageUrl, engineCc) — suficiente para los slots
     const motos = comparison.bikes.map(b => ({
       id: b.id, brand: b.brand, model: b.model,
       imageUrl: b.imageUrl, engineCc: b.engineCc,
     }));
     const slots = [motos[0] || null, motos[1] || null, motos[2] || null];
-    navigate('/comparison', { state: { prefillSlots: slots } });
+    navigate('/comparison', {
+      state: {
+        prefillSlots: slots,
+        // [NUEVO] Se pasa el tipo de comparación guardado para que la página
+        // de comparación lo use al cargar la vista del historial
+        prefillMode: comparison.comparisonType || 'general',
+      },
+    });
   }
 
   return (

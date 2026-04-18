@@ -6,24 +6,39 @@ function toNum(v) { return v === null || v === undefined ? null : Number(v); }
 
 /**
  * Guarda una comparación. bikeIds debe tener 2 ó 3 elementos.
+ *
+ * [MODIFICADO] Ahora acepta y persiste el campo `comparisonType`
+ * (valores válidos: 'general' | 'economica' | 'potencia' | 'comodidad').
+ * Si no se pasa, se almacena 'general' por defecto.
+ * NOTA: La tabla debe tener la columna `comparison_type VARCHAR(20) DEFAULT 'general'`.
+ * Si aún no existe, ejecutar en Supabase SQL Editor:
+ *   ALTER TABLE comparisons ADD COLUMN IF NOT EXISTS comparison_type VARCHAR(20) DEFAULT 'general';
  */
-async function saveComparison(userId, bikeIds) {
+async function saveComparison(userId, bikeIds, comparisonType = 'general') {
   const [id1, id2 = null, id3 = null] = bikeIds.map(Number);
+
+  // Tipos permitidos — evita persistir valores inesperados
+  const validTypes = ['general', 'economica', 'potencia', 'comodidad'];
+  const safeType = validTypes.includes(comparisonType) ? comparisonType : 'general';
+
   await prisma.$executeRaw`
-    INSERT INTO comparisons (user_id, bike_id_1, bike_id_2, bike_id_3, comparison_date)
-    VALUES (${userId}, ${id1}, ${id2}, ${id3}, NOW())
+    INSERT INTO comparisons (user_id, bike_id_1, bike_id_2, bike_id_3, comparison_date, comparison_type)
+    VALUES (${userId}, ${id1}, ${id2}, ${id3}, NOW(), ${safeType})
   `;
   return { saved: true };
 }
 
 /**
  * Devuelve las 20 comparaciones más recientes del usuario con datos de las motos.
+ *
+ * [MODIFICADO] Ahora incluye el campo `comparisonType` en cada fila del resultado.
  */
 async function getComparisonHistory(userId) {
   const rows = await prisma.$queryRaw`
     SELECT
       c.id                  AS "id",
       c.comparison_date     AS "comparisonDate",
+      COALESCE(c.comparison_type, 'general') AS "comparisonType",
       -- Moto 1
       m1.id                 AS "bike1Id",
       m1.brand              AS "bike1Brand",
@@ -54,6 +69,7 @@ async function getComparisonHistory(userId) {
   return rows.map(r => ({
     id:             toNum(r.id),
     comparisonDate: r.comparisonDate,
+    comparisonType: r.comparisonType || 'general',
     bikes: [
       { id: toNum(r.bike1Id), brand: r.bike1Brand, model: r.bike1Model, imageUrl: r.bike1Image, engineCc: toNum(r.bike1Cc) },
       { id: toNum(r.bike2Id), brand: r.bike2Brand, model: r.bike2Model, imageUrl: r.bike2Image, engineCc: toNum(r.bike2Cc) },
