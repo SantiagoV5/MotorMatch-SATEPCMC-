@@ -77,35 +77,40 @@ function applyWithTies(vals, winIsMin, winners, losers, ties, key) {
   const worstGroup = vals.filter(x => x.v === worstVal);
   const midGroup   = vals.filter(x => x.v !== bestVal && x.v !== worstVal);
 
-  // Un único mejor, y el resto empata
-  if (bestGroup.length === 1 && midGroup.length === 0) {
+  // [CORREGIDO] Un único mejor y el RESTO empata entre sí (≥2 en el grupo peor).
+  // Con solo 2 motos de valores distintos, worstGroup.length===1, por lo que
+  // este bloque NO aplica: el perdedor es perdedor, no empate.
+  if (bestGroup.length === 1 && worstGroup.length > 1 && midGroup.length === 0) {
     winners[key] = bestGroup[0].id;
-    ties[key] = worstGroup.map(x => x.id); // los "peores" empataron → gris
+    ties[key] = worstGroup.map(x => x.id); // los "peores" empataron entre sí → gris
     return;
   }
 
-  // Un único peor, y el resto empata
-  if (worstGroup.length === 1 && midGroup.length === 0) {
+  // [CORREGIDO] Un único peor y el RESTO empata entre sí (≥2 en el grupo mejor).
+  // Misma razón: con 2 motos, bestGroup.length===1, no aplica como empate.
+  if (worstGroup.length === 1 && bestGroup.length > 1 && midGroup.length === 0) {
     losers[key] = worstGroup[0].id;
-    ties[key] = bestGroup.map(x => x.id); // los "mejores" empataron → gris
+    ties[key] = bestGroup.map(x => x.id); // los "mejores" empataron entre sí → gris
     return;
   }
 
-  // Empate parcial en el mejor (2+ comparten el mejor valor)
+  // Empate parcial en el mejor (2+ comparten el mejor valor, 1 único peor)
   if (bestGroup.length > 1 && worstGroup.length === 1) {
     losers[key] = worstGroup[0].id;
     ties[key] = bestGroup.map(x => x.id);
     return;
   }
 
-  // Empate parcial en el peor (2+ comparten el peor valor)
+  // Empate parcial en el peor (2+ comparten el peor valor, 1 único mejor)
   if (worstGroup.length > 1 && bestGroup.length === 1) {
     winners[key] = bestGroup[0].id;
     ties[key] = worstGroup.map(x => x.id);
     return;
   }
 
-  // Caso normal: todos tienen valores distintos o hay grupos medianos
+  // Caso normal: un claro ganador y un claro perdedor (valores todos distintos
+  // o con grupo intermedio). Incluye el caso de exactamente 2 motos con valores
+  // distintos → winner y loser, sin empate.
   winners[key] = bestGroup[0].id;
   losers[key]  = worstGroup[0].id;
 }
@@ -125,7 +130,10 @@ function computeGeneral(motos) {
   applyWithTies(numeric('engineCc'),        false, winners, losers, ties, 'engineCc');
   applyWithTies(numeric('powerHp'),         false, winners, losers, ties, 'powerHp');
   applyWithTies(numeric('weightKg'),        true,  winners, losers, ties, 'weightKg');
-  applyWithTies(numeric('consumptionKmpl'), false, winners, losers, ties, 'consumptionKmpl');
+  // [CORREGIDO] consumptionKmpl: menor valor = consume menos = MEJOR (winIsMin=true).
+  // Aunque el label muestra 'km/l', el comportamiento reportado confirma que
+  // el campo almacena el consumo de forma inversa (menor = más eficiente).
+  applyWithTies(numeric('consumptionKmpl'), true, winners, losers, ties, 'consumptionKmpl');
 
   // Transmisión: extraer número de marchas del texto
   const withGears = motos.map(m => {
@@ -165,14 +173,25 @@ function computeEconomica(motos, profile) {
     return { id: m.id, price, cc, kmpl, gastoAnual };
   });
 
-  // [MODIFICADO] Usar applyWithTies para gasto anual (price y consumo ligados a gastoAnual)
-  const gastoVals = scored.map(s => ({ id: s.id, v: s.gastoAnual }));
-  applyWithTies(gastoVals, true, winners, losers, ties, 'price');
-  applyWithTies(gastoVals, true, winners, losers, ties, 'consumptionKmpl');
+  // [CORREGIDO] Cada atributo se resalta por su propio valor directo, no por el
+  // gasto anual compuesto. Usar gastoAnual para resaltar price/consumo causaba
+  // que el color de la celda no coincidiera con el valor numérico mostrado.
+  //
+  //   price:           menor precio → más económica → winIsMin=true
+  //   consumptionKmpl: menor valor → menos eficiente → winIsMin=true (igual que general)
+  //   engineCc:        menor cc → menor SOAT → más económica → winIsMin=true
+  const priceVals = scored.map(s => ({ id: s.id, v: s.price }));
+  applyWithTies(priceVals, true, winners, losers, ties, 'price');
 
-  // Cilindraje: menor → menor SOAT → más económica
+  const kmplVals = scored.map(s => ({ id: s.id, v: s.kmpl }));
+  applyWithTies(kmplVals, true, winners, losers, ties, 'consumptionKmpl');
+
+  // [CORREGIDO] engineCc en modo económica: mayor cilindraje = mejor (winIsMin=false),
+  // consistente con los modos general y potencia. El menor cc solo implica menor
+  // SOAT (reflejado ya en el desglose de costos), pero como atributo de la moto
+  // el mayor cc es el valor superior.
   const ccVals = scored.map(s => ({ id: s.id, v: s.cc }));
-  applyWithTies(ccVals, true, winners, losers, ties, 'engineCc');
+  applyWithTies(ccVals, false, winners, losers, ties, 'engineCc');
 
   return { winners, losers, ties, scored };
 }
@@ -534,16 +553,31 @@ function AttributeTable({ motos, winners, losers, ties, activeMode, compared, an
         </div>
       ))}
 
-      {/* Extra: desglose económica */}
-      {compared && activeMode === 'economica' && (
-        <EconomicoBreakdown motos={motos} />
+      {/* Desglose económica: se muestra siempre que el modo sea económica y haya
+          ≥2 motos, igual que la tabla de atributos. Los resaltados sólo aparecen
+          cuando compared===true (después de pulsar el botón o al cargar del historial). */}
+      {activeMode === 'economica' && (
+        <EconomicoBreakdown motos={motos} compared={compared} />
       )}
     </div>
   );
 }
 
 // ── Desglose económico ────────────────────────────────────────────────────────
-function EconomicoBreakdown({ motos }) {
+/**
+ * [MODIFICADO] Recibe `compared` para controlar si se resaltan los valores.
+ *
+ * Lógica de resaltado por fila:
+ * - SOAT y rodamiento: dependen de engineCc y price respectivamente,
+ *   así que el mejor/peor es consistente fila a fila con esos factores.
+ * - Gasolina: depende de consumptionKmpl.
+ * - Total: es el indicador decisivo — se aplica la lógica de empates
+ *   igual que en los atributos principales.
+ *
+ * Para cada fila se calcula ganador (menor = mejor, ya que son costos),
+ * perdedor y empates usando la misma función applyWithTies.
+ */
+function EconomicoBreakdown({ motos, compared }) {
   const ANNUAL_KM      = 12_000;
   const FUEL_COP_PER_L = 11_000;
   const RODAMIENTO_RATE = 0.015;
@@ -559,6 +593,19 @@ function EconomicoBreakdown({ motos }) {
     return { id: m.id, brand: m.brand, model: m.model, soat, rodamiento, gasolina, total };
   });
 
+  // Calcular resaltados para cada fila cuando compared === true
+  // En todas las filas el menor valor es el mejor (son costos)
+  const rowKeys = ['soat', 'rodamiento', 'gasolina', 'total'];
+  const rowHighlights = {};
+  if (compared) {
+    rowKeys.forEach(key => {
+      const vals = data.map(d => ({ id: d.id, v: d[key] }));
+      const w = {}, l = {}, t = {};
+      applyWithTies(vals, true, w, l, t, key); // true = menor es mejor (costo)
+      rowHighlights[key] = { winner: w[key], loser: l[key], tied: t[key] || [] };
+    });
+  }
+
   const cols = `180px repeat(${motos.length}, 1fr)`;
 
   return (
@@ -570,20 +617,55 @@ function EconomicoBreakdown({ motos }) {
         <p className="text-[10px] text-slate-400 mt-0.5">SOAT + rodamiento (1.5% avalúo) + gasolina (12.000 km/año a $11.000/L)</p>
       </div>
       {[
-        { label: 'SOAT estimado',    key: 'soat' },
-        { label: 'Rodamiento',       key: 'rodamiento' },
-        { label: 'Gasolina anual',   key: 'gasolina' },
-        { label: 'Total anual',      key: 'total', bold: true },
-      ].map(row => (
-        <div key={row.key} className="grid border-b border-slate-50" style={{ gridTemplateColumns: cols }}>
-          <div className={`p-4 text-sm text-slate-600 bg-slate-50/30 ${row.bold ? 'font-black text-primary' : 'font-medium'}`}>{row.label}</div>
-          {data.map(d => (
-            <div key={d.id} className={`p-4 text-center border-l border-slate-50 font-headline ${row.bold ? 'font-black text-primary text-base' : 'font-bold text-slate-700 text-sm'}`}>
-              {formatCOP(d[row.key])}
+        { label: 'SOAT estimado',  key: 'soat' },
+        { label: 'Rodamiento',     key: 'rodamiento' },
+        { label: 'Gasolina anual', key: 'gasolina' },
+        { label: 'Total anual',    key: 'total', bold: true },
+      ].map(row => {
+        const hl = rowHighlights[row.key] || { winner: null, loser: null, tied: [] };
+        return (
+          <div key={row.key} className="grid border-b border-slate-50" style={{ gridTemplateColumns: cols }}>
+            <div className={`p-4 text-sm text-slate-600 bg-slate-50/30 ${row.bold ? 'font-black text-primary' : 'font-medium'}`}>
+              {row.label}
             </div>
-          ))}
-        </div>
-      ))}
+            {data.map(d => {
+              // [NUEVO] Resaltado por celda igual que en la tabla principal
+              const isWinner = compared && hl.winner === d.id;
+              const isLoser  = compared && hl.loser  === d.id;
+              const isTied   = compared && Array.isArray(hl.tied) && hl.tied.includes(d.id);
+
+              return (
+                <div
+                  key={d.id}
+                  className={`p-4 text-center border-l border-slate-50 font-headline flex flex-col items-center justify-center transition-all duration-500
+                    ${isWinner ? 'bg-emerald-50' : isLoser ? 'bg-red-50' : isTied ? 'bg-slate-100' : ''}
+                    ${row.bold ? 'text-base' : 'text-sm'}`}
+                >
+                  <span className={`font-headline transition-colors duration-500
+                    ${isWinner ? 'font-black text-emerald-700' : isLoser ? 'font-black text-red-700' : isTied ? 'font-bold text-slate-500' : row.bold ? 'font-black text-primary' : 'font-bold text-slate-700'}`}>
+                    {formatCOP(d[row.key])}
+                  </span>
+                  {isWinner && (
+                    <span className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-emerald-600 flex items-center gap-1">
+                      <span>▲</span> Menor costo
+                    </span>
+                  )}
+                  {isLoser && (
+                    <span className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-red-500 flex items-center gap-1">
+                      <span>▼</span> Mayor costo
+                    </span>
+                  )}
+                  {isTied && (
+                    <span className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                      <span>═</span> Empate
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -835,8 +917,8 @@ export default function ComparisonPage() {
           <div className="space-y-2">
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">MotorMatch</p>
             <h1 className="text-5xl md:text-7xl font-headline font-black tracking-tighter text-primary uppercase leading-none">
-              BATALLA DE LAS <br />
-              <span style={{ color: '#FF6B35' }} className="italic">MÁQUINAS</span>
+              BATALLA A <br />
+              <span style={{ color: '#FF6B35' }} className="italic">DOS RUEDAS</span>
             </h1>
           </div>
           <div className="flex gap-3 self-start md:self-auto">
