@@ -1195,8 +1195,8 @@ export default function ComparisonPage() {
           <div className="space-y-2">
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">MotorMatch</p>
             <h1 className="text-5xl md:text-7xl font-headline font-black tracking-tighter text-primary uppercase leading-none">
-              BATALLA DE LAS <br />
-              <span style={{ color: '#FF6B35' }} className="italic">MÁQUINAS</span>
+              BATALLA A <br />
+              <span style={{ color: '#FF6B35' }} className="italic">DOS RUEDAS</span>
             </h1>
           </div>
           <div className="flex gap-3 self-start md:self-auto">
