@@ -115,34 +115,105 @@ function applyWithTies(vals, winIsMin, winners, losers, ties, key) {
   losers[key]  = worstGroup[0].id;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS DE SCORING PONDERADO
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Normaliza un valor numérico entre 0 y 1 dentro de un rango [min, max].
+ * Si min === max todos valen igual → devuelve 0.5 para todos.
+ * @param {number} v    - Valor a normalizar
+ * @param {number} min  - Mínimo del conjunto
+ * @param {number} max  - Máximo del conjunto
+ * @param {boolean} higherIsBetter - Si true, mayor v → mayor score normalizado
+ */
+function normalize(v, min, max, higherIsBetter) {
+  if (max === min) return 0.5;
+  const n = (v - min) / (max - min); // 0..1 donde 1 = el mayor valor
+  return higherIsBetter ? n : 1 - n; // invierte si el menor es mejor
+}
+
+/**
+ * Calcula el ganador/perdedor/empate de una comparación a partir de scores
+ * ponderados normalizados. Devuelve { overallWinnerId, overallLoserId,
+ * isTotalTie, scores: [{id, score, rank}] }.
+ *
+ * "isTotalTie" solo es true cuando TODOS los scores finales son iguales.
+ *
+ * @param {Array<{id, ...attrs}>} motos
+ * @param {Array<{key, weight, higherIsBetter}>} criteria
+ */
+function computeWeightedScores(motos, criteria) {
+  // Precalcular min/max por criterio para la normalización
+  const ranges = {};
+  criteria.forEach(c => {
+    const vals = motos.map(m => Number(m[c.key])).filter(v => !isNaN(v) && v > 0);
+    ranges[c.key] = { min: Math.min(...vals), max: Math.max(...vals) };
+  });
+
+  const scored = motos.map(m => {
+    let totalWeight = 0;
+    let weightedSum = 0;
+    criteria.forEach(c => {
+      const v = Number(m[c.key]);
+      if (isNaN(v) || v <= 0) return; // ignorar datos faltantes
+      const { min, max } = ranges[c.key];
+      const norm = normalize(v, min, max, c.higherIsBetter);
+      weightedSum += norm * c.weight;
+      totalWeight += c.weight;
+    });
+    const score = totalWeight > 0 ? weightedSum / totalWeight : 0;
+    return { id: m.id, score: Math.round(score * 1000) / 1000 };
+  });
+
+  const sorted = [...scored].sort((a, b) => b.score - a.score);
+  const maxScore = sorted[0].score;
+  const minScore = sorted[sorted.length - 1].score;
+
+  // Empate total: todos tienen el mismo score final
+  const isTotalTie = maxScore === minScore;
+
+  // Puede haber empate en la cima (2+ motos con el mismo score máximo)
+  const topGroup    = scored.filter(s => s.score === maxScore);
+  const bottomGroup = scored.filter(s => s.score === minScore);
+
+  return {
+    scores: scored,
+    isTotalTie,
+    // Si hay empate en el top, overallWinnerId = null (no hay ganador único)
+    overallWinnerId: !isTotalTie && topGroup.length === 1 ? topGroup[0].id : null,
+    // Si hay empate en el fondo, overallLoserId = null
+    overallLoserId:  !isTotalTie && bottomGroup.length === 1 ? bottomGroup[0].id : null,
+    // IDs que comparten la cima (para casos de empate parcial en el top)
+    tiedWinnerIds:   topGroup.length > 1 ? topGroup.map(s => s.id) : [],
+    tiedLoserIds:    bottomGroup.length > 1 ? bottomGroup.map(s => s.id) : [],
+  };
+}
+
 // ── Modo GENERAL ──────────────────────────────────────────────────────────────
 function computeGeneral(motos) {
   const winners = {};
   const losers  = {};
-  const ties    = {}; // [NUEVO] mapa de empates
+  const ties    = {};
 
   function numeric(key) {
     return motos.map(m => ({ id: m.id, v: Number(m[key]) })).filter(x => !isNaN(x.v) && x.v > 0);
   }
 
-  // [MODIFICADO] Se usa applyWithTies en lugar de applyMinMax para manejar empates
   applyWithTies(numeric('price'),           true,  winners, losers, ties, 'price');
   applyWithTies(numeric('engineCc'),        false, winners, losers, ties, 'engineCc');
   applyWithTies(numeric('powerHp'),         false, winners, losers, ties, 'powerHp');
   applyWithTies(numeric('weightKg'),        true,  winners, losers, ties, 'weightKg');
-  // [CORREGIDO] consumptionKmpl: menor valor = consume menos = MEJOR (winIsMin=true).
-  // Aunque el label muestra 'km/l', el comportamiento reportado confirma que
-  // el campo almacena el consumo de forma inversa (menor = más eficiente).
-  applyWithTies(numeric('consumptionKmpl'), true, winners, losers, ties, 'consumptionKmpl');
+  applyWithTies(numeric('consumptionKmpl'), true,  winners, losers, ties, 'consumptionKmpl');
 
-  // Transmisión: extraer número de marchas del texto
   const withGears = motos.map(m => {
     const match = String(m.transmission || '').match(/(\d+)/);
     return { id: m.id, v: match ? parseInt(match[1]) : 0 };
   }).filter(x => x.v > 0);
   applyWithTies(withGears, false, winners, losers, ties, 'transmission');
 
-  return { winners, losers, ties };
+  // Sin ganador global para modo general (se implementará en una fase posterior)
+  return { winners, losers, ties, overallWinnerId: null, isTotalTie: false };
 }
 
 // ── Modo ECONÓMICA ────────────────────────────────────────────────────────────
@@ -154,53 +225,105 @@ function getSoatCOP(cc) {
   return 2_100_000;
 }
 
+/**
+ * Modo ECONÓMICA — ganador por menor gasto anual total.
+ *
+ * El score ponderado se calcula sobre 3 factores (todos "menor es mejor"):
+ *
+ *   Gasto anual total  50% — criterio principal: SOAT + rodamiento + gasolina
+ *   Precio de compra   35% — inversión inicial que el usuario debe asumir
+ *   Consumo (kmpl)     15% — contribuye al gasto anual pero se pondera aparte
+ *                            para reflejar su impacto a largo plazo
+ *
+ * Si el usuario tiene presupuesto en su perfil, las motos que superan ese
+ * presupuesto reciben una penalización de score del 30% antes de comparar,
+ * de modo que la moto más económica dentro del presupuesto siempre gana
+ * sobre una más barata de operar pero fuera del alcance económico.
+ */
 function computeEconomica(motos, profile) {
-  const ANNUAL_KM      = 12_000;
-  const FUEL_COP_PER_L = 11_000;
+  const ANNUAL_KM       = 12_000;
+  const FUEL_COP_PER_L  = 11_000;
   const RODAMIENTO_RATE = 0.015;
   const winners = {};
   const losers  = {};
-  const ties    = {}; // [NUEVO]
+  const ties    = {};
 
-  const scored = motos.map(m => {
-    const cc      = Number(m.engineCc)        || 0;
-    const price   = Number(m.price)           || 0;
-    const kmpl    = Number(m.consumptionKmpl) || 1;
-    const soat    = getSoatCOP(cc);
-    const rodamiento  = price * RODAMIENTO_RATE;
-    const gasolina    = (ANNUAL_KM / kmpl) * FUEL_COP_PER_L;
-    const gastoAnual  = soat + rodamiento + gasolina;
-    return { id: m.id, price, cc, kmpl, gastoAnual };
+  const budget = profile ? Number(profile.budget) : null;
+
+  // Precalcular gasto anual por moto para usarlo como criterio de score
+  const withCosts = motos.map(m => {
+    const cc         = Number(m.engineCc)        || 0;
+    const price      = Number(m.price)           || 0;
+    const kmpl       = Number(m.consumptionKmpl) || 1;
+    const gastoAnual = getSoatCOP(cc) + price * RODAMIENTO_RATE + (ANNUAL_KM / kmpl) * FUEL_COP_PER_L;
+    return { ...m, _gastoAnual: gastoAnual };
   });
 
-  // [CORREGIDO] Cada atributo se resalta por su propio valor directo, no por el
-  // gasto anual compuesto. Usar gastoAnual para resaltar price/consumo causaba
-  // que el color de la celda no coincidiera con el valor numérico mostrado.
-  //
-  //   price:           menor precio → más económica → winIsMin=true
-  //   consumptionKmpl: menor valor → menos eficiente → winIsMin=true (igual que general)
-  //   engineCc:        menor cc → menor SOAT → más económica → winIsMin=true
-  const priceVals = scored.map(s => ({ id: s.id, v: s.price }));
+  // Resaltado por atributo individual (tabla de atributos, sin cambios)
+  const priceVals = withCosts.map(m => ({ id: m.id, v: Number(m.price) || 0 }));
   applyWithTies(priceVals, true, winners, losers, ties, 'price');
 
-  const kmplVals = scored.map(s => ({ id: s.id, v: s.kmpl }));
+  const kmplVals = withCosts.map(m => ({ id: m.id, v: Number(m.consumptionKmpl) || 0 }));
   applyWithTies(kmplVals, true, winners, losers, ties, 'consumptionKmpl');
 
-  // [CORREGIDO] engineCc en modo económica: mayor cilindraje = mejor (winIsMin=false),
-  // consistente con los modos general y potencia. El menor cc solo implica menor
-  // SOAT (reflejado ya en el desglose de costos), pero como atributo de la moto
-  // el mayor cc es el valor superior.
-  const ccVals = scored.map(s => ({ id: s.id, v: s.cc }));
+  const ccVals = withCosts.map(m => ({ id: m.id, v: Number(m.engineCc) || 0 }));
   applyWithTies(ccVals, false, winners, losers, ties, 'engineCc');
 
-  return { winners, losers, ties, scored };
+  // ── Score ponderado para determinar ganador global ────────────────────────
+  // Se añade gastoAnual y precio como campos del objeto para que
+  // computeWeightedScores pueda acceder a ellos por clave.
+  const motosConScore = withCosts.map(m => ({
+    ...m,
+    _gastoAnual: m._gastoAnual,
+    _precio:     Number(m.price) || 0,
+    _kmpl:       Number(m.consumptionKmpl) || 1,
+  }));
+
+  const criteria = [
+    { key: '_gastoAnual', weight: 0.50, higherIsBetter: false },
+    { key: '_precio',     weight: 0.35, higherIsBetter: false },
+    { key: '_kmpl',       weight: 0.15, higherIsBetter: false },
+  ];
+
+  let weightResult = computeWeightedScores(motosConScore, criteria);
+
+  // Penalización por exceder el presupuesto: si la moto ganadora supera el
+  // presupuesto del usuario, reducir su score un 30% y recalcular.
+  if (budget && weightResult.overallWinnerId) {
+    const winnerMoto = motosConScore.find(m => m.id === weightResult.overallWinnerId);
+    if (winnerMoto && Number(winnerMoto.price) > budget) {
+      const penalized = motosConScore.map(m => ({
+        ...m,
+        _gastoAnual: Number(m.price) > budget ? m._gastoAnual * 1.30 : m._gastoAnual,
+        _precio:     Number(m.price) > budget ? m._precio     * 1.30 : m._precio,
+      }));
+      weightResult = computeWeightedScores(penalized, criteria);
+    }
+  }
+
+  return {
+    winners, losers, ties,
+    overallWinnerId: weightResult.overallWinnerId,
+    isTotalTie:      weightResult.isTotalTie,
+    scores:          weightResult.scores,
+  };
 }
 
 // ── Modo POTENCIA ─────────────────────────────────────────────────────────────
+/**
+ * Modo POTENCIA — ganador por mayor score de desempeño.
+ *
+ * Pesos:
+ *   HP (potencia)      50% — indicador más directo de desempeño real
+ *   Cilindraje (cc)    30% — relacionado con HP pero no equivalente
+ *   Transmisión        20% — más marchas = mayor control a distintas velocidades
+ *
+ * No depende del perfil del usuario.
+ */
 function computePotencia(motos) {
   const winners = {};
   const losers  = {};
-  const ties    = {}; // [NUEVO]
+  const ties    = {};
 
   function numeric(key) {
     return motos.map(m => ({ id: m.id, v: Number(m[key]) })).filter(x => !isNaN(x.v) && x.v > 0);
@@ -215,34 +338,89 @@ function computePotencia(motos) {
   }).filter(x => x.v > 0);
   applyWithTies(withGears, false, winners, losers, ties, 'transmission');
 
-  return { winners, losers, ties };
+  // Score ponderado: enriquecer motos con número de marchas extraído
+  const motosConMarchas = motos.map(m => {
+    const match = String(m.transmission || '').match(/(\d+)/);
+    return { ...m, _marchas: match ? parseInt(match[1]) : 0 };
+  });
+
+  const criteria = [
+    { key: 'powerHp',   weight: 0.50, higherIsBetter: true },
+    { key: 'engineCc',  weight: 0.30, higherIsBetter: true },
+    { key: '_marchas',  weight: 0.20, higherIsBetter: true },
+  ];
+
+  const weightResult = computeWeightedScores(motosConMarchas, criteria);
+
+  return {
+    winners, losers, ties,
+    overallWinnerId: weightResult.overallWinnerId,
+    isTotalTie:      weightResult.isTotalTie,
+    scores:          weightResult.scores,
+  };
 }
 
 // ── Modo COMODIDAD ────────────────────────────────────────────────────────────
+/**
+ * Modo COMODIDAD — ganador por mejor adaptación ergonómica al usuario.
+ *
+ * Pesos:
+ *   Peso (kg)          60% — moto más ligera = más fácil de maniobrar siempre
+ *   Altura de asiento  40% — adaptada a la estatura del usuario (perfil)
+ *
+ * Para la altura de asiento, en lugar de "menor siempre gana", se calcula
+ * la distancia absoluta al inseam ideal del usuario (estatura × 0.47).
+ * La moto con menor distancia al ideal recibe el mejor score en ese criterio.
+ * Si no hay perfil, se usa directamente "menor altura = mejor".
+ */
 function computeComodidad(motos, profile) {
   const winners = {};
   const losers  = {};
-  const ties    = {}; // [NUEVO]
+  const ties    = {};
   const userHeight = profile ? Number(profile.heightCm) : null;
+  const idealSeat  = userHeight ? userHeight * 0.47 : null;
 
-  // Peso: menor → mejor
+  // Peso: menor → mejor (para tabla de atributos)
   const weightVals = motos.map(m => ({ id: m.id, v: Number(m.weightKg) }))
     .filter(x => !isNaN(x.v) && x.v > 0);
   applyWithTies(weightVals, true, winners, losers, ties, 'weightKg');
 
-  // Altura asiento
+  // Altura asiento (para tabla de atributos)
   const heightVals = motos.map(m => ({ id: m.id, v: Number(m.seatHeightCm) }))
     .filter(x => !isNaN(x.v) && x.v > 0);
-
   if (heightVals.length >= 2) {
-    const maxComfortableHeight = userHeight ? userHeight * 0.47 : Infinity;
-    const comfortable = heightVals.filter(x => x.v <= maxComfortableHeight);
-    const pool = comfortable.length > 0 ? comfortable : heightVals;
-    // Para seatHeight usamos el pool (cómodos primero)
-    applyWithTies(pool, true, winners, losers, ties, 'seatHeightCm');
+    if (idealSeat) {
+      // Menor distancia al ideal → mejor
+      const distVals = heightVals.map(x => ({ id: x.id, v: Math.abs(x.v - idealSeat) }));
+      applyWithTies(distVals, true, winners, losers, ties, 'seatHeightCm');
+    } else {
+      applyWithTies(heightVals, true, winners, losers, ties, 'seatHeightCm');
+    }
   }
 
-  return { winners, losers, ties };
+  // ── Score ponderado para ganador global ───────────────────────────────────
+  // Para el score de altura de asiento se usa la distancia al ideal (menor = mejor).
+  // Si no hay perfil, se usa el valor directo (menor = mejor).
+  const motosConDist = motos.map(m => ({
+    ...m,
+    _seatDist: idealSeat
+      ? Math.abs((Number(m.seatHeightCm) || 0) - idealSeat)
+      : Number(m.seatHeightCm) || 0,
+  }));
+
+  const criteria = [
+    { key: 'weightKg',  weight: 0.60, higherIsBetter: false },
+    { key: '_seatDist', weight: 0.40, higherIsBetter: false }, // menor distancia = mejor
+  ];
+
+  const weightResult = computeWeightedScores(motosConDist, criteria);
+
+  return {
+    winners, losers, ties,
+    overallWinnerId: weightResult.overallWinnerId,
+    isTotalTie:      weightResult.isTotalTie,
+    scores:          weightResult.scores,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -671,9 +849,18 @@ function EconomicoBreakdown({ motos, compared }) {
 }
 
 // ── Mini-tarjeta de moto (foto + nombre + botón quitar) ───────────────────────
-function MotoCard({ moto, onRemove, navigate }) {
+/**
+ * [MODIFICADO] Recibe `isOverallWinner` (bool) para resaltar la tarjeta
+ * con borde y badge verde cuando esta moto es la ganadora global de la
+ * comparación. Solo se activa cuando `compared === true`.
+ */
+function MotoCard({ moto, onRemove, navigate, isOverallWinner }) {
   return (
-    <div className="flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100">
+    <div className={`flex flex-col rounded-2xl overflow-hidden shadow-sm border transition-all duration-500 ${
+      isOverallWinner
+        ? 'border-emerald-400 bg-emerald-50 shadow-emerald-100 shadow-md'
+        : 'bg-white border-slate-100'
+    }`}>
       <div className="relative h-44 bg-slate-50">
         <img src={moto.imageUrl || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=400&h=280&fit=crop'}
           alt={`${moto.brand} ${moto.model}`} className="w-full h-full object-contain p-3 transition-transform duration-500 hover:scale-105" />
@@ -682,15 +869,30 @@ function MotoCard({ moto, onRemove, navigate }) {
           aria-label="Quitar de comparación">
           <span className="material-symbols-outlined text-sm">cancel</span>
         </button>
+        {/* [NUEVO] Badge de ganadora — solo visible cuando es la ganadora global */}
+        {isOverallWinner && (
+          <div className="absolute top-3 left-3 flex items-center gap-1 bg-emerald-500 text-white px-2.5 py-1 rounded-full shadow-sm">
+            <span className="material-symbols-outlined text-sm">emoji_events</span>
+            <span className="text-[10px] font-black uppercase tracking-widest">Ganadora</span>
+          </div>
+        )}
       </div>
       <div className="px-5 py-4">
-        <p className="font-headline text-[10px] font-bold text-slate-400 uppercase tracking-widest">{moto.brand}</p>
-        <h3 className="font-headline text-xl font-black text-primary leading-tight uppercase">{moto.model}</h3>
-        {moto.year && <p className="text-xs text-slate-400 mt-0.5">{moto.year}</p>}
+        <p className={`font-headline text-[10px] font-bold uppercase tracking-widest ${isOverallWinner ? 'text-emerald-600' : 'text-slate-400'}`}>
+          {moto.brand}
+        </p>
+        <h3 className={`font-headline text-xl font-black leading-tight uppercase ${isOverallWinner ? 'text-emerald-700' : 'text-primary'}`}>
+          {moto.model}
+        </h3>
+        {moto.year && <p className={`text-xs mt-0.5 ${isOverallWinner ? 'text-emerald-600' : 'text-slate-400'}`}>{moto.year}</p>}
       </div>
       <div className="px-5 pb-4">
         <button onClick={() => navigate(`/motorcycles/${moto.id}`)}
-          className="w-full bg-primary text-white py-2 rounded-xl font-bold uppercase tracking-widest text-[10px] hover:bg-primary/90 transition-colors">
+          className={`w-full py-2 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-colors ${
+            isOverallWinner
+              ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+              : 'bg-primary hover:bg-primary/90 text-white'
+          }`}>
           Ver detalle
         </button>
       </div>
@@ -732,6 +934,10 @@ export default function ComparisonPage() {
   const [losers, setLosers]       = useState({});
   // [NUEVO] Estado para empates
   const [ties, setTies]           = useState({});
+  // [NUEVO] ID de la moto ganadora global (para resaltar la tarjeta)
+  const [overallWinnerId, setOverallWinnerId] = useState(null);
+  // [NUEVO] true cuando todas las motos empatan en todos los atributos
+  const [isTotalTie, setIsTotalTie]           = useState(false);
   const [saving, setSaving]       = useState(false);
   const [saved, setSaved]         = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -801,6 +1007,9 @@ export default function ComparisonPage() {
     setWinners(result.winners);
     setLosers(result.losers);
     setTies(result.ties || {});
+    // [NUEVO] Propagar ganador global también en el auto-resaltado del historial
+    setOverallWinnerId(result.overallWinnerId ?? null);
+    setIsTotalTie(result.isTotalTie ?? false);
     setCompared(true);
     // Sin animación de pulso para la carga automática; sería distractor
     // y el usuario no ha "pedido" la comparación activamente.
@@ -815,8 +1024,10 @@ export default function ComparisonPage() {
     setAnimating(false);
     setWinners({});
     setLosers({});
-    // [NUEVO] Limpiar empates al resetear
     setTies({});
+    // [NUEVO] Limpiar ganador global y flag de empate total al resetear
+    setOverallWinnerId(null);
+    setIsTotalTie(false);
     setSaved(false);
   }
 
@@ -851,8 +1062,10 @@ export default function ComparisonPage() {
 
     setWinners(result.winners);
     setLosers(result.losers);
-    // [NUEVO] Actualizar el estado de empates
     setTies(result.ties || {});
+    // [NUEVO] Propagar ganador global y flag de empate total desde el resultado
+    setOverallWinnerId(result.overallWinnerId ?? null);
+    setIsTotalTie(result.isTotalTie ?? false);
     setCompared(true);
     setAnimating(true);
     setTimeout(() => setAnimating(false), 900);
@@ -950,12 +1163,36 @@ export default function ComparisonPage() {
                 moto={moto}
                 onRemove={() => handleRemove(idx)}
                 navigate={navigate}
+                  isOverallWinner={compared && overallWinnerId === moto.id}
               />
             ) : (
               <EmptySlot key={idx} onClick={() => setPickerSlot(idx)} />
             )
           )}
         </div>
+
+        {/* [NUEVO] Modal de empate total — aparece cuando compared===true y todas
+            las motos empataron en todos sus atributos del modo activo */}
+        {compared && isTotalTie && (
+          <div className="mt-6 mx-auto max-w-2xl">
+            <div className="flex items-start gap-4 px-6 py-5 rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <span className="material-symbols-outlined text-3xl text-slate-400 flex-shrink-0 mt-0.5">
+                balance
+              </span>
+              <div>
+                <p className="font-headline font-black text-primary text-base uppercase tracking-wide">
+                  ¡Empate total!
+                </p>
+                <p className="text-sm text-slate-500 mt-1 leading-relaxed">
+                  Las motos presentaron empate en todos sus atributos bajo este tipo de comparación.
+                  La elección ahora queda en tus manos — considera factores como el diseño,
+                  la red de concesionarios, disponibilidad de repuestos o simplemente
+                  cuál te genera más emoción al verla.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Tabla de atributos ── */}
         {activeMotos.length >= 2 && (
