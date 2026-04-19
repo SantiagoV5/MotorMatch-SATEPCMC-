@@ -191,6 +191,21 @@ function computeWeightedScores(motos, criteria) {
 }
 
 // ── Modo GENERAL ──────────────────────────────────────────────────────────────
+/**
+ * Modo GENERAL — evalúa todos los atributos sin datos del usuario.
+ *
+ * Score ponderado sobre 5 atributos (pesos decididos por relevancia práctica):
+ *
+ *   Potencia (HP)     30% — indicador de desempeño más valorado por el usuario promedio
+ *   Precio            25% — factor de decisión clave en cualquier compra
+ *   Cilindraje (cc)   20% — capacidad del motor, relacionado con HP pero independiente
+ *   Consumo (km/l)    15% — economía operativa a largo plazo
+ *   Peso (kg)         10% — maniobrabilidad y comodidad general
+ *
+ * La transmisión (marchas) se resalta atributo a atributo en la tabla
+ * pero no entra en el score global: su impacto es secundario en una
+ * evaluación general y no tiene una dirección universal de "mejor".
+ */
 function computeGeneral(motos) {
   const winners = {};
   const losers  = {};
@@ -200,6 +215,7 @@ function computeGeneral(motos) {
     return motos.map(m => ({ id: m.id, v: Number(m[key]) })).filter(x => !isNaN(x.v) && x.v > 0);
   }
 
+  // Resaltado atributo a atributo para la tabla
   applyWithTies(numeric('price'),           true,  winners, losers, ties, 'price');
   applyWithTies(numeric('engineCc'),        false, winners, losers, ties, 'engineCc');
   applyWithTies(numeric('powerHp'),         false, winners, losers, ties, 'powerHp');
@@ -212,8 +228,23 @@ function computeGeneral(motos) {
   }).filter(x => x.v > 0);
   applyWithTies(withGears, false, winners, losers, ties, 'transmission');
 
-  // Sin ganador global para modo general (se implementará en una fase posterior)
-  return { winners, losers, ties, overallWinnerId: null, isTotalTie: false };
+  // Score ponderado para determinar la ganadora global
+  const criteria = [
+    { key: 'powerHp',         weight: 0.30, higherIsBetter: true  },
+    { key: 'price',           weight: 0.25, higherIsBetter: false },
+    { key: 'engineCc',        weight: 0.20, higherIsBetter: true  },
+    { key: 'consumptionKmpl', weight: 0.15, higherIsBetter: false },
+    { key: 'weightKg',        weight: 0.10, higherIsBetter: false },
+  ];
+
+  const weightResult = computeWeightedScores(motos, criteria);
+
+  return {
+    winners, losers, ties,
+    overallWinnerId: weightResult.overallWinnerId,
+    isTotalTie:      weightResult.isTotalTie,
+    scores:          weightResult.scores,
+  };
 }
 
 // ── Modo ECONÓMICA ────────────────────────────────────────────────────────────
@@ -907,11 +938,22 @@ export default function ComparisonPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const prefillMoto  = location.state?.prefillMoto  || null;
-  const prefillSlots = location.state?.prefillSlots || null;
-  // [MODIFICADO] Se lee el tipo de comparación guardado en el historial
-  const prefillMode  = location.state?.prefillMode  || null;
-  const fromHistory  = Boolean(prefillSlots);
+  const prefillMoto    = location.state?.prefillMoto    || null;
+  const prefillSlots   = location.state?.prefillSlots   || null;
+  // Se lee el tipo de comparación y el ID de la ganadora guardados en el historial
+  const prefillMode    = location.state?.prefillMode    || null;
+  // prefillWinnerId: ID de la moto ganadora guardado en la BD (null = empate total)
+  // Se usa para restaurar el resaltado de la tarjeta al ver el detalle del historial
+  // sin necesidad de recalcular el score (que depende de datos del perfil que podrían
+  // haber cambiado desde que se realizó la comparación original).
+  const prefillWinnerId = location.state?.prefillWinnerId ?? null;
+  // fromHistory indica que la página fue abierta desde el historial.
+  // Se usa como ref (no como state) porque:
+  //   - No necesita causar re-renders.
+  //   - Debe poder cambiar a false tras el primer auto-resaltado, de modo que
+  //     cualquier presión manual del botón "Comparar" siempre guarde la comparación,
+  //     incluso cuando la página se abrió desde el historial.
+  const fromHistoryRef = useRef(Boolean(prefillSlots));
 
   const [slots, setSlots] = useState(() => {
     if (prefillSlots) return prefillSlots;
@@ -934,10 +976,16 @@ export default function ComparisonPage() {
   const [losers, setLosers]       = useState({});
   // [NUEVO] Estado para empates
   const [ties, setTies]           = useState({});
-  // [NUEVO] ID de la moto ganadora global (para resaltar la tarjeta)
-  const [overallWinnerId, setOverallWinnerId] = useState(null);
-  // [NUEVO] true cuando todas las motos empatan en todos los atributos
-  const [isTotalTie, setIsTotalTie]           = useState(false);
+  // ID de la moto ganadora global (para resaltar la tarjeta).
+  // Al venir del historial se inicializa con el valor guardado en la BD
+  // para que la tarjeta ganadora se resalte en cuanto carga la página,
+  // antes incluso de que termine el enriquecimiento de slots.
+  const [overallWinnerId, setOverallWinnerId] = useState(prefillWinnerId);
+  // true cuando todas las motos empatan en todos los atributos del modo
+  // Al venir del historial con prefillWinnerId===null, isTotalTie arranca
+  // en false y se recalcula en el useEffect de auto-resaltado una vez que
+  // los datos estén disponibles.
+  const [isTotalTie, setIsTotalTie] = useState(false);
   const [saving, setSaving]       = useState(false);
   const [saved, setSaved]         = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -985,18 +1033,19 @@ export default function ComparisonPage() {
    * de nuevo porque `fromHistory` sigue siendo true).
    */
   useEffect(() => {
-    // Solo aplica cuando viene del historial y la carga ya terminó
-    if (!fromHistory) return;
+    // Solo aplica cuando la página se abrió desde el historial y aún no
+    // se ha consumido el auto-resaltado (fromHistoryRef.current === true).
+    if (!fromHistoryRef.current) return;
     if (questLoading) return;
 
-    // Esperar a que los slots tengan datos enriquecidos:
-    // los slots del prefill solo traen {id, brand, model, imageUrl, engineCc},
-    // mientras que los enriquecidos incluyen price, powerHp, weightKg, etc.
+    // Esperar a que los slots tengan datos enriquecidos.
+    // Los slots del prefill solo traen {id, brand, model, imageUrl, engineCc};
+    // los enriquecidos incluyen price, powerHp, weightKg, etc.
     const enriched = activeMotos.filter(m => m.price || m.powerHp || m.weightKg);
     if (enriched.length < 2) return;
 
-    // Calcular resultados según el modo guardado en el historial
-    let result = { winners: {}, losers: {}, ties: {} };
+    // Calcular winners/losers/ties para los resaltados de la tabla de atributos
+    let result = { winners: {}, losers: {}, ties: {}, overallWinnerId: null, isTotalTie: false };
     switch (activeMode) {
       case 'general':   result = computeGeneral(activeMotos); break;
       case 'economica': result = computeEconomica(activeMotos, questProfile); break;
@@ -1007,17 +1056,29 @@ export default function ComparisonPage() {
     setWinners(result.winners);
     setLosers(result.losers);
     setTies(result.ties || {});
-    // [NUEVO] Propagar ganador global también en el auto-resaltado del historial
-    setOverallWinnerId(result.overallWinnerId ?? null);
-    setIsTotalTie(result.isTotalTie ?? false);
+
+    // Para el resaltado de la tarjeta ganadora usamos el ID guardado en la BD
+    // (prefillWinnerId), ya que refleja quién ganó en el momento de la comparación
+    // original. Solo recurrimos al score recalculado si no había ganadora guardada
+    // (comparaciones antiguas sin la columna winner_bike_id).
+    if (prefillWinnerId !== undefined) {
+      // prefillWinnerId ya está en el estado (inicializado en useState),
+      // no hace falta volver a setearlo — preservamos el valor de la BD.
+      // isTotalTie: registrado en la BD cuando prefillWinnerId es null.
+      setIsTotalTie(prefillWinnerId === null);
+    } else {
+      // Comparación antigua sin winner_bike_id: usar el score recalculado.
+      setOverallWinnerId(result.overallWinnerId ?? null);
+      setIsTotalTie(result.isTotalTie ?? false);
+    }
+
     setCompared(true);
-    // Sin animación de pulso para la carga automática; sería distractor
-    // y el usuario no ha "pedido" la comparación activamente.
+    // Marcar el auto-resaltado como consumido: cualquier acción manual
+    // posterior (cambiar modo, presionar Comparar) ya debe guardar normalmente.
+    fromHistoryRef.current = false;
+    // Sin animación de pulso en la carga automática desde el historial.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromHistory, questLoading, slots]);
-  // Nota: `activeMotos` y `activeMode` se derivan de `slots` y del state inicial,
-  // por lo que `slots` como dependencia es suficiente para disparar el efecto
-  // cuando los slots enriquecidos reemplazan a los básicos del prefill.
+  }, [questLoading, slots]);
 
   function resetComparison() {
     setCompared(false);
@@ -1070,18 +1131,22 @@ export default function ComparisonPage() {
     setAnimating(true);
     setTimeout(() => setAnimating(false), 900);
 
-    // [MODIFICADO] Guardar comparación con el tipo activo (solo si no viene del historial)
-    if (!fromHistory) {
-      setSaving(true);
-      try {
-        // Se pasa activeMode como segundo argumento para guardarlo en la BD
-        await saveComparison(activeMotos.map(m => m.id), activeMode);
-        setSaved(true);
-      } catch (err) {
-        console.error('Error guardando comparación:', err);
-      } finally {
-        setSaving(false);
-      }
+    // El botón "Comparar" siempre guarda la comparación, incluso si la página
+    // fue abierta desde el historial. El auto-resaltado pone fromHistoryRef.current
+    // a false antes de que el usuario pueda presionar el botón, por lo que no hay
+    // riesgo de doble guardado con la comparación original del historial.
+    setSaving(true);
+    try {
+      await saveComparison(
+        activeMotos.map(m => m.id),
+        activeMode,
+        result.overallWinnerId ?? null,
+      );
+      setSaved(true);
+    } catch (err) {
+      console.error('Error guardando comparación:', err);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -1130,8 +1195,8 @@ export default function ComparisonPage() {
           <div className="space-y-2">
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">MotorMatch</p>
             <h1 className="text-5xl md:text-7xl font-headline font-black tracking-tighter text-primary uppercase leading-none">
-              BATALLA A <br />
-              <span style={{ color: '#FF6B35' }} className="italic">DOS RUEDAS</span>
+              BATALLA DE LAS <br />
+              <span style={{ color: '#FF6B35' }} className="italic">MÁQUINAS</span>
             </h1>
           </div>
           <div className="flex gap-3 self-start md:self-auto">
