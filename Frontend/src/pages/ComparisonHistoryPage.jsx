@@ -16,6 +16,17 @@ function formatDate(iso) {
   });
 }
 
+/**
+ * [NUEVO] Mapa de etiquetas y colores para los tipos de comparación.
+ * Permite mostrar el tipo de comparación de forma visual en cada tarjeta.
+ */
+const MODE_LABELS = {
+  general:   { label: 'General',   icon: 'compare_arrows', color: 'bg-blue-100 text-blue-700' },
+  economica: { label: 'Económica', icon: 'savings',        color: 'bg-green-100 text-green-700' },
+  potencia:  { label: 'Potencia',  icon: 'bolt',           color: 'bg-orange-100 text-orange-700' },
+  comodidad: { label: 'Comodidad', icon: 'accessibility',  color: 'bg-purple-100 text-purple-700' },
+};
+
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
 function CardSkeleton() {
@@ -41,21 +52,48 @@ function CardSkeleton() {
 
 // ── Tarjeta de comparación ────────────────────────────────────────────────────
 
+/**
+ * [MODIFICADO] ComparisonCard ahora muestra el tipo de comparación
+ * encima del botón "Ver comparación" usando la etiqueta del modo.
+ */
 function ComparisonCard({ comparison, onDelete, onView, deleting }) {
-  const { bikes, comparisonDate } = comparison;
+  const { bikes, comparisonDate, comparisonType, winnerBikeId } = comparison;
+
+  const modeInfo   = MODE_LABELS[comparisonType] || MODE_LABELS.general;
+  // winnerBikeId === null  → empate total registrado en BD
+  // winnerBikeId === number → hay ganadora
+  // winnerBikeId === undefined → comparación antigua sin el campo (no resaltar)
+  const hasTie     = winnerBikeId === null && 'winnerBikeId' in comparison;
+  const hasWinner  = typeof winnerBikeId === 'number';
 
   return (
     <article className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col lg:flex-row transition-shadow hover:shadow-md">
 
-      {/* Motos — flex en lugar de grid para que el VS quede siempre centrado */}
+      {/* Motos */}
       <div className="flex-1 p-6 md:p-8 bg-slate-50/50 flex items-center">
         <div className="flex-1 flex items-center justify-around gap-2">
-          {bikes.map((bike, idx) => (
+          {bikes.map((bike, idx) => {
+            const isWinner = hasWinner && bike.id === winnerBikeId;
+            const isTied   = hasTie;
+            return (
             <div key={bike.id} className="flex items-center gap-2 flex-1 min-w-0">
-              {/* Moto */}
-              <div className="group flex flex-col items-center text-center gap-2 flex-1 min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 truncate w-full">{bike.brand}</p>
-                <p className="font-headline font-black text-primary text-sm leading-tight uppercase truncate w-full">{bike.model}</p>
+              {/* Moto — resaltada si es ganadora (verde) o empate (gris) */}
+              <div className={`group flex flex-col items-center text-center gap-2 flex-1 min-w-0 rounded-xl p-2 transition-all ${
+                isWinner ? 'bg-emerald-50 ring-1 ring-emerald-300' : isTied ? 'bg-slate-100 ring-1 ring-slate-200' : ''
+              }`}>
+                {/* Badge ganadora o empate */}
+                {isWinner && (
+                  <span className="flex items-center gap-0.5 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">
+                    <span className="material-symbols-outlined text-[11px]">emoji_events</span> Ganadora
+                  </span>
+                )}
+                {isTied && (
+                  <span className="flex items-center gap-0.5 bg-slate-400 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">
+                    <span className="material-symbols-outlined text-[11px]">balance</span> Empate
+                  </span>
+                )}
+                <p className={`text-[10px] font-bold uppercase tracking-widest truncate w-full ${isWinner ? 'text-emerald-600' : 'text-slate-400'}`}>{bike.brand}</p>
+                <p className={`font-headline font-black text-sm leading-tight uppercase truncate w-full ${isWinner ? 'text-emerald-700' : 'text-primary'}`}>{bike.model}</p>
                 <div className="w-full h-24 flex items-center justify-center">
                   <img
                     src={bike.imageUrl || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=200&h=140&fit=crop'}
@@ -64,7 +102,9 @@ function ComparisonCard({ comparison, onDelete, onView, deleting }) {
                   />
                 </div>
                 {bike.engineCc && (
-                  <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full text-[9px] font-bold">{bike.engineCc}cc</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${isWinner ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                    {bike.engineCc}cc
+                  </span>
                 )}
               </div>
               {/* VS separador — solo entre motos, no al final */}
@@ -74,7 +114,8 @@ function ComparisonCard({ comparison, onDelete, onView, deleting }) {
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -86,6 +127,16 @@ function ComparisonCard({ comparison, onDelete, onView, deleting }) {
         </div>
 
         <div className="flex flex-col gap-3 mt-auto">
+          {/*
+            [NUEVO] Etiqueta del tipo de comparación.
+            Se muestra encima del botón "Ver comparación" indicando
+            con qué tipo de comparación fue realizada.
+          */}
+          <div className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold ${modeInfo.color}`}>
+            <span className="material-symbols-outlined text-sm">{modeInfo.icon}</span>
+            Comparación {modeInfo.label}
+          </div>
+
           <button
             onClick={() => onView(comparison)}
             className="w-full py-3 rounded-xl font-headline font-bold uppercase tracking-widest text-xs text-white flex items-center justify-center gap-2 transition-all active:scale-95"
@@ -159,7 +210,7 @@ export default function ComparisonHistoryPage() {
   const [history, setHistory]           = useState([]);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
-  const [deleting, setDeleting]         = useState(null);   // id de la que se está borrando
+  const [deleting, setDeleting]         = useState(null);
   const [showConfirm, setShowConfirm]   = useState(false);
   const [clearLoading, setClearLoading] = useState(false);
 
@@ -204,16 +255,28 @@ export default function ComparisonHistoryPage() {
     }
   }
 
-  // Al ver los detalles: navegar a /comparison con las motos precargadas
+  /**
+   * [MODIFICADO] Al ver los detalles de una comparación del historial,
+   * se pasa también el tipo de comparación (prefillMode) en el state
+   * para que ComparisonPage inicialice el modo correcto y ejecute la
+   * comparación con ese tipo.
+   */
   function handleView(comparison) {
-    // Buscar los datos completos de las motos del historial para pasarlos como prefill
-    // Solo tenemos datos básicos (id, brand, model, imageUrl, engineCc) — suficiente para los slots
     const motos = comparison.bikes.map(b => ({
       id: b.id, brand: b.brand, model: b.model,
       imageUrl: b.imageUrl, engineCc: b.engineCc,
     }));
     const slots = [motos[0] || null, motos[1] || null, motos[2] || null];
-    navigate('/comparison', { state: { prefillSlots: slots } });
+    navigate('/comparison', {
+      state: {
+        prefillSlots:   slots,
+        prefillMode:    comparison.comparisonType || 'general',
+        // Pasar el ID de la ganadora guardada en la BD para que ComparisonPage
+        // la resalte directamente, sin necesidad de recalcular el score.
+        // null significa empate total registrado; undefined = no enviado (backwards compat).
+        prefillWinnerId: comparison.winnerBikeId ?? null,
+      },
+    });
   }
 
   return (
