@@ -20,6 +20,7 @@ model User {
   heightCm              Int?             @map("height_cm")
   weightKg              Decimal?         @map("weight_kg") @db.Decimal(5, 2)
   ridingExperience      String?          @map("riding_experience") @db.VarChar(20)
+  monthlyMileage        Int?             @map("monthly_mileage")
   preferredBrands       String[]         @map("preferred_brands")
   budgetRange           Json?            @map("budget_range")
   monthlyIncome         Decimal?         @map("monthly_income") @db.Decimal(15, 2)

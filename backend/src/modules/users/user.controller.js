@@ -18,4 +18,14 @@ async function updateMyProfile(req, res, next) {
 	}
 }
 
-module.exports = { getMyProfile, updateMyProfile }
+async function updateMileage(req, res, next) {
+        try {
+                const { monthlyMileage } = req.body
+                const profile = await userService.updateMileage(req.user.id, monthlyMileage)
+                res.json({ success: true, message: 'Kilometraje actualizado.', data: profile })
+        } catch (err) {
+                next(err)
+        }
+}
+
+module.exports = { getMyProfile, updateMyProfile, updateMileage }

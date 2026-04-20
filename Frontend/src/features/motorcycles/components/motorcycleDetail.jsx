@@ -4,6 +4,7 @@ import Header from '../../../shared/components/layout/header';
 import { addFavorite, removeFavorite, getMyFavoriteIds } from '../../favorites/services/favoritesService';
 import { motorcycleService } from '../services/motorcycleService';
 import { CostSimulatorModal } from '../../costSimulator';
+import MaintenanceEstimator from './MaintenanceEstimator';
 
 export function MotorcycleDetail() {
   const { id } = useParams();
@@ -261,6 +262,9 @@ export function MotorcycleDetail() {
             </ul>
           </div>
         </section>
+
+
+        <MaintenanceEstimator motorcycle={motorcycle} />
 
         {/* Galería */}
         {allImages.length > 0 && (

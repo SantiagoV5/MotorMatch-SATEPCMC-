@@ -8,5 +8,6 @@ const router = Router()
 
 router.get('/me', requireAuth, getMyProfile)
 router.put('/me', requireAuth, validate(updateUserSchema), updateMyProfile)
+router.patch('/me/mileage', requireAuth, require('./user.controller').updateMileage)
 
 module.exports = router
