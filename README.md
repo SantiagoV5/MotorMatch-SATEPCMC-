@@ -36,6 +36,7 @@ docker-compose up
 
 - **[QUICKSTART.md](QUICKSTART.md)** - Guía rápida (⭐ Empieza aquí)
 - **[GUIA_DOCKER.md](GUIA_DOCKER.md)** - Guía completa con todos los detalles
+- **[k8s/GUIA KUBERNETES.md](k8s/GUIA%20KUBERNETES.md)** - Guía para ejecutar MotorMatch en Kubernetes local con `k8s/base` y `k8s/overlays/local` conectado a Supabase
 - [Prisma ORM](https://www.prisma.io/docs/) - Base de datos
 - [Express.js](https://expressjs.com/) - Backend
 - [React](https://react.dev/) - Frontend
@@ -163,6 +164,10 @@ cd Frontend
 npm install
 npm run dev  # Inicia en http://localhost:5173
 ```
+
+## ☸️ Kubernetes Local
+
+Si quieres probar el sistema en un cluster local, usa la guía de [k8s/GUIA KUBERNETES.md](k8s/GUIA%20KUBERNETES.md). Ese flujo está pensado para desarrollo local y se apoya en [k8s/local.sh](k8s/local.sh), que construye las imagenes, toma las credenciales reales de Supabase desde el `.env` de la raiz, aplica el overlay local y expone el frontend en `http://localhost:8080`.
 
 ---
 
