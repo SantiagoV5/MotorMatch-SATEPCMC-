@@ -1,13 +1,25 @@
 import apiClient from '../../../services/apiClient';
 
-export async function saveComparison(bikeIds) {
-  const { data } = await apiClient.post('/comparisons', { bikeIds });
+/**
+ * Guarda una comparación en la base de datos.
+ *
+ * @param {number[]}    bikeIds        - IDs de las motos (2 o 3)
+ * @param {string}      comparisonType - 'general' | 'economica' | 'potencia' | 'comodidad'
+ * @param {number|null} winnerBikeId   - ID de la moto ganadora; null si hubo empate total
+ */
+export async function saveComparison(bikeIds, comparisonType = 'general', winnerBikeId = null) {
+  const { data } = await apiClient.post('/comparisons', {
+    bikeIds,
+    comparisonType,
+    winnerBikeId: winnerBikeId ?? null,
+  });
   return data.data;
 }
 
 export async function getComparisonHistory() {
   const { data } = await apiClient.get('/comparisons');
-  return data.data; // array of { id, comparisonDate, bikes: [{id,brand,model,imageUrl,engineCc}] }
+  // Cada elemento: { id, comparisonDate, comparisonType, winnerBikeId, bikes: [...] }
+  return data.data;
 }
 
 export async function deleteComparison(id) {

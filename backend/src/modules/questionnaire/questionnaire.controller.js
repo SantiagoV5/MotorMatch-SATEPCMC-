@@ -68,4 +68,25 @@ async function submitQuestionnaire(req, res, next) {
   }
 }
 
-module.exports = { submitQuestionnaire, getMyQuestionnaire, getMyRecommendations }
+
+// GET /api/questionnaire/my/profile  — datos completos para la comparación
+async function getMyQuestionnaireProfile(req, res, next) {
+  try {
+    const questionnaire = await prisma.questionnaire.findFirst({
+      where: { userId: req.user.id },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        budget: true,
+        heightCm: true,
+        usageType: true,
+        completedAt: true,
+      },
+    })
+    res.json({ exists: !!questionnaire, profile: questionnaire || null })
+  } catch (err) {
+    next(err)
+  }
+}
+
+module.exports = { submitQuestionnaire, getMyQuestionnaire, getMyRecommendations, getMyQuestionnaireProfile }

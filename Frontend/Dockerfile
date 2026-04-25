@@ -1,14 +1,18 @@
 
-FROM node:20-alpine
+FROM node:20-alpine AS build
 
 WORKDIR /app/frontend
 
-# Copia package.json
 COPY package*.json ./
+RUN npm ci
 
-# Copia el código
-RUN npm install
 COPY . .
+RUN npm run build
 
-EXPOSE 5173
-CMD ["npm", "run", "dev", "--", "--host"]
+FROM nginx:1.27-alpine
+
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY --from=build /app/frontend/dist /usr/share/nginx/html
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
