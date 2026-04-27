@@ -6,7 +6,8 @@ Este directorio contiene una base reutilizable y un overlay local para ejecutar 
 
 - `k8s/base`: recursos compartidos del sistema, como backend y frontend.
 - `k8s/overlays/local`: configuracion local, namespace y conexion a la base de datos de Supabase.
-- `k8s/local.sh`: script que levanta el entorno local usando el overlay.
+- `k8s/local.sh`: script que levanta el entorno local usando el overlay (para sistemas Linux/Mac).
+- `k8s/local.ps1`: script de PowerShell equivalente diseñado para Windows nativo sin necesidad de WSL.
 
 ## Instalacion de dependencias
 
@@ -53,49 +54,23 @@ bash --version
 
 ### Windows
 
-La opcion recomendada es usar Windows con WSL2 y Ubuntu. Asi puedes ejecutar el script Bash sin adaptaciones y reutilizar la misma guia que en Linux.
+La opcion recomendada es usar PowerShell de forma nativa con Docker Desktop y el script `local.ps1`. Estar atado a WSL2 puede generar problemas de lectura en archivos .env e incongruencias en red con el contenedor.
 
-1. Instala WSL2 y Ubuntu:
+1. Instala [Docker Desktop](https://www.docker.com/products/docker-desktop/) (recomendado) y asegúrate de que el motor 'Docker daemon' esté ejecutándose y visible en tu bandeja del sistema.
+
+2. En vez de WSL2, abre PowerShell como Administrador y descarga las dependencias nativas para Windows usando Winget:
 
 ```powershell
-wsl --install -d Ubuntu
+winget install Kubernetes.kind
+winget install Kubernetes.cli
 ```
 
-2. Instala Docker Desktop y activa la integracion con WSL2.
+3. Verifica que instalaste las versiones correctas:
 
-3. Abre Ubuntu desde WSL y ejecuta el proyecto desde esa terminal.
-
-4. Dentro de Ubuntu, instala las utilidades base:
-
-```bash
-sudo apt update
-sudo apt install -y ca-certificates curl gnupg lsb-release bash
-```
-
-5. Instala `kubectl`:
-
-```bash
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /usr/share/keyrings/kubernetes-apt-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list >/dev/null
-sudo apt update
-sudo apt install -y kubectl
-```
-
-6. Instala `kind`:
-
-```bash
-curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
-chmod +x ./kind
-sudo mv ./kind /usr/local/bin/kind
-```
-
-7. Verifica la instalacion:
-
-```bash
+```powershell
 docker --version
 kubectl version --client
 kind version
-bash --version
 ```
 
 ### Requisitos funcionales
@@ -103,40 +78,55 @@ bash --version
 Antes de ejecutar el despliegue local, confirma lo siguiente:
 
 - Docker esta corriendo y puede construir imagenes.
-- `kubectl` puede hablar con un cluster local.
-- Bash esta disponible para ejecutar `k8s/local.sh`.
-- Si usas kind, el script puede crear un cluster llamado `motormatch-local` automaticamente.
-- Debes tener las cadenas reales de Supabase en el archivo `.env` de la raiz del proyecto; el script crea el Secret a partir de ese archivo.
+- `kubectl` debe estar en el PATH (`winget` en Win lo asegura).
+- El respectivo script (`k8s/local.sh` para *Unix y `k8s/local.ps1` para PowerShell) debe ser tu punto de entrada para evitar comandos manuales y configuraciones complejas.
+- El script creara un cluster de kind llamado `motormatch-local` automaticamente.
+- Debes tener las cadenas reales de Supabase en el archivo `.env` de la raiz del proyecto; el script leera las variables para generar el Secret en el cluster.
 
 ## Como desplegar el sistema
 
 1. Construye las imagenes de backend y frontend, aplica el overlay local y espera a que los recursos queden listos.
 
-```bash
+*En Bash (Mac/Linux):*
+`bash
 bash k8s/local.sh up
-```
+`
 
-2. Cuando el script termine, el frontend quedara expuesto en `http://localhost:8080` mediante `kubectl port-forward`.
+*En PowerShell (Windows):*
+`powershell
+.\k8s\local.ps1 up
+`
 
-3. Si quieres comprobar el estado del entorno, revisa los pods y servicios del namespace `motormatch`.
+2. Cuando el script termine, el frontend debe exponerse localmente por terminal con este tunel para permitir acceso:
 
-```bash
+`bash
+kubectl port-forward svc/frontend 8080:80 -n motormatch
+`
+(Tras lanzar el puerto, podras entrar a `http://localhost:8080`)
+
+3. Si quieres comprobar el estado de salud de tus contenedores.
+
+*En Bash:*
+`bash
 bash k8s/local.sh status
-```
+`
 
-4. Para ver los logs de un componente concreto, usa el comando de logs del script.
+*En PowerShell:*
+`powershell
+.\k8s\local.ps1 status
+`
 
-```bash
-bash k8s/local.sh logs backend
-bash k8s/local.sh logs frontend
-```
+4. Cuando termines la prueba local, elimina los recursos y mata el proceso de tunneling.
 
-5. Cuando termines la prueba local, elimina los recursos y detén el port-forward.
-
-```bash
+*En Bash:*
+`bash
 bash k8s/local.sh down
-```
+`
 
+*En PowerShell:*
+`powershell
+.\k8s\local.ps1 down
+`
 ## Comandos utilizados
 
 Estos son los comandos principales que usa este flujo local:
@@ -162,3 +152,4 @@ El script `k8s/local.sh` agrupa esos pasos para que no tengas que ejecutarlos ma
 - El script toma `DATABASE_URL`, `DIRECT_URL` y `JWT_SECRET` desde el `.env` de la raiz y crea el Secret en el cluster.
 - El frontend no usa `Ingress` en este flujo local; se accede por `port-forward`.
 - Este overlay no despliega un job de migraciones ni una base local; solo consume la base de datos remota.
+
