@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: motormatch-config
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  JWT_EXPIRES_IN: "7d"
+  FRONTEND_URL: "http://localhost:8080"
+  APP_URL: "http://localhost:8080"
+  SMTP_HOST: ""
+  SMTP_PORT: ""
