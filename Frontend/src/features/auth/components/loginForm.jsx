@@ -329,6 +329,13 @@ function LoginForm() {
                 Crea una cuenta gratis
               </button>
             </p>
+            <button
+              type="button"
+              onClick={() => navigate('/ayuda-faq')}
+              className="mt-4 text-sm font-semibold text-accent hover:underline"
+            >
+              ¿Necesitas ayuda? Ver FAQ
+            </button>
           </div>
 
         </div>

@@ -29,3 +29,12 @@ input[type='range'] {
   background: #e2e8f0;
   outline: none;
 }
+
+.brand-carousel {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.brand-carousel::-webkit-scrollbar {
+  display: none;
+}

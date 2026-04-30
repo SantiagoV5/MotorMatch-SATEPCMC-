@@ -6,11 +6,29 @@ import MotorcycleCard from '../features/motorcycles/components/motorcycleCard';
 import MotorcycleSkeleton from '../features/motorcycles/components/motorcycleSkeleton';
 import Header from '../shared/components/layout/header';
 import { getMyFavoriteIds } from '../features/favorites/services/favoritesService';
+import { SUPPORT_MAILTO } from '../shared/constants/support';
+import BrandLogoCarousel from '../shared/components/BrandLogoCarousel';
 
 
 // ----- price range constants for the slider -----
 const MIN_PRICE = 5000000;
 const MAX_PRICE = 50000000;
+
+const BRAND_LOGOS = {
+  AKT: 'https://cloudfront-us-east-1.images.arcpublishing.com/elespectador/4FRZGTJONRENZGGGUP4HPFLP3Q.jpg',
+  BMW: 'https://upload.wikimedia.org/wikipedia/commons/4/44/BMW.svg',
+  DUCATI: 'https://upload.wikimedia.org/wikipedia/commons/6/66/Ducati_red_logo.PNG',
+  KTM: 'https://ktm-bikes.co/cdn/shop/files/KTM_Logo-2016-RGB_2C_onDark_Transparent_Vertical_edacb7ef-328c-4735-b2ee-4cfd95e356c2.png?v=1726938283',
+  SUZUKI: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Suzuki_Motor_Corporation_logo.svg/1280px-Suzuki_Motor_Corporation_logo.svg.png',
+  YAMAHA: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmPoWWy2WFpEU_4oOCu_mqO_LkUkEbVGODqw&s',
+  BAJAJ: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSw3RzT2dBxuMpDYb8k__NMPOZju_joi5RHEg&s',
+  HONDA: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Honda_Logo.svg/330px-Honda_Logo.svg.png',
+  TVS: 'https://i.pinimg.com/736x/15/50/91/155091f7e6e708676b72a12f6717983e.jpg',
+  KAWASAKI: 'https://upload.wikimedia.org/wikipedia/commons/1/15/Kawasaki_Logo_vert.svg',
+  VICTORY: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfxPD26PLGfdHYqAbAWfA3Pzepy1UOIvk_hQ&s'
+};
+
+const getBrandLogo = (brand) => BRAND_LOGOS[brand.toUpperCase()] || null;
 
 
 export default function HomePage() {
@@ -212,25 +230,6 @@ export default function HomePage() {
     (selectedDisplacement ? 1 : 0) +
     (priceRange[0] !== MIN_PRICE || priceRange[1] !== MAX_PRICE ? 1 : 0);
 
-  const getBrandLogo = (brand) => {
-    const logos = {
-      'AKT': 'https://cloudfront-us-east-1.images.arcpublishing.com/elespectador/4FRZGTJONRENZGGGUP4HPFLP3Q.jpg',
-      'BMW': 'https://upload.wikimedia.org/wikipedia/commons/4/44/BMW.svg',
-      'DUCATI': 'https://upload.wikimedia.org/wikipedia/commons/6/66/Ducati_red_logo.PNG',
-      'KTM': 'https://ktm-bikes.co/cdn/shop/files/KTM_Logo-2016-RGB_2C_onDark_Transparent_Vertical_edacb7ef-328c-4735-b2ee-4cfd95e356c2.png?v=1726938283',
-      'SUZUKI': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Suzuki_Motor_Corporation_logo.svg/1280px-Suzuki_Motor_Corporation_logo.svg.png',
-      'YAMAHA': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmPoWWy2WFpEU_4oOCu_mqO_LkUkEbVGODqw&s',
-      'BAJAJ': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSw3RzT2dBxuMpDYb8k__NMPOZju_joi5RHEg&s',
-      'HONDA': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Honda_Logo.svg/330px-Honda_Logo.svg.png',
-      'TVS': 'https://i.pinimg.com/736x/15/50/91/155091f7e6e708676b72a12f6717983e.jpg',
-      'KAWASAKI': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Kawasaki_Logo_vert.svg',
-      'VICTORY': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfxPD26PLGfdHYqAbAWfA3Pzepy1UOIvk_hQ&s'
-      
-
-    };
-    return logos[brand.toUpperCase()] || null;
-  };
-
   const displacementOptions = [
     { label: 'Económica',  subtitle: 'Baja cilindrada',  value: 'economica'  },
     { label: 'Intermedia', subtitle: 'Cilindrada media', value: 'intermedia' },
@@ -238,6 +237,20 @@ export default function HomePage() {
   ];
 
   const filterBrands = brands.length > 0 ? brands : ['YAMAHA', 'HONDA', 'BAJAJ', 'KAWASAKI'];
+  const popularBrandItems = useMemo(
+    () => {
+      const mappedBrands = brands.map((brand) => ({
+        name: brand,
+        logo: getBrandLogo(brand),
+      }));
+
+      const yamahaIndex = mappedBrands.findIndex((item) => item.name.toUpperCase() === 'YAMAHA');
+      if (yamahaIndex <= 0) return mappedBrands;
+
+      return [...mappedBrands.slice(yamahaIndex), ...mappedBrands.slice(0, yamahaIndex)];
+    },
+    [brands]
+  );
 
   // ----- bike amount by brand (from currently loaded results) -----
   const countByBrand = useMemo(() => motorcycles.reduce((acc, moto) => {
@@ -541,32 +554,21 @@ export default function HomePage() {
         {/* Popular Brands */}
         {!loading && brands.length > 0 && (
           <section className="max-w-7xl mx-auto px-4 py-3 mt-3">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-base font-bold tracking-wider text-primary dark:text-accent uppercase">Marcas Populares</h3>
-              <div className="h-px flex-1 bg-primary/10 ml-6"></div>
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between mb-3">
+              <div>
+                <h3 className="text-base font-bold tracking-wider text-primary dark:text-accent uppercase">Marcas Populares</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Se mueve solo, pero también lo puedes arrastrar o usar las flechas.
+                </p>
+              </div>
+              <div className="hidden sm:block h-px flex-1 bg-primary/10 ml-6"></div>
             </div>
-            <div className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-8 gap-3">
-              {brands.map((brand) => (
-                <div
-                  key={brand}
-                  className="flex flex-col items-center gap-2 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700"
-                >
-                  <div className="w-full h-14 flex items-center justify-center p-2">
-                    <img
-                      src={getBrandLogo(brand)}
-                      alt={`Logo ${brand}`}
-                      className="max-w-full max-h-full object-contain"
-                    />
-                  </div>
-                  <span className="font-semibold text-xs text-center text-slate-600 dark:text-slate-400">{brand}</span>
-                </div>
-              ))}
-            </div>
+            <BrandLogoCarousel items={popularBrandItems} />
           </section>
         )}
 
         {/* Main CTAs */}
-        <section className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <section className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-1 md:grid-cols-4 gap-3">
           <button onClick={() => navigate('/questionnaire')} className="w-full py-2 bg-primary hover:bg-primary/95 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg">
             <span className="material-symbols-outlined text-base">quiz</span>
             COMENZAR CUESTIONARIO
@@ -578,6 +580,10 @@ export default function HomePage() {
           <button onClick={handleMatchClick} className="w-full py-2 bg-accent hover:bg-accent/90 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg">
             <span className="material-symbols-outlined text-base">auto_awesome</span>
             MATCH
+          </button>
+          <button onClick={() => navigate('/ayuda-faq')} className="w-full py-2 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 shadow-sm">
+            <span className="material-symbols-outlined text-base">help_center</span>
+            AYUDA Y FAQ
           </button>
         </section>
 
@@ -722,8 +728,12 @@ export default function HomePage() {
           <nav className="flex flex-wrap justify-center gap-8">
             <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Aviso Legal</a>
             <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Privacidad</a>
-            <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Soporte</a>
-            <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Contacto</a>
+            <button onClick={() => navigate('/ayuda-faq')} className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors">
+              Ayuda y FAQ
+            </button>
+            <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href={SUPPORT_MAILTO}>
+              Contacto
+            </a>
           </nav>
         </div>
       </footer>
