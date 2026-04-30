@@ -101,6 +101,7 @@ export function MotorcycleDetail() {
   const allImages = Array.from(
     new Set([motorcycle.imageUrl, ...(motorcycle.galleryImages || [])].filter(Boolean))
   );
+  const youtubeReferences = normalizeYoutubeReferences(motorcycle.referencesYT || motorcycle.youtubeReferences);
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#F5F7FA] font-['Space_Grotesk'] text-[#2C3E50] antialiased">
@@ -214,6 +215,92 @@ export function MotorcycleDetail() {
           </div>
         </section>
 
+        {/* Referencias en YouTube */}
+        {youtubeReferences.length > 0 && (
+          <section className="mb-20">
+            <div className="mb-8 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h3 className="text-2xl font-bold border-l-4 border-[#FF6B35] pl-4 text-[#0A2463]">
+                  Referencias en YouTube
+                </h3>
+                <p className="mt-2 pl-4 text-sm text-slate-500">
+                  Dos videos de referencia para ver la moto en acción sin mostrar el enlace directo.
+                </p>
+              </div>
+              <span className="hidden md:inline-flex items-center gap-2 self-start rounded-full bg-[#0A2463]/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A2463]">
+                <span className="material-symbols-outlined text-base text-[#FF6B35]">smart_display</span>
+                {youtubeReferences.length} videos
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {youtubeReferences.map((reference, index) => (
+                <a
+                  key={`${reference.url}-${index}`}
+                  href={reference.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl ${
+                    youtubeReferences.length === 1 ? 'md:col-span-2' : ''
+                  }`}
+                >
+                  <div className="relative aspect-video overflow-hidden bg-slate-100">
+                    {reference.thumbnailUrl ? (
+                      <img
+                        src={reference.thumbnailUrl}
+                        alt={`Referencia de YouTube ${index + 1}`}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0A2463] to-[#1f3b8a] text-white">
+                        <div className="text-center">
+                          <span className="material-symbols-outlined text-6xl">play_circle</span>
+                          <p className="mt-2 text-sm font-semibold uppercase tracking-[0.25em]">Ver en YouTube</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+
+                    <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.3em] text-white backdrop-blur-sm">
+                      <span className="material-symbols-outlined text-sm text-[#FF6B35]">smart_display</span>
+                      Referencia {String(index + 1).padStart(2, '0')}
+                    </div>
+
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+                        <span className="material-symbols-outlined text-4xl">play_circle</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">
+                          Video de referencia
+                        </p>
+                        <h4 className="mt-2 text-xl font-bold text-[#0A2463] transition-colors group-hover:text-[#FF6B35]">
+                          {reference.title}
+                        </h4>
+                      </div>
+                      <span className="material-symbols-outlined text-[#FF6B35] transition-transform duration-300 group-hover:-translate-y-1 group-hover:translate-x-1">
+                        open_in_new
+                      </span>
+                    </div>
+
+                    <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#FF6B35]/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#FF6B35]">
+                      <span className="material-symbols-outlined text-base">smart_display</span>
+                      Ver video
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Ventajas y Desventajas */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
           {/* Ventajas */}
@@ -326,4 +413,78 @@ function TechCard({ icon, label, value }) {
       <p className="text-lg font-bold">{value}</p>
     </div>
   );
+}
+
+function normalizeYoutubeReferences(rawReferences) {
+  if (!rawReferences) return [];
+
+  let referencesSource = rawReferences;
+  if (typeof referencesSource === 'string') {
+    try {
+      referencesSource = JSON.parse(referencesSource);
+    } catch {
+      return [];
+    }
+  }
+
+  const referencesList = Array.isArray(referencesSource)
+    ? referencesSource
+    : Array.isArray(referencesSource?.videos)
+      ? referencesSource.videos
+      : Array.isArray(referencesSource?.references)
+        ? referencesSource.references
+        : Array.isArray(referencesSource?.links)
+          ? referencesSource.links
+          : [];
+
+  return referencesList
+    .map((item, index) => {
+      const url = typeof item === 'string'
+        ? item
+        : item?.url || item?.link || item?.href || '';
+
+      if (!url) return null;
+
+      const videoId = extractYouTubeVideoId(url);
+
+      return {
+        title: typeof item === 'object' && item?.title ? item.title : `Referencia ${String(index + 1).padStart(2, '0')}`,
+        url,
+        thumbnailUrl: typeof item === 'object' && item?.thumbnailUrl
+          ? item.thumbnailUrl
+          : videoId
+            ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+            : null,
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 2);
+}
+
+function extractYouTubeVideoId(url) {
+  try {
+    const parsedUrl = new URL(url);
+    const hostname = parsedUrl.hostname.replace(/^www\./, '').toLowerCase();
+    const isYouTubeHost = hostname === 'youtu.be' || hostname.endsWith('youtube.com') || hostname.endsWith('youtube-nocookie.com');
+
+    if (!isYouTubeHost) return '';
+
+    const searchVideoId = parsedUrl.searchParams.get('v');
+    if (searchVideoId) return searchVideoId;
+
+    const pathParts = parsedUrl.pathname.split('/').filter(Boolean);
+    if (pathParts.length === 0) return '';
+
+    if (hostname === 'youtu.be') {
+      return pathParts[0] || '';
+    }
+
+    if (['shorts', 'embed', 'live'].includes(pathParts[0])) {
+      return pathParts[1] || '';
+    }
+
+    return pathParts[pathParts.length - 1] || '';
+  } catch {
+    return '';
+  }
 }
