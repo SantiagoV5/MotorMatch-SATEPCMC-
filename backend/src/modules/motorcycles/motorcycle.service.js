@@ -76,15 +76,15 @@ async function getAllMotorcycles(filters = {}) {
  * @returns {Promise<Object>} Motocicleta con detalles completos
  */
 async function getMotorcycleById(id) {
-  const motorcycle = await prisma.motorcycle.findUnique({
-    where: { id: parseInt(id, 10) },
-    include: {
-      recommendations: {
-        take: 5,
-        orderBy: { createdAt: 'desc' },
-      },
-    },
-  });
+  const motorcycleId = parseInt(id, 10);
+  const rows = await prisma.$queryRaw`
+    SELECT *
+    FROM "motorcycles"
+    WHERE id = ${motorcycleId}
+    LIMIT 1
+  `;
+
+  const motorcycle = rows?.[0] ? normalizeMotorcycleDetailRow(rows[0]) : null;
 
   if (!motorcycle) {
     const error = new Error('Motocicleta no encontrada');
@@ -135,6 +135,50 @@ function formatPrice(price, currency = 'COP') {
   }).format(price);
 
   return formatted;
+}
+
+function normalizeMotorcycleDetailRow(row) {
+  return {
+    id: pickField(row, ['id']),
+    brand: pickField(row, ['brand']),
+    model: pickField(row, ['model']),
+    year: pickField(row, ['year']),
+    engineCc: pickField(row, ['engineCc', 'engine_cc']),
+    engineType: pickField(row, ['engineType', 'engine_type']),
+    powerHp: pickField(row, ['powerHp', 'power_hp']),
+    torqueNm: pickField(row, ['torqueNm', 'torque_nm']),
+    weightKg: pickField(row, ['weightKg', 'weight_kg']),
+    seatHeightCm: pickField(row, ['seatHeightCm', 'seat_height_cm']),
+    fuelType: pickField(row, ['fuelType', 'fuel_type']),
+    fuelTankLiters: pickField(row, ['fuelTankLiters', 'fuel_tank_liters']),
+    consumptionKmpl: pickField(row, ['consumptionKmpl', 'consumption_kmpl']),
+    transmission: pickField(row, ['transmission']),
+    brakeSystem: pickField(row, ['brakeSystem', 'brake_system']),
+    price: pickField(row, ['price']),
+    currency: pickField(row, ['currency']),
+    imageUrl: pickField(row, ['imageUrl', 'image_url']),
+    galleryImages: pickField(row, ['galleryImages', 'gallery_images']) || [],
+    description: pickField(row, ['description']),
+    advantages: pickField(row, ['advantages']) || [],
+    disadvantages: pickField(row, ['disadvantages']) || [],
+    referencesYT: pickField(row, ['referencesYT', 'references_yt', 'referencesyt']) || null,
+    colors: pickField(row, ['colors']) || [],
+    countryOrigin: pickField(row, ['countryOrigin', 'country_origin']),
+    warranty: pickField(row, ['warranty']),
+    isActive: pickField(row, ['isActive', 'is_active']),
+    createdAt: pickField(row, ['createdAt', 'created_at']),
+    updatedAt: pickField(row, ['updatedAt', 'updated_at']),
+  };
+}
+
+function pickField(row, candidateKeys) {
+  for (const key of candidateKeys) {
+    if (Object.prototype.hasOwnProperty.call(row, key) && row[key] !== undefined) {
+      return row[key];
+    }
+  }
+
+  return undefined;
 }
 
 module.exports = {
