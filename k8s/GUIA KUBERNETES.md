@@ -152,4 +152,3 @@ El script `k8s/local.sh` agrupa esos pasos para que no tengas que ejecutarlos ma
 - El script toma `DATABASE_URL`, `DIRECT_URL` y `JWT_SECRET` desde el `.env` de la raiz y crea el Secret en el cluster.
 - El frontend no usa `Ingress` en este flujo local; se accede por `port-forward`.
 - Este overlay no despliega un job de migraciones ni una base local; solo consume la base de datos remota.
-

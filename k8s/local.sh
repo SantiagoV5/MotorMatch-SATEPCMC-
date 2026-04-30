@@ -129,6 +129,7 @@ apply_bundle() {
   create_supabase_secret
   kubectl apply -k "${LOCAL_OVERLAY_DIR}"
   kubectl rollout restart deployment/backend -n "${NAMESPACE}"
+  kubectl rollout restart deployment/frontend -n "${NAMESPACE}"
 }
 
 create_supabase_secret() {

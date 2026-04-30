@@ -9,6 +9,7 @@ import apiClient from '../services/apiClient';
 import ShareWhatsAppModal from '../shared/components/ShareWhatsAppModal';
 import { getAppUrl } from '../shared/utils/whatsappShare';
 import { trackShareUsage } from '../shared/services/shareAnalyticsService';
+import { SUPPORT_MAILTO } from '../shared/constants/support';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -1446,8 +1447,12 @@ export default function ComparisonPage() {
           <nav className="flex flex-wrap justify-center gap-8">
             <a className="text-slate-600 hover:text-accent font-medium transition-colors" href="#">Aviso Legal</a>
             <a className="text-slate-600 hover:text-accent font-medium transition-colors" href="#">Privacidad</a>
-            <a className="text-slate-600 hover:text-accent font-medium transition-colors" href="#">Soporte</a>
-            <a className="text-slate-600 hover:text-accent font-medium transition-colors" href="#">Contacto</a>
+            <button onClick={() => navigate('/ayuda-faq')} className="text-slate-600 hover:text-accent font-medium transition-colors">
+              Ayuda y FAQ
+            </button>
+            <a className="text-slate-600 hover:text-accent font-medium transition-colors" href={SUPPORT_MAILTO}>
+              Contacto
+            </a>
           </nav>
         </div>
       </footer>

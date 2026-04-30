@@ -57,6 +57,13 @@ export default function Header({ children, sticky = true }) {
               <span className="material-symbols-outlined text-base">compare_arrows</span>
               <span className="hidden sm:inline">Comparar</span>
             </button>
+            <button
+              onClick={() => navigate('/ayuda-faq')}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border border-slate-200 bg-white text-slate-700 hover:border-primary/30 hover:text-primary hover:bg-slate-50 active:scale-95"
+            >
+              <span className="material-symbols-outlined text-base">help_center</span>
+              <span>Ayuda</span>
+            </button>
           </div>
 
           {/* Lado derecho: saludo + menú desplegable */}
@@ -127,6 +134,15 @@ export default function Header({ children, sticky = true }) {
                     >
                       <span className="material-symbols-outlined text-lg">show_chart</span>
                       <span className="text-sm font-semibold font-label">Análisis de Mercado</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => navigate('/ayuda-faq')}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300"
+                    >
+                      <span className="material-symbols-outlined text-lg">help_center</span>
+                      <span className="text-sm font-semibold font-label">Ayuda y FAQ</span>
                     </button>
                   </li>
                   <li>

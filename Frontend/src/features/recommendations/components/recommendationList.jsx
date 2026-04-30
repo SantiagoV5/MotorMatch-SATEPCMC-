@@ -8,6 +8,7 @@ import Header from '../../../shared/components/layout/header'
 import ShareWhatsAppModal from '../../../shared/components/ShareWhatsAppModal'
 import { getAppUrl } from '../../../shared/utils/whatsappShare'
 import { trackShareUsage } from '../../../shared/services/shareAnalyticsService'
+import { SUPPORT_MAILTO } from '../../../shared/constants/support'
 
 const USAGE_LABELS = {
   ciudad:    'ciudad',
@@ -457,8 +458,12 @@ export default function RecommendationList() {
           <nav className="flex flex-wrap justify-center gap-8">
             <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Aviso Legal</a>
             <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Privacidad</a>
-            <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Soporte</a>
-            <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href="#">Contacto</a>
+            <button onClick={() => navigate('/ayuda-faq')} className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors">
+              Ayuda y FAQ
+            </button>
+            <a className="text-neutral-dark dark:text-slate-300 hover:text-accent font-medium transition-colors" href={SUPPORT_MAILTO}>
+              Contacto
+            </a>
           </nav>
         </div>
       </footer>

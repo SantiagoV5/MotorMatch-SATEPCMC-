@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../shared/components/layout/header';
+import { SUPPORT_MAILTO } from '../../../shared/constants/support';
 import { getMyFavorites, removeFavorite } from '../services/favoritesService';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -267,8 +268,12 @@ export default function FavoritesPage() {
           <nav className="flex flex-wrap justify-center gap-8">
             <a className="text-slate-600 hover:text-accent font-medium transition-colors" href="#">Aviso Legal</a>
             <a className="text-slate-600 hover:text-accent font-medium transition-colors" href="#">Privacidad</a>
-            <a className="text-slate-600 hover:text-accent font-medium transition-colors" href="#">Soporte</a>
-            <a className="text-slate-600 hover:text-accent font-medium transition-colors" href="#">Contacto</a>
+            <button onClick={() => navigate('/ayuda-faq')} className="text-slate-600 hover:text-accent font-medium transition-colors">
+              Ayuda y FAQ
+            </button>
+            <a className="text-slate-600 hover:text-accent font-medium transition-colors" href={SUPPORT_MAILTO}>
+              Contacto
+            </a>
           </nav>
         </div>
       </footer>
