@@ -38,6 +38,7 @@ model User {
   favorites             Favorite[]
   comparisons           Comparison[]
   costSimulations       CostSimulation[]
+  reviews               Review[]
   shareEvents           ShareEvent[]
   feedbacks             Feedback[]
 
@@ -81,6 +82,7 @@ model Motorcycle {
   recommendations       Recommendation[]
   favorites             Favorite[]
   costSimulations       CostSimulation[]
+  reviews               Review[]
 
   @@index([brand, model], map: "idx_motorcycles_brand_model")
   @@map("motorcycles")
@@ -207,4 +209,21 @@ model Feedback {
   @@index([userId], map: "idx_feedback_user_id")
   @@index([questionnaireId], map: "idx_feedback_questionnaire_id")
   @@map("feedback")
+}
+
+model Review {
+  id           Int        @id @default(autoincrement())
+  userId       Int        @map("user_id")
+  motorcycleId Int        @map("motorcycle_id")
+  rating       Int
+  comment      String     @db.VarChar(500)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  motorcycle   Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, motorcycleId], name: "unique_user_motorcycle_review")
+  @@index([motorcycleId], map: "idx_reviews_motorcycle_id")
+  @@index([userId], map: "idx_reviews_user_id")
+  @@map("reviews")
 }

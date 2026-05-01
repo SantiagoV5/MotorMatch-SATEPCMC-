@@ -4,6 +4,7 @@ import Header from '../../../shared/components/layout/header';
 import MotorcycleImage from '../../../shared/components/MotorcycleImage';
 import { addFavorite, removeFavorite, getMyFavoriteIds } from '../../favorites/services/favoritesService';
 import { motorcycleService } from '../services/motorcycleService';
+import { getMotorcycleReviews, createReview, updateReview, deleteReview } from '../services/reviewService';
 import { CostSimulatorModal } from '../../costSimulator';
 import MaintenanceEstimator from './MaintenanceEstimator';
 
@@ -17,6 +18,16 @@ export function MotorcycleDetail() {
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
   const [userBudget, setUserBudget] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [reviewSummary, setReviewSummary] = useState({ averageRating: 0, totalReviews: 0 });
+  const [reviews, setReviews] = useState([]);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [reviewsHasMore, setReviewsHasMore] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsSubmitting, setReviewsSubmitting] = useState(false);
+  const [reviewsError, setReviewsError] = useState(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [currentReviewId, setCurrentReviewId] = useState(null);
 
   // Load favorite status once motorcycle id is known.
   // Depends on motorcycle?.id (not the whole object) to avoid infinite re-renders.
@@ -77,6 +88,11 @@ export function MotorcycleDetail() {
     fetchMotorcycle();
   }, [id]);
 
+  useEffect(() => {
+    if (!motorcycle?.id) return;
+    loadReviews({ page: 1, append: false });
+  }, [motorcycle?.id]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]">
@@ -117,6 +133,87 @@ export function MotorcycleDetail() {
   };
 
   const youtubeReferences = normalizeYoutubeReferences(motorcycle.referencesYT || motorcycle.youtubeReferences);
+
+  const scrollToReviews = () => {
+    const reviewsSection = document.getElementById('reviews-section');
+    if (reviewsSection) {
+      reviewsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const loadReviews = async ({ page = 1, append = false } = {}) => {
+    if (!motorcycle?.id) return;
+
+    setReviewsLoading(true);
+    setReviewsError(null);
+
+    try {
+      const data = await getMotorcycleReviews(motorcycle.id, { page, limit: 5 });
+      setReviewSummary(data.summary || { averageRating: 0, totalReviews: 0 });
+      setReviewsHasMore(!!data.pagination?.hasMore);
+      setReviewsPage(page);
+      setCurrentReviewId(data.currentUserReview?.id || null);
+
+      if (data.currentUserReview) {
+        setReviewRating(data.currentUserReview.rating || 5);
+        setReviewComment(data.currentUserReview.comment || '');
+      } else if (!append) {
+        setReviewRating(5);
+        setReviewComment('');
+      }
+
+      setReviews((prev) => (append ? [...prev, ...(data.reviews || [])] : (data.reviews || [])));
+    } catch (error) {
+      console.error('Error al cargar reseñas:', error);
+      setReviewsError('No se pudieron cargar las reseñas.');
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const handleHeroRatingClick = (rating) => {
+    setReviewRating(rating);
+    scrollToReviews();
+  };
+
+  const handleSaveReview = async (event) => {
+    event.preventDefault();
+
+    if (!userId) {
+      setReviewsError('Inicia sesión para escribir una reseña.');
+      scrollToReviews();
+      return;
+    }
+
+    setReviewsSubmitting(true);
+    setReviewsError(null);
+
+    try {
+      const payload = {
+        motorcycleId: motorcycle.id,
+        rating: reviewRating,
+        comment: reviewComment,
+      };
+
+      if (currentReviewId) {
+        await updateReview(currentReviewId, payload);
+      } else {
+        await createReview(payload);
+      }
+
+      await loadReviews({ page: 1, append: false });
+    } catch (error) {
+      const message = error.response?.data?.message || 'No se pudo guardar la reseña.';
+      setReviewsError(message);
+    } finally {
+      setReviewsSubmitting(false);
+    }
+  };
+
+  const handleLoadMoreReviews = async () => {
+    if (!reviewsHasMore || reviewsLoading) return;
+    await loadReviews({ page: reviewsPage + 1, append: true });
+  };
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#F5F7FA] font-['Space_Grotesk'] text-[#2C3E50] antialiased">
@@ -213,16 +310,18 @@ export function MotorcycleDetail() {
               </button>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-[#FF6B35] fill-1">star</span>
-                <span className="material-symbols-outlined text-[#FF6B35] fill-1">star</span>
-                <span className="material-symbols-outlined text-[#FF6B35] fill-1">star</span>
-                <span className="material-symbols-outlined text-[#FF6B35] fill-1">star</span>
-                <span className="material-symbols-outlined text-[#FF6B35]">star_half</span>
+                <ReviewStars value={reviewSummary.averageRating} onRate={handleHeroRatingClick} />
               </div>
-              <span className="text-2xl font-bold">4.5</span>
-              <span className="text-slate-500 text-sm">(reseñas)</span>
+              <span className="text-2xl font-bold">{reviewSummary.averageRating.toFixed(1)}</span>
+              <button
+                type="button"
+                onClick={scrollToReviews}
+                className="text-slate-500 text-sm hover:text-[#FF6B35] transition-colors"
+              >
+                (reseñas y comentarios)
+              </button>
             </div>
 
             <div className="space-y-1">
@@ -411,6 +510,155 @@ export function MotorcycleDetail() {
 
         <MaintenanceEstimator motorcycle={motorcycle} />
 
+        <section id="reviews-section" className="mb-20 scroll-mt-8 rounded-3xl border border-slate-100 bg-white p-6 md:p-8 shadow-sm">
+          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-[#FF6B35]">Reseñas y comentarios</p>
+              <h3 className="mt-2 text-2xl font-black text-[#0A2463]">Reseñas y comentarios</h3>
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                <span className="font-bold text-[#0A2463]">{reviewSummary.averageRating.toFixed(1)}</span>
+                <span>·</span>
+                <span>{reviewSummary.totalReviews} reseñas</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={scrollToReviews}
+              className="inline-flex items-center gap-2 self-start rounded-full bg-[#0A2463]/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A2463]"
+            >
+              <span className="material-symbols-outlined text-base text-[#FF6B35]">rate_review</span>
+              Escribir reseña
+            </button>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="space-y-4">
+              {reviewsError && (
+                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {reviewsError}
+                </div>
+              )}
+
+              {reviewsLoading && reviews.length === 0 ? (
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-8 text-sm text-slate-500">
+                  Cargando reseñas...
+                </div>
+              ) : reviews.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                  Aún no hay reseñas para esta moto. Sé la primera persona en opinar.
+                </div>
+              ) : (
+                reviews.map((review) => (
+                  <article key={review.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-bold text-[#0A2463]">{review.user?.name || 'Usuario'}</p>
+                        <div className="mt-2 flex items-center gap-2 text-sm text-slate-500">
+                          <ReviewStars value={review.rating} />
+                          <span>{review.rating}/5</span>
+                        </div>
+                      </div>
+                      <span className="text-xs font-semibold text-slate-400">
+                        {new Intl.DateTimeFormat('es-CO', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        }).format(new Date(review.createdAt))}
+                      </span>
+                    </div>
+                    <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-slate-700">
+                      {review.comment}
+                    </p>
+                  </article>
+                ))
+              )}
+
+              {reviewsHasMore && (
+                <button
+                  type="button"
+                  onClick={handleLoadMoreReviews}
+                  disabled={reviewsLoading}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-[#0A2463] transition-colors hover:bg-slate-50 disabled:opacity-60"
+                >
+                  {reviewsLoading ? 'Cargando...' : 'Cargar más reseñas'}
+                </button>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+              <div className="mb-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-[#FF6B35]">Tu comentario</p>
+                <h4 className="mt-2 text-xl font-black text-[#0A2463]">
+                  {currentReviewId ? 'Actualizar tu reseña' : 'Escribe tu reseña'}
+                </h4>
+                <p className="mt-2 text-sm text-slate-500">
+                  Toca una estrella arriba, escribe tu experiencia y guárdala en este espacio.
+                </p>
+              </div>
+
+              {!userId && (
+                <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  Inicia sesión para dejar tu reseña.
+                </div>
+              )}
+
+              <form className="space-y-4" onSubmit={handleSaveReview}>
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-[#1A202C]">Calificación</label>
+                  <div className="flex items-center gap-2">
+                    {Array.from({ length: 5 }, (_, index) => {
+                      const value = index + 1;
+                      const active = value <= reviewRating;
+
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setReviewRating(value)}
+                          className="transition-transform hover:scale-110"
+                          aria-label={`Seleccionar ${value} estrellas`}
+                        >
+                          <span
+                            className="material-symbols-outlined text-3xl"
+                            style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0", color: active ? '#FF6B35' : '#cbd5e1' }}
+                          >
+                            star
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-[#1A202C]">Comentario</label>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(event) => setReviewComment(event.target.value)}
+                    rows={6}
+                    maxLength={500}
+                    placeholder="Cuéntanos tu experiencia con esta moto..."
+                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition-colors focus:border-[#FF6B35]"
+                  />
+                  <div className="mt-2 flex items-center justify-between text-xs text-slate-400">
+                    <span>Mínimo 20 caracteres</span>
+                    <span>{reviewComment.length}/500</span>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={reviewsSubmitting || !userId || reviewComment.trim().length < 20}
+                  className="w-full rounded-2xl bg-[#FF6B35] px-5 py-3 text-sm font-black uppercase tracking-widest text-white transition-colors hover:brightness-110 disabled:opacity-60"
+                >
+                  {reviewsSubmitting ? 'Guardando...' : currentReviewId ? 'Actualizar reseña' : 'Publicar reseña'}
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+
       </main>
 
       {/* Footer */}
@@ -493,6 +741,52 @@ function normalizeYoutubeReferences(rawReferences) {
     })
     .filter(Boolean)
     .slice(0, 2);
+}
+
+function ReviewStars({ value, onRate = null }) {
+  const numericValue = Number(value) || 0;
+  const fullStars = Math.floor(numericValue);
+  const hasHalfStar = numericValue - fullStars >= 0.5;
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: 5 }, (_, index) => {
+        const starValue = index + 1;
+        const active = starValue <= fullStars;
+        const half = hasHalfStar && starValue === fullStars + 1;
+        const content = half ? 'star_half' : 'star';
+
+        if (onRate) {
+          return (
+            <button
+              key={starValue}
+              type="button"
+              onClick={() => onRate(starValue)}
+              className="transition-transform hover:scale-110"
+              aria-label={`Calificar con ${starValue} estrellas`}
+            >
+              <span
+                className="material-symbols-outlined text-[#FF6B35]"
+                style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
+              >
+                {content}
+              </span>
+            </button>
+          );
+        }
+
+        return (
+          <span
+            key={starValue}
+            className="material-symbols-outlined text-[#FF6B35]"
+            style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
+          >
+            {content}
+          </span>
+        );
+      })}
+    </div>
+  );
 }
 
 function extractYouTubeVideoId(url) {

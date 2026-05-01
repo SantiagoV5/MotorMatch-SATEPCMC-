@@ -17,6 +17,7 @@ const marketAnalysisRoutes = require('./modules/marketAnalysis/marketAnalysis.ro
 const analyticsRoutes     = require('./modules/analytics/share.routes');
 const feedbackRoutes      = require('./modules/feedback/feedback.routes');
 const supportRoutes       = require('./modules/support/support.routes');
+const reviewRoutes        = require('./modules/reviews/review.routes');
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use('/api/market-analysis', marketAnalysisRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/support', supportRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
