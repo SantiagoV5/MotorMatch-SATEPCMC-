@@ -17,7 +17,14 @@ function Invoke-Up {
     }
 
     # Ensure cluster exists
-    $clusters = kind get clusters 2>$null
+    try {
+        $clusters = kind get clusters 2>$null
+    } catch {
+        # `kind get clusters` returns a non-zero exit when no clusters exist;
+        # catch the error and treat as empty list so the script can create the cluster.
+        $clusters = @()
+    }
+
     if ($clusters -notcontains $ClusterName) {
         Write-Host "Creando cluster local de Kubernetes con kind: $ClusterName"
         kind create cluster --name $ClusterName
