@@ -10,6 +10,7 @@ import ShareWhatsAppModal from '../shared/components/ShareWhatsAppModal';
 import { getAppUrl } from '../shared/utils/whatsappShare';
 import { trackShareUsage } from '../shared/services/shareAnalyticsService';
 import { SUPPORT_MAILTO } from '../shared/constants/support';
+import MotorcycleImage from '../shared/components/MotorcycleImage';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -548,8 +549,13 @@ function MotoPicker({ onSelect, onClose, alreadySelected }) {
                 <div key={moto.id}
                   className="flex items-center gap-4 p-3 rounded-xl border border-slate-100 hover:border-primary/30 hover:bg-primary/5 cursor-pointer group transition-all"
                   onClick={() => onSelect(moto)}>
-                  <img src={moto.imageUrl || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=200&h=140&fit=crop'}
-                    alt={`${moto.brand} ${moto.model}`} className="w-20 h-14 object-contain rounded-lg bg-slate-50 flex-shrink-0" />
+                  <MotorcycleImage
+                    src={moto.imageUrl}
+                    alt={`${moto.brand} ${moto.model}`}
+                    className="w-20 h-14 rounded-lg bg-slate-50 flex-shrink-0 transition-transform duration-300 group-hover:scale-105"
+                    style={{ objectFit: 'contain' }}
+                    fallbackLabel="Sin imagen"
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{moto.brand}</p>
                     <p className="font-headline font-black text-primary text-base leading-tight truncate">{moto.model}</p>
@@ -896,8 +902,13 @@ function MotoCard({ moto, onRemove, navigate, isOverallWinner }) {
         : 'bg-white border-slate-100'
     }`}>
       <div className="relative h-44 bg-slate-50">
-        <img src={moto.imageUrl || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=400&h=280&fit=crop'}
-          alt={`${moto.brand} ${moto.model}`} className="w-full h-full object-contain p-3 transition-transform duration-500 hover:scale-105" />
+        <MotorcycleImage
+          src={moto.imageUrl}
+          alt={`${moto.brand} ${moto.model}`}
+          className="w-full h-full p-3 transition-transform duration-500 hover:scale-105"
+          style={{ objectFit: 'contain' }}
+          fallbackLabel="Sin imagen"
+        />
         <button onClick={onRemove}
           className="absolute top-3 right-3 bg-white/80 hover:bg-red-50 text-slate-400 hover:text-red-500 p-1.5 rounded-full transition-all shadow-sm"
           aria-label="Quitar de comparación">

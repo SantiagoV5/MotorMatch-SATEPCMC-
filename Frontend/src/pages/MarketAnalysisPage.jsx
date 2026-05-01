@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './MarketAnalysisPage.css';
 import apiClient from '../services/apiClient';
+import MotorcycleImage from '../shared/components/MotorcycleImage';
 
 export default function MarketAnalysisPage() {
   const navigate = useNavigate();
@@ -191,11 +192,13 @@ export default function MarketAnalysisPage() {
                 <div key={idx} className="motorcycle-card">
                   <div className="rank-badge"># {idx + 1}</div>
                   <div className="moto-image">
-                    {moto.imageUrl ? (
-                      <img src={moto.imageUrl} alt={`${moto.brand} ${moto.model}`} />
-                    ) : (
-                      <div className="no-image">📷</div>
-                    )}
+                    <MotorcycleImage
+                      src={moto.imageUrl}
+                      alt={`${moto.brand} ${moto.model}`}
+                      className="w-full h-full"
+                      style={{ objectFit: 'contain' }}
+                      fallbackLabel="Sin imagen"
+                    />
                   </div>
                   <h3>
                     {moto.brand} {moto.model}

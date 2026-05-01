@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../../shared/components/layout/header';
 import { SUPPORT_MAILTO } from '../../../shared/constants/support';
 import { getMyFavorites, removeFavorite } from '../services/favoritesService';
+import MotorcycleImage from '../../../shared/components/MotorcycleImage';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -58,14 +59,16 @@ function FavoriteCard({ moto, onRemove, removing }) {
     <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-lg border border-primary/5 flex flex-col group transition-all hover:shadow-xl hover:-translate-y-1">
       {/* Imagen */}
       <div
-        className="relative h-40 overflow-hidden cursor-pointer"
+        className="relative h-60 overflow-hidden cursor-pointer"
         onClick={() => navigate(`/motorcycles/${moto.id}`)}
       >
-        <img
-          src={moto.imageUrl || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=800&h=600&fit=crop'}
+        <MotorcycleImage
+          src={moto.imageUrl}
           alt={`${moto.brand} ${moto.model}`}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          loading="lazy"
+          className="w-full h-full transition-transform duration-500"
+          style={{ objectFit: 'contain' }}
+          zoom={1.22}
+          fallbackLabel="Sin imagen"
         />
         {/* Badge segmento */}
         <div className={`absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-bold shadow ${getSegmentColor(moto.segment)}`}>

@@ -15,6 +15,7 @@ import FinancialTipsPage from './pages/FinancialTipsPage'
 import MarketAnalysisPage from './pages/MarketAnalysisPage'
 import ProfilePage from './pages/ProfilePage'
 import HelpFaqPage from './pages/HelpFaqPage'
+import SupportPage from './pages/SupportPage'
 
 // Protected Route Wrapper
 function ProtectedRoute({ children }) {
@@ -87,6 +88,7 @@ function App() {
         </ProtectedRoute>
       } />
       <Route path="/ayuda-faq" element={<HelpFaqPage />} />
+      <Route path="/soporte" element={<SupportPage />} />
       <Route path="/login"    element={<LoginForm />} />
       <Route path="/register"     element={<RegisterForm />} />
       <Route path="/verify-email"   element={<VerifyEmailPage />} />

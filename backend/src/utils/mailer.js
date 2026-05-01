@@ -1,6 +1,8 @@
 const nodemailer = require('nodemailer');
 const { logger } = require('./logger');
 
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'soportemotormatch@gmail.com';
+
 // ─── Transporter ──────────────────────────────────────────────────────────────
 // En desarrollo (NODE_ENV !== 'production') y sin SMTP configurado,
 // se imprime el enlace directamente en la terminal para facilitar pruebas.
@@ -22,6 +24,15 @@ function createTransporter() {
     greetingTimeout:  5000,   // 5 segundos para saludo SMTP
     socketTimeout:    10000,  // 10 segundos de inactividad
   });
+}
+
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // ─── Envío de verificación ────────────────────────────────────────────────────
@@ -302,4 +313,99 @@ async function sendPasswordChangedEmail({ to, name }) {
   logger.info(`Email de cambio de contraseña enviado a ${to}`);
 }
 
-module.exports = { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordChangedEmail };
+// ─── Envío de soporte ───────────────────────────────────────────────────────
+async function sendSupportEmail({ name, email, message, sourcePage }) {
+  const transporter = createTransporter();
+
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safeMessage = escapeHtml(message).replace(/\n/g, '<br>');
+  const safeSourcePage = sourcePage ? escapeHtml(sourcePage) : null;
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+    <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
+        <tr><td align="center">
+          <table width="620" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
+            <tr>
+              <td style="background:#0a2463;padding:32px 40px;text-align:center;">
+                <h1 style="margin:0;color:#fff;font-size:24px;letter-spacing:2px;">MOTOR<span style="color:#e84855;">MATCH</span></h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:40px;">
+                <h2 style="margin:0 0 16px;color:#0a2463;font-size:22px;">Nuevo mensaje de soporte</h2>
+                <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">
+                  Se recibió un nuevo mensaje desde la ayuda de MotorMatch.
+                </p>
+
+                <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:24px;">
+                  <tr>
+                    <td style="padding:10px 0;border-bottom:1px solid #e2e8f0;color:#475569;font-size:14px;"><strong>Nombre:</strong> ${safeName}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:10px 0;border-bottom:1px solid #e2e8f0;color:#475569;font-size:14px;"><strong>Correo:</strong> ${safeEmail}</td>
+                  </tr>
+                  ${safeSourcePage ? `
+                  <tr>
+                    <td style="padding:10px 0;border-bottom:1px solid #e2e8f0;color:#475569;font-size:14px;"><strong>Origen:</strong> ${safeSourcePage}</td>
+                  </tr>` : ''}
+                </table>
+
+                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;">
+                  <p style="margin:0 0 10px;color:#0a2463;font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;">Mensaje</p>
+                  <p style="margin:0;color:#334155;font-size:15px;line-height:1.7;">${safeMessage}</p>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
+                <p style="margin:0;color:#94a3b8;font-size:12px;">
+                  Responder a este correo te permitirá contestar directamente al usuario.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const text = [
+    'Nuevo mensaje de soporte de MotorMatch',
+    `Nombre: ${name}`,
+    `Correo: ${email}`,
+    safeSourcePage ? `Origen: ${sourcePage}` : null,
+    '',
+    'Mensaje:',
+    message,
+  ].filter(Boolean).join('\n');
+
+  if (!transporter) {
+    logger.info('─'.repeat(60));
+    logger.info('📧  MENSAJE DE SOPORTE (modo consola)');
+    logger.info(`    Para: ${SUPPORT_EMAIL}`);
+    logger.info(`    De: ${email}`);
+    if (sourcePage) logger.info(`    Origen: ${sourcePage}`);
+    logger.info(`    Mensaje: ${message}`);
+    logger.info('─'.repeat(60));
+    return;
+  }
+
+  await transporter.sendMail({
+    from: `"MotorMatch" <${process.env.SMTP_USER}>`,
+    to: SUPPORT_EMAIL,
+    replyTo: email,
+    subject: '🛟 Ayuda MotorMatch',
+    text,
+    html,
+  });
+
+  logger.info(`Mensaje de soporte enviado a ${SUPPORT_EMAIL} desde ${email}`);
+}
+
+module.exports = { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordChangedEmail, sendSupportEmail };

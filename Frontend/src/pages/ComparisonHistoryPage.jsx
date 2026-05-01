@@ -7,6 +7,7 @@ import {
   deleteComparison,
   deleteAllComparisons,
 } from '../features/comparison/services/comparisonService';
+import MotorcycleImage from '../shared/components/MotorcycleImage';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -96,10 +97,12 @@ function ComparisonCard({ comparison, onDelete, onView, deleting }) {
                 <p className={`text-[10px] font-bold uppercase tracking-widest truncate w-full ${isWinner ? 'text-emerald-600' : 'text-slate-400'}`}>{bike.brand}</p>
                 <p className={`font-headline font-black text-sm leading-tight uppercase truncate w-full ${isWinner ? 'text-emerald-700' : 'text-primary'}`}>{bike.model}</p>
                 <div className="w-full h-24 flex items-center justify-center">
-                  <img
-                    src={bike.imageUrl || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=200&h=140&fit=crop'}
+                  <MotorcycleImage
+                    src={bike.imageUrl}
                     alt={`${bike.brand} ${bike.model}`}
-                    className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:-translate-y-1"
+                    className="max-h-full max-w-full transition-transform duration-500 group-hover:-translate-y-1"
+                    style={{ objectFit: 'contain' }}
+                    fallbackLabel="Sin imagen"
                   />
                 </div>
                 {bike.engineCc && (
