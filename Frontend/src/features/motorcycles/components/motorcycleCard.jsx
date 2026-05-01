@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addFavorite, removeFavorite } from '../../favorites/services/favoritesService';
 import PropTypes from 'prop-types';
+import MotorcycleImage from '../../../shared/components/MotorcycleImage';
 
 export default function MotorcycleCard({ motorcycle, isFavorite = false, onFavoriteToggle }) {
   const navigate = useNavigate();
@@ -59,12 +60,14 @@ export default function MotorcycleCard({ motorcycle, isFavorite = false, onFavor
       className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-lg border border-primary/5 flex flex-col group cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1"
     >
       {/* Image */}
-      <div className="relative h-40 overflow-hidden">
-        <img
-          src={motorcycle.imageUrl || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=800&h=600&fit=crop'}
+      <div className="relative h-60 overflow-hidden">
+        <MotorcycleImage
+          src={motorcycle.imageUrl}
           alt={`${motorcycle.brand} ${motorcycle.model}`}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          loading="lazy"
+          className="w-full h-full transition-transform duration-500"
+          style={{ objectFit: 'contain' }}
+          zoom={1.22}
+          fallbackLabel="Sin imagen"
         />
         
         {/* Segment Badge */}

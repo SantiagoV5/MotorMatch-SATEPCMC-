@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../../../shared/components/layout/header';
+import MotorcycleImage from '../../../shared/components/MotorcycleImage';
 import { addFavorite, removeFavorite, getMyFavoriteIds } from '../../favorites/services/favoritesService';
 import { motorcycleService } from '../services/motorcycleService';
 import { CostSimulatorModal } from '../../costSimulator';
@@ -65,6 +66,7 @@ export function MotorcycleDetail() {
         setLoading(true);
         const data = await motorcycleService.getMotorcycleById(id);
         setMotorcycle(data);
+        setCurrentImageIndex(0);
       } catch (error) {
         console.error('Error al cargar moto:', error);
       } finally {
@@ -101,6 +103,19 @@ export function MotorcycleDetail() {
   const allImages = Array.from(
     new Set([motorcycle.imageUrl, ...(motorcycle.galleryImages || [])].filter(Boolean))
   );
+  const hasMultipleImages = allImages.length > 1;
+  const currentHeroImage = allImages[currentImageIndex] || allImages[0];
+
+  const handlePreviousImage = () => {
+    if (!allImages.length) return;
+    setCurrentImageIndex(previousIndex => (previousIndex - 1 + allImages.length) % allImages.length);
+  };
+
+  const handleNextImage = () => {
+    if (!allImages.length) return;
+    setCurrentImageIndex(previousIndex => (previousIndex + 1) % allImages.length);
+  };
+
   const youtubeReferences = normalizeYoutubeReferences(motorcycle.referencesYT || motorcycle.youtubeReferences);
 
   return (
@@ -113,14 +128,60 @@ export function MotorcycleDetail() {
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-16 items-center">
           {/* Image */}
           <div className="relative">
-            <div
-              className="aspect-video w-full overflow-hidden rounded-2xl shadow-xl bg-slate-200"
-              style={{
-                backgroundImage: `url("${allImages[currentImageIndex]}")`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}
-            ></div>
+            <div className="group relative aspect-video w-full overflow-hidden rounded-2xl bg-slate-100 shadow-xl">
+              <MotorcycleImage
+                key={currentHeroImage || 'hero-placeholder'}
+                src={currentHeroImage}
+                alt={`${motorcycle.brand} ${motorcycle.model} ${motorcycle.year} - imagen ${currentImageIndex + 1}`}
+                className="h-full w-full p-3"
+                loading="eager"
+                style={{ objectFit: 'contain' }}
+                fallbackLabel="Sin imagen"
+              />
+
+              <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" />
+
+              {hasMultipleImages && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handlePreviousImage}
+                    aria-label="Imagen anterior"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/65 focus:outline-none focus:ring-2 focus:ring-white/70 md:h-12 md:w-12"
+                  >
+                    <span className="material-symbols-outlined text-2xl">chevron_left</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleNextImage}
+                    aria-label="Siguiente imagen"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/65 focus:outline-none focus:ring-2 focus:ring-white/70 md:h-12 md:w-12"
+                  >
+                    <span className="material-symbols-outlined text-2xl">chevron_right</span>
+                  </button>
+
+                  <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-black/55 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.28em] text-white backdrop-blur-sm">
+                    <span className="material-symbols-outlined text-sm text-[#FF6B35]">collections</span>
+                    {currentImageIndex + 1} / {allImages.length}
+                  </div>
+
+                  <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/40 px-3 py-2 backdrop-blur-sm">
+                    {allImages.map((_, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => setCurrentImageIndex(index)}
+                        aria-label={`Ver imagen ${index + 1}`}
+                        className={`h-2.5 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-white/70 ${
+                          index === currentImageIndex ? 'w-8 bg-white' : 'w-2.5 bg-white/50 hover:bg-white/80'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Info */}
@@ -223,9 +284,6 @@ export function MotorcycleDetail() {
                 <h3 className="text-2xl font-bold border-l-4 border-[#FF6B35] pl-4 text-[#0A2463]">
                   Referencias en YouTube
                 </h3>
-                <p className="mt-2 pl-4 text-sm text-slate-500">
-                  Dos videos de referencia para ver la moto en acción sin mostrar el enlace directo.
-                </p>
               </div>
               <span className="hidden md:inline-flex items-center gap-2 self-start rounded-full bg-[#0A2463]/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A2463]">
                 <span className="material-symbols-outlined text-base text-[#FF6B35]">smart_display</span>
@@ -353,30 +411,6 @@ export function MotorcycleDetail() {
 
         <MaintenanceEstimator motorcycle={motorcycle} />
 
-        {/* Galería */}
-        {allImages.length > 0 && (
-          <section className="mb-12">
-            <h3 className="text-2xl font-bold mb-8 border-l-4 border-[#FF6B35] pl-4 text-[#0A2463]">
-              Galería de Detalles
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {allImages.map((img, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentImageIndex(index)}
-                  className={`aspect-square rounded-2xl bg-slate-200 overflow-hidden hover:scale-[1.02] transition-transform cursor-pointer shadow-md ${
-                    index === currentImageIndex ? 'ring-4 ring-[#FF6B35]' : ''
-                  }`}
-                  style={{
-                    backgroundImage: `url("${img}")`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                  }}
-                ></button>
-              ))}
-            </div>
-          </section>
-        )}
       </main>
 
       {/* Footer */}

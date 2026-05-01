@@ -16,6 +16,7 @@ const costSimulatorRoutes = require('./modules/costSimulator/costSimulator.route
 const marketAnalysisRoutes = require('./modules/marketAnalysis/marketAnalysis.routes');
 const analyticsRoutes     = require('./modules/analytics/share.routes');
 const feedbackRoutes      = require('./modules/feedback/feedback.routes');
+const supportRoutes       = require('./modules/support/support.routes');
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use('/api/cost-simulator', costSimulatorRoutes);
 app.use('/api/market-analysis', marketAnalysisRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/support', supportRoutes);
 
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
