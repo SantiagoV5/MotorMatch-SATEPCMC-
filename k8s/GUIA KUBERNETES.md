@@ -99,7 +99,7 @@ bash k8s/local.sh up
 
 2. Cuando el script termine, el frontend debe exponerse localmente por terminal con este tunel para permitir acceso:
 
-`bash
+`
 kubectl port-forward svc/frontend 8080:80 -n motormatch
 `
 (Tras lanzar el puerto, podras entrar a `http://localhost:8080`)

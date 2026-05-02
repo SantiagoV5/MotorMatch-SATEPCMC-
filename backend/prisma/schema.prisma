@@ -41,6 +41,8 @@ model User {
   reviews               Review[]
   shareEvents           ShareEvent[]
   feedbacks             Feedback[]
+  priceAlerts           PriceAlert[]
+  notificationHistory   NotificationHistory[]
 
   @@map("users")
 }
@@ -83,6 +85,8 @@ model Motorcycle {
   favorites             Favorite[]
   costSimulations       CostSimulation[]
   reviews               Review[]
+  priceAlerts           PriceAlert[]
+  notificationHistory   NotificationHistory[]
 
   @@index([brand, model], map: "idx_motorcycles_brand_model")
   @@map("motorcycles")
@@ -202,7 +206,7 @@ model Feedback {
   isUseful              Boolean     @map("is_useful")
   improvement           String?     @db.VarChar(200)
   createdAt             DateTime    @default(now()) @map("created_at")
-  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   questionnaire         Questionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
 
   @@unique([userId, questionnaireId, recommendationSignature], name: "unique_feedback_per_generation")
@@ -226,4 +230,62 @@ model Review {
   @@index([motorcycleId], map: "idx_reviews_motorcycle_id")
   @@index([userId], map: "idx_reviews_user_id")
   @@map("reviews")
+}
+
+enum NotificationType {
+  EMAIL
+  IN_APP
+  BOTH
+}
+
+enum AlertStatus {
+  ACTIVE
+  PAUSED
+  DELETED
+}
+
+model PriceAlert {
+  id               Int              @id @default(autoincrement())
+  userId           Int              @map("user_id")
+  motorcycleId     Int              @map("motorcycle_id")
+  targetPrice      Decimal          @map("target_price") @db.Decimal(12, 2)
+  notificationType NotificationType @default(BOTH) @map("notification_type")
+  status           AlertStatus      @default(ACTIVE)
+  lastNotifiedAt   DateTime?        @map("last_notified_at")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  motorcycle       Motorcycle       @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
+  notifications    NotificationHistory[]
+
+  // Restricción única para evitar múltiples alertas activas/duplicadas sobre la misma moto al mismo precio
+  @@unique([userId, motorcycleId, targetPrice, status], name: "unique_alert_per_user_moto")
+
+  // Índices para escalabilidad
+  @@index([status, lastNotifiedAt], map: "idx_pricealerts_status_notified") // Crítico para Cron Job y Cooldown
+  @@index([userId, status], map: "idx_pricealerts_user_status") // Crítico para Panel Mis Alertas y Dashboard
+  @@index([motorcycleId, status], map: "idx_pricealerts_motorcycle_status") // Útil para Analytics (Ej. "100 personas esperan que baje YAMAHA")
+  @@map("price_alerts")
+}
+
+model NotificationHistory {
+  id               Int              @id @default(autoincrement())
+  userId           Int              @map("user_id")
+  alertId          Int              @map("alert_id")
+  motorcycleId     Int              @map("motorcycle_id")
+  previousPrice    Decimal          @map("previous_price") @db.Decimal(12, 2)
+  newPrice         Decimal          @map("new_price") @db.Decimal(12, 2)
+  type             NotificationType
+  isRead           Boolean          @default(false) @map("is_read")
+  sentAt           DateTime         @default(now()) @map("sent_at")
+
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alert            PriceAlert       @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  motorcycle       Motorcycle       @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
+
+  // Índices para historial y notificaciones
+  @@index([alertId, sentAt], map: "idx_notifications_alert_sentat") // Crítico para validar cooldown (Anti-spam) en el cron job
+  @@index([userId, isRead], map: "idx_notifications_user_read") // Crítico para Listados de notificaciones "In-App" (No leídas)
+  @@map("notification_history")
 }
