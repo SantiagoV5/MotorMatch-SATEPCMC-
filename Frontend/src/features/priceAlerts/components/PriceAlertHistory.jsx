@@ -56,26 +56,26 @@ export default function PriceAlertHistory() {
           <div key={item.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-white border border-slate-100 rounded-xl shadow-sm gap-4">
              <div>
                 <span className="text-[10px] font-bold px-2 py-1 bg-green-50 text-green-700 rounded-full mb-2 inline-block shadow-sm">
-                  {item.notificationType === 'EMAIL' ? 'Correo Enviado' : item.notificationType}
+                  {item.type === 'EMAIL' ? 'Correo Enviado' : item.type}
                 </span>
                 <p className="text-sm font-semibold text-slate-700">
-                  La moto con alerta bajó a <strong className="text-green-600">{formatCurrency(item.detectedPrice)}</strong>
+                  La moto con alerta bajó a <strong className="text-green-600">{formatCurrency(item.newPrice)}</strong>
                 </p>
                 <p className="text-xs text-slate-400 mt-1">
                   Enviado el {new Date(item.sentAt).toLocaleString()}
                 </p>
              </div>
              
-             {item.priceAlert?.motorcycle && (
+             {item.motorcycle && (
                <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-lg pr-4">
-                 {item.priceAlert.motorcycle.imageUrl ? (
-                    <img src={item.priceAlert.motorcycle.imageUrl} alt="Moto" className="w-10 h-10 object-cover rounded-md" />
+                 {item.motorcycle.imageUrl ? (
+                    <img src={item.motorcycle.imageUrl} alt="Moto" className="w-10 h-10 object-cover rounded-md" />
                  ) : (
                     <div className="w-10 h-10 bg-slate-200 rounded-md flex items-center justify-center"><span className="material-symbols-outlined text-sm text-slate-400">two_wheeler</span></div>
                  )}
                  <div>
-                   <p className="text-xs font-bold text-[#0A2463]">{item.priceAlert.motorcycle.brand}</p>
-                   <p className="text-xs text-slate-500">{item.priceAlert.motorcycle.model}</p>
+                   <p className="text-xs font-bold text-[#0A2463]">{item.motorcycle.brand}</p>
+                   <p className="text-xs text-slate-500">{item.motorcycle.model}</p>
                  </div>
                </div>
              )}

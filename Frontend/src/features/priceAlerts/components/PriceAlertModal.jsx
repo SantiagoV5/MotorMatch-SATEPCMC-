@@ -73,15 +73,22 @@ export function PriceAlertModal({ isOpen, onClose, motorcycle }) {
 
     } catch (err) {
       let errorMsg = 'Error al crear la alerta. Inténtalo más tarde.';
+      const backendMessage =
+        (typeof err === 'string' && err) ||
+        err?.message ||
+        err?.error ||
+        (Array.isArray(err?.details) ? err.details.join(' ') : '');
       
       // Manejo específico de errores
-      if (err?.message?.includes('token') || err?.message?.includes('autorizado')) {
+      if (backendMessage.includes('token') || backendMessage.includes('autorizado')) {
         errorMsg = 'Sesión expirada. Por favor, inicia sesión de nuevo.';
         setTimeout(() => { onClose(); navigate('/login'); }, 2000);
-      } else if (err?.message?.includes('10 alertas')) {
+      } else if (backendMessage.includes('10 alertas')) {
         errorMsg = 'Límite alcanzado: Tienes 10 alertas activas. Gestiona tus alertas en tu Perfil.';
-      } else if (err?.message?.includes('Ya tienes una alerta')) {
+      } else if (backendMessage.includes('Ya tienes una alerta')) {
         errorMsg = 'Ya tienes una alerta activa para esta moto.';
+      } else if (backendMessage) {
+        errorMsg = backendMessage;
       }
 
       setStatus({ state: 'error', message: errorMsg });

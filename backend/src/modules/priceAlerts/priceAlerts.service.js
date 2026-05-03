@@ -29,7 +29,7 @@ class PriceAlertsService {
 
     if (!motorcycle) {
       const error = new Error('La moto especificada no existe.');
-      error.status = 404;
+      error.statusCode = 404;
       throw error;
     }
 
@@ -43,7 +43,7 @@ class PriceAlertsService {
 
     if (activeAlertsCount >= 10) {
       const error = new Error('Has alcanzado el límite máximo de 10 alertas activas.');
-      error.status = 403;
+      error.statusCode = 403;
       throw error;
     }
 
@@ -58,7 +58,7 @@ class PriceAlertsService {
 
     if (existingAlert) {
       const error = new Error('Ya tienes una alerta activa o pausada para esta moto.');
-      error.status = 409;
+      error.statusCode = 409;
       throw error;
     }
 
@@ -163,7 +163,7 @@ class PriceAlertsService {
 
     if (activeCount >= 10) {
       const error = new Error('Has alcanzado el límite máximo de 10 alertas activas. Pausa o elimina una antes de reactivar.');
-      error.status = 403;
+      error.statusCode = 403;
       throw error;
     }
 
@@ -222,17 +222,17 @@ class PriceAlertsService {
   _ensureOwnership(alert, userId) {
     if (!alert) {
       const error = new Error('Alerta no encontrada.');
-      error.status = 404;
+      error.statusCode = 404;
       throw error;
     }
     if (alert.userId !== userId) {
       const error = new Error('Acceso denegado: esta alerta no te pertenece.');
-      error.status = 403;
+      error.statusCode = 403;
       throw error;
     }
     if (alert.status === 'DELETED') {
       const error = new Error('La alerta se encuentra eliminada y no puede ser modificada/consultada directamente.');
-      error.status = 400; // Podría ser 404 para no revelar su persistencia
+      error.statusCode = 400; // Podría ser 404 para no revelar su persistencia
       throw error;
     }
   }

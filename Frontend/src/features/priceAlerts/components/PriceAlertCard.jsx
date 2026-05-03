@@ -9,7 +9,7 @@ export default function PriceAlertCard({ alert, onPause, onReactivate, onDelete 
   
   // Format motorcycle details
   const motorcycleName = motorcycle.brand ? `${motorcycle.brand} ${motorcycle.model}` : 'Moto Eliminada';
-  const currentPrice = motorcycle.priceInfo?.price || 0;
+  const currentPrice = Number(motorcycle?.price ?? 0);
   
   // Price differences
   const diff = currentPrice - targetPrice;

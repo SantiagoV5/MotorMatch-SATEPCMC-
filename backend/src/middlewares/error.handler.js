@@ -26,8 +26,10 @@ function errorHandler(err, req, res, _next) {
   }
 
   // Errores de negocio que el código lanza manualmente (ej: credenciales)
-  if (err.statusCode) {
-    return res.status(err.statusCode).json({
+  // Soporta ambas convenciones para evitar respuestas 500 genéricas.
+  const businessStatus = err.statusCode || err.status;
+  if (businessStatus) {
+    return res.status(businessStatus).json({
       message: err.message,
     });
   }
