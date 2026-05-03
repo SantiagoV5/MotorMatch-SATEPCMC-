@@ -408,4 +408,93 @@ async function sendSupportEmail({ name, email, message, sourcePage }) {
   logger.info(`Mensaje de soporte enviado a ${SUPPORT_EMAIL} desde ${email}`);
 }
 
-module.exports = { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordChangedEmail, sendSupportEmail };
+// â”€â”€â”€ EnvÃ­o de alerta de precio â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+async function sendPriceAlertEmail({ to, name, motorcycle, targetPrice, currentPrice }) {
+  const transporter = createTransporter();
+  const appUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const formatCurrency = (value) => new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+  }).format(value);
+
+  const safeName = escapeHtml(name);
+  const safeBrand = escapeHtml(motorcycle.brand);
+  const safeModel = escapeHtml(motorcycle.model);
+  const motorcycleName = `${safeBrand} ${safeModel} ${motorcycle.year || ''}`.trim();
+  const motorcycleUrl = `${appUrl}/motos/${motorcycle.id}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+    <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
+        <tr><td align="center">
+          <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
+            <tr>
+              <td style="background:#22c55e;padding:32px 40px;text-align:center;">
+                <h1 style="margin:0;color:#fff;font-size:24px;letter-spacing:1px;">Precio alcanzado</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:40px;">
+                <h2 style="margin:0 0 16px;color:#0f172a;font-size:22px;">Hola, ${safeName}</h2>
+                <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">
+                  Buenas noticias: la moto que estabas esperando alcanzo o mejoro tu precio objetivo.
+                </p>
+                <div style="background:#f8fafc;border-left:4px solid #22c55e;padding:20px;margin-bottom:24px;">
+                  <h3 style="margin:0 0 10px;color:#0f172a;font-size:18px;">${motorcycleName}</h3>
+                  <p style="margin:4px 0;color:#475569;">Precio actual: <strong style="color:#0f172a;font-size:18px;">${formatCurrency(currentPrice)}</strong></p>
+                  <p style="margin:4px 0;color:#64748b;font-size:13px;">Tu precio objetivo era: ${formatCurrency(targetPrice)}</p>
+                </div>
+                <div style="text-align:center;margin:32px 0;">
+                  <a href="${motorcycleUrl}"
+                    style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-weight:700;font-size:15px;letter-spacing:1px;">
+                    Ver ficha tecnica
+                  </a>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
+                <p style="margin:0;color:#94a3b8;font-size:12px;">
+                  Recibes este correo porque configuraste una alerta de precio en MotorMatch.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  if (!transporter) {
+    logger.info('â”€'.repeat(60));
+    logger.info('ðŸ“§  ALERTA DE PRECIO (modo consola)');
+    logger.info(`    Para: ${to}`);
+    logger.info(`    Moto: ${motorcycle.brand} ${motorcycle.model}`);
+    logger.info(`    Precio actual: ${formatCurrency(currentPrice)} | Objetivo: ${formatCurrency(targetPrice)}`);
+    logger.info('â”€'.repeat(60));
+    return;
+  }
+
+  await transporter.sendMail({
+    from: `"MotorMatch" <${process.env.SMTP_USER}>`,
+    to,
+    subject: `Bajo de precio: ${motorcycle.brand} ${motorcycle.model}`,
+    html,
+  });
+
+  logger.info(`Email de alerta enviado a ${to} para moto ${motorcycle.id}`);
+}
+
+module.exports = {
+  sendVerificationEmail,
+  sendWelcomeEmail,
+  sendPasswordResetEmail,
+  sendPasswordChangedEmail,
+  sendSupportEmail,
+  sendPriceAlertEmail,
+};

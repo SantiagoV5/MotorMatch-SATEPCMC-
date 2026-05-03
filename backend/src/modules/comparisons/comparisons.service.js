@@ -5,48 +5,31 @@ function toNum(v) { return v === null || v === undefined ? null : Number(v); }
 /**
  * Guarda una comparación. bikeIds debe tener 2 ó 3 elementos.
  *
- * Columnas requeridas en la tabla `comparisons`:
- *   comparison_type  VARCHAR(20)  DEFAULT 'general'
- *   winner_bike_id   INTEGER      NULL  ← ID de la moto ganadora, NULL si hubo empate total
- *
- * Si las columnas no existen aún, ejecutar en Supabase SQL Editor:
- *   ALTER TABLE comparisons ADD COLUMN IF NOT EXISTS comparison_type VARCHAR(20) DEFAULT 'general';
- *   ALTER TABLE comparisons ADD COLUMN IF NOT EXISTS winner_bike_id INTEGER NULL;
- *
  * @param {number}      userId
  * @param {number[]}    bikeIds       - 2 ó 3 IDs de motos
- * @param {string}      comparisonType
- * @param {number|null} winnerBikeId  - ID de la ganadora, null si empate total
  */
-async function saveComparison(userId, bikeIds, comparisonType = 'general', winnerBikeId = null) {
+async function saveComparison(userId, bikeIds) {
   const [id1, id2 = null, id3 = null] = bikeIds.map(Number);
-
-  const validTypes = ['general', 'economica', 'potencia', 'comodidad'];
-  const safeType   = validTypes.includes(comparisonType) ? comparisonType : 'general';
-  // NULL si no hay ganador (empate total o modo sin ganador), número si lo hay
-  const safeWinner = winnerBikeId ? Number(winnerBikeId) : null;
 
   await prisma.$executeRaw`
     INSERT INTO comparisons
-      (user_id, bike_id_1, bike_id_2, bike_id_3, comparison_date, comparison_type, winner_bike_id)
+      (user_id, bike_id_1, bike_id_2, bike_id_3, comparison_date)
     VALUES
-      (${userId}, ${id1}, ${id2}, ${id3}, NOW(), ${safeType}, ${safeWinner})
+      (${userId}, ${id1}, ${id2}, ${id3}, NOW())
   `;
   return { saved: true };
 }
 
 /**
  * Devuelve las 20 comparaciones más recientes del usuario con datos de las motos.
- * Incluye `comparisonType` y `winnerBikeId` para que el frontend pueda
- * resaltar la ganadora tanto en el historial como al ver el detalle.
+ * Nota: comparisonType siempre es 'general' y winnerBikeId siempre es null
+ * (estas funcionalidades requieren columnas que no existen en el schema actual).
  */
 async function getComparisonHistory(userId) {
   const rows = await prisma.$queryRaw`
     SELECT
       c.id                                    AS "id",
       c.comparison_date                       AS "comparisonDate",
-      COALESCE(c.comparison_type, 'general')  AS "comparisonType",
-      c.winner_bike_id                        AS "winnerBikeId",
       -- Moto 1
       m1.id          AS "bike1Id",
       m1.brand       AS "bike1Brand",
@@ -77,9 +60,8 @@ async function getComparisonHistory(userId) {
   return rows.map(r => ({
     id:             toNum(r.id),
     comparisonDate: r.comparisonDate,
-    comparisonType: r.comparisonType || 'general',
-    // null cuando hubo empate total; número cuando hay ganadora
-    winnerBikeId:   r.winnerBikeId ? toNum(r.winnerBikeId) : null,
+    comparisonType: 'general',
+    winnerBikeId:   null,
     bikes: [
       { id: toNum(r.bike1Id), brand: r.bike1Brand, model: r.bike1Model, imageUrl: r.bike1Image, engineCc: toNum(r.bike1Cc) },
       { id: toNum(r.bike2Id), brand: r.bike2Brand, model: r.bike2Model, imageUrl: r.bike2Image, engineCc: toNum(r.bike2Cc) },

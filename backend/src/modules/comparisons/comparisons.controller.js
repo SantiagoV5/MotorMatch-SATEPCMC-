@@ -8,17 +8,11 @@ const {
 // POST /api/comparisons
 async function createComparison(req, res, next) {
   try {
-    const { bikeIds, comparisonType, winnerBikeId } = req.body;
+    const { bikeIds } = req.body;
     if (!Array.isArray(bikeIds) || bikeIds.length < 2 || bikeIds.length > 3) {
       return res.status(400).json({ message: 'Se requieren entre 2 y 3 motos para comparar.' });
     }
-    // winnerBikeId puede ser null (empate) o un número válido
-    const result = await saveComparison(
-      req.user.id,
-      bikeIds,
-      comparisonType  || 'general',
-      winnerBikeId    ?? null,
-    );
+    const result = await saveComparison(req.user.id, bikeIds);
     res.status(201).json({ data: result });
   } catch (err) { next(err); }
 }

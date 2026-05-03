@@ -7,6 +7,7 @@ import { motorcycleService } from '../services/motorcycleService';
 import { getMotorcycleReviews, createReview, updateReview, deleteReview } from '../services/reviewService';
 import { CostSimulatorModal } from '../../costSimulator';
 import MaintenanceEstimator from './MaintenanceEstimator';
+import { PriceAlertModal } from '../../priceAlerts/components/PriceAlertModal';
 
 export function MotorcycleDetail() {
   const { id } = useParams();
@@ -16,6 +17,7 @@ export function MotorcycleDetail() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [userBudget, setUserBudget] = useState(null);
   const [userId, setUserId] = useState(null);
   const [reviewSummary, setReviewSummary] = useState({ averageRating: 0, totalReviews: 0 });
@@ -43,8 +45,8 @@ export function MotorcycleDetail() {
   useEffect(() => {
     const getUserBudget = async () => {
       try {
-        // Get user from sessionStorage (same as useAuth)
-        const userDataStr = sessionStorage.getItem('mm_user');
+        // Get user from the active storage, matching the auth hook/client behavior.
+        const userDataStr = sessionStorage.getItem('mm_user') || localStorage.getItem('mm_user');
         if (userDataStr) {
           const userData = JSON.parse(userDataStr);
           setUserId(userData.id);
@@ -344,9 +346,22 @@ export function MotorcycleDetail() {
                 <span className="material-symbols-outlined">compare_arrows</span>
                 COMPARAR
               </button>
+              <button
+                onClick={() => setIsAlertOpen(true)}
+                className="flex-1 min-w-[200px] h-14 bg-white border-2 border-[#0A2463] text-[#0A2463] rounded-xl font-bold hover:bg-[#0A2463] hover:text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-black/5">
+                <span className="material-symbols-outlined">notifications_active</span>
+                ALERTA DE PRECIO
+              </button>
             </div>
           </div>
         </section>
+
+        {/* Alerta de Precio Modal */}
+        <PriceAlertModal
+          isOpen={isAlertOpen}
+          onClose={() => setIsAlertOpen(false)}
+          motorcycle={motorcycle}
+        />
 
         {/* Cost Simulator Modal */}
         <CostSimulatorModal

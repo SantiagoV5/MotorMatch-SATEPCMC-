@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Header from '../shared/components/layout/header'
 import useAuth from '../features/auth/hooks/useAuth'
 import { getAvailableBrands, getMyProfile, updateMyProfile } from '../features/profile/services/profileService'
+import PriceAlertList from '../features/priceAlerts/components/PriceAlertList'
 
 function normalizePhone(value) {
   return value.replace(/[^0-9+\-\s()]/g, '')
@@ -16,6 +17,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
+  const [activeTab, setActiveTab] = useState('DATA') // 'DATA' | 'ALERTS'
   const [availableBrands, setAvailableBrands] = useState([])
   const [form, setForm] = useState({
     fullName: user?.name || user?.fullName || '',
@@ -134,16 +136,34 @@ export default function ProfilePage() {
       <Header sticky={false} />
 
       <main className="mx-auto max-w-5xl px-4 md:px-6 py-10">
-        <div className="mb-8">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#FF6B35] mb-2">Mi perfil</p>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[#0A2463]">Gestiona tus datos personales</h1>
-          <p className="mt-3 text-sm text-slate-500 max-w-2xl">
-            Mantén actualizados tu nombre, contacto, estatura y marcas preferidas para mejorar tus recomendaciones.
+        <div className="mb-8 text-center md:text-left">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#FF6B35] mb-2">Mi Cuenta</p>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[#0A2463]">Panel de usuario</h1>
+          <p className="mt-3 text-sm text-slate-500 max-w-2xl mx-auto md:mx-0">
+            Configura tus datos, preferencias y gestiona tus alertas activas.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-          <section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 space-y-6">
+        {/* --- Menú de Pestañas --- */}
+        <div className="flex border-b border-slate-200 mb-8 overflow-x-auto hide-scrollbar">
+          <button
+            onClick={() => setActiveTab('DATA')}
+            className={`px-6 py-4 font-bold text-sm uppercase tracking-wider whitespace-nowrap border-b-2 transition-colors ${activeTab === 'DATA' ? 'border-[#0A2463] text-[#0A2463]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+          >
+            Datos Personales
+          </button>
+          <button
+            onClick={() => setActiveTab('ALERTS')}
+            className={`px-6 py-4 font-bold text-sm uppercase tracking-wider whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'ALERTS' ? 'border-[#FF6B35] text-[#FF6B35]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+          >
+            <span className="material-symbols-outlined text-lg">notifications</span>
+            Mis Alertas
+          </button>
+        </div>
+
+        {activeTab === 'DATA' ? (
+          <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 space-y-6">
             {loading ? (
               <p className="text-slate-500">Cargando perfil...</p>
             ) : (
@@ -253,6 +273,17 @@ export default function ProfilePage() {
             </button>
           </aside>
         </form>
+        ) : (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 min-h-[400px]">
+            <div className="mb-6">
+              <h2 className="text-2xl font-black text-[#0A2463]">Alertas de Precio</h2>
+              <p className="text-sm text-slate-500">
+                Te notificaremos cuando el precio baje de tu objetivo. Puedes tener hasta 10 alertas activas.
+              </p>
+            </div>
+            <PriceAlertList />
+          </div>
+        )}
       </main>
     </div>
   )

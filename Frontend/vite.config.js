@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 function resolveApiProxyTarget() {
-  const rawTarget = process.env.VITE_API_URL || 'http://backend:3000';
+  const rawTarget = process.env.VITE_API_URL || 'http://localhost:3000';
   return rawTarget.replace(/\/api\/?$/, '');
 }
 
