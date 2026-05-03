@@ -45,8 +45,8 @@ export function MotorcycleDetail() {
   useEffect(() => {
     const getUserBudget = async () => {
       try {
-        // Get user from sessionStorage (same as useAuth)
-        const userDataStr = sessionStorage.getItem('mm_user');
+        // Get user from the active storage, matching the auth hook/client behavior.
+        const userDataStr = sessionStorage.getItem('mm_user') || localStorage.getItem('mm_user');
         if (userDataStr) {
           const userData = JSON.parse(userDataStr);
           setUserId(userData.id);
