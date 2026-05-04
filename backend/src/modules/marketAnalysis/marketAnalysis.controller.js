@@ -1,86 +1,59 @@
 const {
   getPopularBrands,
   getSegmentPrices,
+  getPriceEvolution,
   getTopMotorcyclesList,
+  getMarketSummary,
 } = require('./marketAnalysis.service');
 
-/**
- * GET /api/market-analysis/brands
- * Obtiene las marcas más populares
- */
+// Períodos válidos para evitar inyección
+const VALID_PERIODS = ['1m', '3m', '6m', '1y'];
+function safePeriod(raw, fallback = '1y') {
+  return VALID_PERIODS.includes(raw) ? raw : fallback;
+}
+
+// GET /api/market-analysis/brands?period=1y
 async function getBrands(req, res, next) {
   try {
-    const brands = await getPopularBrands();
-    res.json({
-      success: true,
-      data: brands,
-    });
-  } catch (error) {
-    next(error);
-  }
+    const period = safePeriod(req.query.period);
+    const data   = await getPopularBrands(period);
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
 }
 
-/**
- * GET /api/market-analysis/segments
- * Obtiene precios promedio por segmento
- */
+// GET /api/market-analysis/segments
 async function getSegments(req, res, next) {
   try {
-    const segments = await getSegmentPrices();
-    res.json({
-      success: true,
-      data: segments,
-    });
-  } catch (error) {
-    next(error);
-  }
+    const data = await getSegmentPrices();
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
 }
 
-/**
- * GET /api/market-analysis/top-motorcycles
- * Obtiene top 5 motos más buscadas
- */
+// GET /api/market-analysis/prices?period=6m
+async function getPrices(req, res, next) {
+  try {
+    const period = safePeriod(req.query.period, '6m');
+    const data   = await getPriceEvolution(period);
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
+}
+
+// GET /api/market-analysis/top-searches?period=1m
 async function getTopMotorcycles(req, res, next) {
   try {
-    const topMotos = await getTopMotorcyclesList();
-    res.json({
-      success: true,
-      data: topMotos,
-    });
-  } catch (error) {
-    next(error);
-  }
+    const period = safePeriod(req.query.period, '1m');
+    const data   = await getTopMotorcyclesList(period);
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
 }
 
-/**
- * GET /api/market-analysis/summary
- * Obtiene resumen completo de análisis
- */
+// GET /api/market-analysis/summary?period=1y
 async function getSummary(req, res, next) {
   try {
-    const [brands, segments, topMotos] = await Promise.all([
-      getPopularBrands(),
-      getSegmentPrices(),
-      getTopMotorcyclesList(),
-    ]);
-
-    res.json({
-      success: true,
-      data: {
-        brands,
-        segments,
-        topMotorcycles: topMotos,
-        lastUpdated: new Date(),
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
+    const period = safePeriod(req.query.period);
+    const data   = await getMarketSummary(period);
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
 }
 
-module.exports = {
-  getBrands,
-  getSegments,
-  getTopMotorcycles,
-  getSummary,
-};
+module.exports = { getBrands, getSegments, getPrices, getTopMotorcycles, getSummary };

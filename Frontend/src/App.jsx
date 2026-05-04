@@ -13,6 +13,7 @@ import ComparisonHistoryPage from './pages/ComparisonHistoryPage'
 import { SimulationsHistoryPage } from './pages/SimulationsHistoryPage'
 import FinancialTipsPage from './pages/FinancialTipsPage'
 import MarketAnalysisPage from './pages/MarketAnalysisPage'
+import MarketTrendsPage from './pages/MarketTrendsPage'
 import ProfilePage from './pages/ProfilePage'
 import HelpFaqPage from './pages/HelpFaqPage'
 import SupportPage from './pages/SupportPage'
@@ -80,6 +81,11 @@ function App() {
       <Route path="/market-analysis" element={
         <ProtectedRoute>
           <MarketAnalysisPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/market-trends" element={
+        <ProtectedRoute>
+          <MarketTrendsPage />
         </ProtectedRoute>
       } />
       <Route path="/profile" element={
