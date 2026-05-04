@@ -8,6 +8,7 @@ import { getMotorcycleReviews, createReview, updateReview, deleteReview } from '
 import { CostSimulatorModal } from '../../costSimulator';
 import MaintenanceEstimator from './MaintenanceEstimator';
 import { PriceAlertModal } from '../../priceAlerts/components/PriceAlertModal';
+import useAuth from '../../auth/hooks/useAuth';
 
 export function MotorcycleDetail() {
   const { id } = useParams();
@@ -19,7 +20,9 @@ export function MotorcycleDetail() {
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [userBudget, setUserBudget] = useState(null);
-  const [userId, setUserId] = useState(null);
+  const { user, token } = useAuth();
+  const userId = user?.id || null;
+  const isAuthenticated = Boolean(token);
   const [reviewSummary, setReviewSummary] = useState({ averageRating: 0, totalReviews: 0 });
   const [reviews, setReviews] = useState([]);
   const [reviewsPage, setReviewsPage] = useState(1);
@@ -43,23 +46,8 @@ export function MotorcycleDetail() {
 
   // Get user profile info for budget
   useEffect(() => {
-    const getUserBudget = async () => {
-      try {
-        // Get user from the active storage, matching the auth hook/client behavior.
-        const userDataStr = sessionStorage.getItem('mm_user') || localStorage.getItem('mm_user');
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
-          setUserId(userData.id);
-          if (userData.budgetRange?.max) {
-            setUserBudget(userData.budgetRange.max);
-          }
-        }
-      } catch (err) {
-        console.error('Error getting user budget:', err);
-      }
-    };
-    getUserBudget();
-  }, []);
+    setUserBudget(user?.budgetRange?.max || null);
+  }, [user]);
 
   const handleFavoriteToggle = async () => {
     const next = !isFavorite;
@@ -181,7 +169,7 @@ export function MotorcycleDetail() {
   const handleSaveReview = async (event) => {
     event.preventDefault();
 
-    if (!userId) {
+    if (!isAuthenticated) {
       setReviewsError('Inicia sesión para escribir una reseña.');
       scrollToReviews();
       return;
@@ -612,7 +600,7 @@ export function MotorcycleDetail() {
                 </p>
               </div>
 
-              {!userId && (
+              {!isAuthenticated && (
                 <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                   Inicia sesión para dejar tu reseña.
                 </div>
@@ -664,7 +652,7 @@ export function MotorcycleDetail() {
 
                 <button
                   type="submit"
-                  disabled={reviewsSubmitting || !userId || reviewComment.trim().length < 20}
+                  disabled={reviewsSubmitting || !isAuthenticated || reviewComment.trim().length < 20}
                   className="w-full rounded-2xl bg-[#FF6B35] px-5 py-3 text-sm font-black uppercase tracking-widest text-white transition-colors hover:brightness-110 disabled:opacity-60"
                 >
                   {reviewsSubmitting ? 'Guardando...' : currentReviewId ? 'Actualizar reseña' : 'Publicar reseña'}

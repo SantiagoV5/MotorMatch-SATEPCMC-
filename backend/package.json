@@ -4,16 +4,16 @@
   "description": "MotorMatch API - Sistema de recomendación de motocicletas para Colombia",
   "main": "src/server.js",
   "scripts": {
-    "predev": "prisma generate",
+    "predev": "dotenv -e ../.env -- prisma generate",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "prestart": "prisma generate",
+    "prestart": "dotenv -e ../.env -- prisma generate",
     "import-bikes": "node scripts/importBikes.js",
     "enrich-bikes": "node scripts/enrichBike.js",
     "update-prices": "node scripts/updatePrices.js",
-    "db:migrate": "prisma migrate dev",
-    "db:generate": "prisma generate",
-    "db:studio": "prisma studio"
+    "db:migrate": "dotenv -e ../.env -- prisma migrate dev",
+    "db:generate": "dotenv -e ../.env -- prisma generate",
+    "db:studio": "dotenv -e ../.env -- prisma studio"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
