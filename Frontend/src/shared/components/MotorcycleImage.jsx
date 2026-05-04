@@ -8,6 +8,9 @@ export default function MotorcycleImage({
   fallbackIcon = 'two_wheeler',
   loading = 'lazy',
   decoding = 'async',
+  fetchPriority = 'auto',
+  width = 960,
+  height = 540,
   zoom = 1,
   style: imgStyle,
   ...imgProps
@@ -36,6 +39,9 @@ export default function MotorcycleImage({
       className={className}
       loading={loading}
       decoding={decoding}
+      fetchPriority={fetchPriority}
+      width={width}
+      height={height}
       referrerPolicy="no-referrer"
       onError={() => setHasError(true)}
       style={{

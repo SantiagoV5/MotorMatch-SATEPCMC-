@@ -190,6 +190,10 @@ export default function BrandLogoCarousel({ items }) {
                 <img
                   src={item.logo}
                   alt={`Logo ${item.name}`}
+                  width="176"
+                  height="56"
+                  loading="lazy"
+                  decoding="async"
                   className="max-h-full max-w-full object-contain"
                   draggable="false"
                 />

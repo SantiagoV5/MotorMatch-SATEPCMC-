@@ -69,7 +69,7 @@ export default function PriceAlertHistory() {
              {item.motorcycle && (
                <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-lg pr-4">
                  {item.motorcycle.imageUrl ? (
-                    <img src={item.motorcycle.imageUrl} alt="Moto" className="w-10 h-10 object-cover rounded-md" />
+                    <img src={item.motorcycle.imageUrl} alt="Moto" className="w-10 h-10 object-cover rounded-md" width="40" height="40" loading="lazy" decoding="async" />
                  ) : (
                     <div className="w-10 h-10 bg-slate-200 rounded-md flex items-center justify-center"><span className="material-symbols-outlined text-sm text-slate-400">two_wheeler</span></div>
                  )}
