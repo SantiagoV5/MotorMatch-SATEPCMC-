@@ -18,7 +18,7 @@ const analyticsRoutes     = require('./modules/analytics/share.routes');
 const feedbackRoutes      = require('./modules/feedback/feedback.routes');
 const supportRoutes       = require('./modules/support/support.routes');
 const reviewRoutes        = require('./modules/reviews/review.routes');
-const priceAlertsRoutes   = require('./modules/priceAlerts/priceAlerts.routes');
+const searchesRoutes      = require('./modules/searches/searches.routes');
 
 const app = express();
 
@@ -47,10 +47,10 @@ app.use('/api/comparisons', comparisonsRoutes);
 app.use('/api/cost-simulator', costSimulatorRoutes);
 app.use('/api/market-analysis', marketAnalysisRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/searches',  searchesRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/reviews', reviewRoutes);
-app.use('/api/price-alerts', priceAlertsRoutes);
 
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
