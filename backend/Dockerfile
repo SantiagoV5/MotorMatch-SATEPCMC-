@@ -4,6 +4,6 @@ WORKDIR /app/backend
 COPY package*.json ./
 RUN npm install
 COPY . .
-RUN npx prisma generate
+RUN DATABASE_URL="postgresql://user:pass@localhost:5432/motormatch" DIRECT_URL="postgresql://user:pass@localhost:5432/motormatch" npx prisma generate
 EXPOSE 3000
 CMD ["npm", "run", "dev"]
