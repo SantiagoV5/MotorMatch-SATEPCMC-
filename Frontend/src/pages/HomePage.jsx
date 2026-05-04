@@ -15,17 +15,17 @@ const MIN_PRICE = 5000000;
 const MAX_PRICE = 50000000;
 
 const BRAND_LOGOS = {
-  AKT: 'https://cloudfront-us-east-1.images.arcpublishing.com/elespectador/4FRZGTJONRENZGGGUP4HPFLP3Q.jpg',
-  BMW: 'https://upload.wikimedia.org/wikipedia/commons/4/44/BMW.svg',
-  DUCATI: 'https://upload.wikimedia.org/wikipedia/commons/6/66/Ducati_red_logo.PNG',
-  KTM: 'https://ktm-bikes.co/cdn/shop/files/KTM_Logo-2016-RGB_2C_onDark_Transparent_Vertical_edacb7ef-328c-4735-b2ee-4cfd95e356c2.png?v=1726938283',
-  SUZUKI: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Suzuki_Motor_Corporation_logo.svg/1280px-Suzuki_Motor_Corporation_logo.svg.png',
-  YAMAHA: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmPoWWy2WFpEU_4oOCu_mqO_LkUkEbVGODqw&s',
-  BAJAJ: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSw3RzT2dBxuMpDYb8k__NMPOZju_joi5RHEg&s',
-  HONDA: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Honda_Logo.svg/330px-Honda_Logo.svg.png',
-  TVS: 'https://i.pinimg.com/736x/15/50/91/155091f7e6e708676b72a12f6717983e.jpg',
-  KAWASAKI: 'https://upload.wikimedia.org/wikipedia/commons/1/15/Kawasaki_Logo_vert.svg',
-  VICTORY: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfxPD26PLGfdHYqAbAWfA3Pzepy1UOIvk_hQ&s'
+  AKT: '/optimized/brands/akt.webp',
+  BMW: '/optimized/brands/bmw.svg',
+  DUCATI: '/optimized/brands/ducati.webp',
+  KTM: '/optimized/brands/ktm.webp',
+  SUZUKI: '/optimized/brands/suzuki.webp',
+  YAMAHA: '/optimized/brands/yamaha.webp',
+  BAJAJ: '/optimized/brands/bajaj.webp',
+  HONDA: '/optimized/brands/honda.webp',
+  TVS: '/optimized/brands/tvs.webp',
+  KAWASAKI: '/optimized/brands/kawasaki.svg',
+  VICTORY: '/optimized/brands/victory.webp'
 };
 
 const getBrandLogo = (brand) => BRAND_LOGOS[brand.toUpperCase()] || null;
@@ -536,8 +536,13 @@ export default function HomePage() {
           <div className="absolute inset-0 opacity-30">
             <img
               className="w-full h-full object-cover"
-              src="https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=1920&h=300&fit=crop"
+              src="/optimized/home-hero.webp"
               alt="Motorcycle on scenic highway"
+              width="1920"
+              height="300"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
             />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/50 to-transparent"></div>

@@ -118,7 +118,7 @@ export function PriceAlertModal({ isOpen, onClose, motorcycle }) {
           {/* Info de la moto */}
           <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-6 flex items-center gap-4">
             {motorcycle.imageUrl && (
-              <img src={motorcycle.imageUrl} alt={motorcycle.model} className="w-16 h-16 object-cover rounded-lg border border-slate-200" />
+              <img src={motorcycle.imageUrl} alt={motorcycle.model} className="w-16 h-16 object-cover rounded-lg border border-slate-200" width="64" height="64" loading="lazy" decoding="async" />
             )}
             <div>
               <p className="text-xs font-bold text-[#FF6B35] uppercase">{motorcycle.brand}</p>

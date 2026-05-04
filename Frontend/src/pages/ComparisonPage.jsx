@@ -3,8 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../shared/components/layout/header';
 import { getAllMotorcycles, getMotorcycleById } from '../features/motorcycles/services/motorcycleService';
 import { saveComparison } from '../features/comparison/services/comparisonService';
-import { ComparisonPDF } from '../features/comparison/components/ComparisonPDF';
-import { PDFDownloadLink, pdf } from '@react-pdf/renderer';
 import apiClient from '../services/apiClient';
 import ShareWhatsAppModal from '../shared/components/ShareWhatsAppModal';
 import { getAppUrl } from '../shared/utils/whatsappShare';
@@ -24,6 +22,27 @@ function formatCOP(price) {
 }
 
 const MAX_SLOTS = 3;
+const PDF_FILE_NAME = 'MotorMatch_Comparacion.pdf';
+
+async function createComparisonPdfBlob(activeMotos, winners) {
+  const [{ pdf }, { ComparisonPDF }] = await Promise.all([
+    import('@react-pdf/renderer'),
+    import('../features/comparison/components/ComparisonPDF'),
+  ]);
+
+  return pdf(<ComparisonPDF motos={activeMotos} rows={ROWS} highlights={winners} />).toBlob();
+}
+
+function downloadBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DEFINICIÓN DE MODOS DE COMPARACIÓN
@@ -1003,6 +1022,8 @@ export default function ComparisonPage() {
   const [saving, setSaving]       = useState(false);
   const [saved, setSaved]         = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [pdfSharing, setPdfSharing] = useState(false);
 
   // Perfil del cuestionario
   const [questProfile, setQuestProfile]   = useState(null);
@@ -1198,11 +1219,25 @@ export default function ComparisonPage() {
     '', '¿Qué opinas?', '', `App: ${shareBaseUrl}`,
   ].join('\n');
 
+  async function handleDownloadPDF() {
+    setPdfGenerating(true);
+    try {
+      const blob = await createComparisonPdfBlob(activeMotos, winners);
+      downloadBlob(blob, PDF_FILE_NAME);
+    } catch (err) {
+      console.error('Error al generar PDF:', err);
+      alert('No se pudo generar el PDF. Intenta de nuevo.');
+    } finally {
+      setPdfGenerating(false);
+    }
+  }
+
   // Funcionalidad extra: Compartir PDF Nativo
   async function handleSharePDF() {
+    setPdfSharing(true);
     try {
-      const blob = await pdf(<ComparisonPDF motos={activeMotos} rows={ROWS} highlights={winners} />).toBlob();
-      const file = new File([blob], "MotorMatch_Comparacion.pdf", { type: "application/pdf" });
+      const blob = await createComparisonPdfBlob(activeMotos, winners);
+      const file = new File([blob], PDF_FILE_NAME, { type: "application/pdf" });
       
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
@@ -1215,6 +1250,8 @@ export default function ComparisonPage() {
       }
     } catch (err) {
       console.error('Error al compartir PDF:', err);
+    } finally {
+      setPdfSharing(false);
     }
   }
 
@@ -1244,30 +1281,31 @@ export default function ComparisonPage() {
 
             {canCompare && compared && (
               <div className="flex items-center gap-2 border-l border-primary/20 pl-3">
-                <PDFDownloadLink 
-                  document={<ComparisonPDF motos={activeMotos} rows={ROWS} highlights={winners} />} 
-                  fileName="MotorMatch_Comparacion.pdf"
+                <button
+                  type="button"
+                  onClick={handleDownloadPDF}
+                  disabled={pdfGenerating}
                   className="flex items-center justify-center gap-2 bg-slate-800 text-white font-bold text-xs uppercase tracking-widest px-3 py-2 rounded-lg hover:bg-slate-700 transition-colors"
                 >
-                  {({ loading }) => (
-                    <>
-                      <span className="material-symbols-outlined text-sm">
-                        {loading ? 'hourglass_empty' : 'picture_as_pdf'}
-                      </span>
-                      <span className="hidden sm:inline">
-                        {loading ? 'Generando...' : 'Exportar PDF'}
-                      </span>
-                    </>
-                  )}
-                </PDFDownloadLink>
+                  <span className="material-symbols-outlined text-sm">
+                    {pdfGenerating ? 'hourglass_empty' : 'picture_as_pdf'}
+                  </span>
+                  <span className="hidden sm:inline">
+                    {pdfGenerating ? 'Generando...' : 'Exportar PDF'}
+                  </span>
+                </button>
                 
                 {/* Share PDF Button (Mobile optimized) */}
                 <button
+                  type="button"
                   onClick={handleSharePDF}
+                  disabled={pdfSharing}
                   title="Compartir PDF nativo"
-                  className="flex items-center justify-center bg-slate-100 text-slate-800 font-bold text-xs uppercase tracking-widest px-3 py-2 rounded-lg hover:bg-slate-200 transition-colors"
+                  className="flex items-center justify-center bg-slate-100 text-slate-800 font-bold text-xs uppercase tracking-widest px-3 py-2 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-60"
                 >
-                  <span className="material-symbols-outlined text-sm">ios_share</span>
+                  <span className="material-symbols-outlined text-sm">
+                    {pdfSharing ? 'hourglass_empty' : 'ios_share'}
+                  </span>
                 </button>
               </div>
             )}

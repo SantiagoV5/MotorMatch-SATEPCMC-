@@ -12,7 +12,10 @@ function AuthSidePanel({ description }) {
         <img
           alt="Motocicleta en carretera abierta"
           className="w-full h-full object-cover opacity-60"
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4OkUM0CEcwPjlXq1333W0s4KYr8hQwPfhydGrf-JFL--HyM3mHPQMW8NBh39o8UxWDKw9TSkUFy7xrrk42_eMLEdrhtFwtVpWTdUvUlx4S0AfIBhifrR-nfgDxR9rPdk_6Ku1AMLt1earHV933nwWwF81NzzYd__gGwJ2hZaPrp3xHosQM3_GbJ2_auJV5EsMK6la-OGssX2zMmshRT9qaDPBKTVc5baYHBvwmp0B8LYzSGbEg4KVKlbVn1yi8eiXJjjQTYq2xBc"
+          width="1200"
+          height="1600"
+          decoding="async"
+          src="/optimized/auth-panel-bg.webp"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/40 to-transparent" />
       </div>

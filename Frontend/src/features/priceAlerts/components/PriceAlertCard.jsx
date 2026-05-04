@@ -49,7 +49,7 @@ export default function PriceAlertCard({ alert, onPause, onReactivate, onDelete 
       {/* Imagen Moto */}
       <div className="w-full md:w-40 h-32 md:h-full bg-slate-100 flex-shrink-0 relative">
          {motorcycle.imageUrl ? (
-            <img src={motorcycle.imageUrl} alt={motorcycleName} className="w-full h-full object-cover grayscale-[20%]" />
+            <img src={motorcycle.imageUrl} alt={motorcycleName} className="w-full h-full object-cover grayscale-[20%]" width="320" height="160" loading="lazy" decoding="async" />
          ) : (
             <div className="w-full h-full flex items-center justify-center text-slate-400">
                <span className="material-symbols-outlined text-4xl">two_wheeler</span>

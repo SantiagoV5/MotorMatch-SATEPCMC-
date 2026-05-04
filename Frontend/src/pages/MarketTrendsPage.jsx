@@ -464,7 +464,7 @@ export default function MarketTrendsPage() {
                           <div className="flex items-center gap-3">
                             <div className="w-14 h-10 rounded-lg bg-slate-50 border border-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
                               {moto.imageUrl
-                                ? <img src={moto.imageUrl} alt={`${moto.brand} ${moto.model}`} className="w-full h-full object-contain p-1" />
+                                ? <img src={moto.imageUrl} alt={`${moto.brand} ${moto.model}`} className="w-full h-full object-contain p-1" width="56" height="40" loading="lazy" decoding="async" />
                                 : <span className="material-symbols-outlined text-slate-300 text-lg">two_wheeler</span>}
                             </div>
                             <div>

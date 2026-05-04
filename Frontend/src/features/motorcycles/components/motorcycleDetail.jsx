@@ -245,6 +245,10 @@ export function MotorcycleDetail() {
                 alt={`${motorcycle.brand} ${motorcycle.model} ${motorcycle.year} - imagen ${currentImageIndex + 1}`}
                 className="h-full w-full p-3"
                 loading="eager"
+                fetchPriority="high"
+                width={1280}
+                height={720}
+                sizes="(min-width: 1024px) 50vw, 100vw"
                 style={{ objectFit: 'contain' }}
                 fallbackLabel="Sin imagen"
               />
@@ -433,7 +437,10 @@ export function MotorcycleDetail() {
                         src={reference.thumbnailUrl}
                         alt={`Referencia de YouTube ${index + 1}`}
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        width="640"
+                        height="360"
                         loading="lazy"
+                        decoding="async"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0A2463] to-[#1f3b8a] text-white">
