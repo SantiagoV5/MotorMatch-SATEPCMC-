@@ -1,0 +1,366 @@
+[
+  {
+    "motorcycleId": 1,
+    "motorcycleLabel": "AKT NKD 125 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=hgMmCsDka_I"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=s2alQMfNtYg"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 2,
+    "motorcycleLabel": "AKT FLEX 125 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=kmuo-LR7uKk"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=1jNaPYAi2jM"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 3,
+    "motorcycleLabel": "AKT TTR 200 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=bK2PNHnj9_c"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=0N6qRtpvcJ0"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 4,
+    "motorcycleLabel": "HONDA CB190R 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=m1cPPj4mZkM"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=DmGTyc7tqSQ"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 5,
+    "motorcycleLabel": "HONDA PCX 160 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=TZ_YPzUWfKw"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=wmbLAsFQBd0"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 6,
+    "motorcycleLabel": "HONDA XR 190 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=gcLV1Gu9iaU"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=NYFAe5rZwLk"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 7,
+    "motorcycleLabel": "YAMAHA MT-07 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=OHdRdkvD870"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=wGwc7bURd5g"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 8,
+    "motorcycleLabel": "YAMAHA CRYPTON FINN 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=d7Ju8oyNaPs"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=hekTtxTlIUE"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 9,
+    "motorcycleLabel": "YAMAHA FZ 25 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=is56iVtpcGU"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=R0IPncrungg"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 10,
+    "motorcycleLabel": "KAWASAKI VERSYS-X 300 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=w7scnlzvcLc"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=HwBQfB89Y0w"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 11,
+    "motorcycleLabel": "KAWASAKI NINJA 400 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=FZzD-RzxQA0"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=R1nVR6yH5nI"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 12,
+    "motorcycleLabel": "KAWASAKI NINJA H2 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=UjWY2c6WJkU"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=SmGkbraNpyg"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 13,
+    "motorcycleLabel": "SUZUKI GSX-S1000 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=vfKfSQFmcPI"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=iEzpg3acNsg"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 14,
+    "motorcycleLabel": "SUZUKI V-STROM 250 SX 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=Uar20KW3cbk"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=546JSlbZ_q4"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 15,
+    "motorcycleLabel": "SUZUKI GIXXER 150 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=CLY0PDq1qqc"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=ZviGtGBE4s4"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 16,
+    "motorcycleLabel": "BMW G310R 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=oOwipVNJjVo"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=dyqk3L_ljio"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 17,
+    "motorcycleLabel": "BMW S1000RR 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=89z2_Mve3Go"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=Y5cwgCL2MP8"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 18,
+    "motorcycleLabel": "KTM DUKE 890 R 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=6S3y9UzXEUE"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=rW4abC29NyM"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 19,
+    "motorcycleLabel": "KTM DUKE 390 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=zkS2i2gwUOs"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=qganIzldOrc"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 20,
+    "motorcycleLabel": "KTM DUKE 200 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=xnvUqu6G2lA"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=QtOfOTdq6lA"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 21,
+    "motorcycleLabel": "BAJAJ BOXER CT 100 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=OZCKmTvXJM0"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=h9Uxr2Dz6k8"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 22,
+    "motorcycleLabel": "BAJAJ NS 200 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=1b1T2USMP4E"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=loYt0agAD5M"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 23,
+    "motorcycleLabel": "BAJAJ DOMINAR 400 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=xUyIZetVeb0"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=SvepSXYGBKc"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 24,
+    "motorcycleLabel": "TVS APACHE RTR 200 4V 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=JNy8d50Onig"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=AHiFmvqlQjg"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 25,
+    "motorcycleLabel": "TVS APACHE RTR 160 4V 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=kBT3K-n7OEA"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=gVDBHkKaF28"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 26,
+    "motorcycleLabel": "TVS RAIDER 125 2026",
+    "videos": [
+      {
+        "title": "review 1",
+        "url": "https://www.youtube.com/watch?v=Jb_xSu9FfL4"
+      },
+      {
+        "title": "review 2",
+        "url": "https://www.youtube.com/watch?v=yeDXjAuJP2o"
+      }
+    ]
+  }
+]

@@ -137,11 +137,12 @@ function MaintenanceEstimator({ motorcycle }) {
         
         {/* Left Side: Controls */}
         <div className="p-8 md:w-5/12 bg-slate-50 border-r border-slate-200 flex flex-col justify-center">
-          <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">
+          <label htmlFor="monthly-mileage" className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">
             Mi kilometraje mensual estimado
           </label>
           <div className="flex items-center gap-3">
             <input 
+              id="monthly-mileage"
               type="number" 
               min="0"
               step="50"

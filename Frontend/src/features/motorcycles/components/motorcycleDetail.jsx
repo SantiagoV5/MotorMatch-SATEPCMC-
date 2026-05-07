@@ -1,21 +1,116 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Header from '../../../shared/components/layout/header';
 import MotorcycleImage from '../../../shared/components/MotorcycleImage';
 import { addFavorite, removeFavorite, getMyFavoriteIds } from '../../favorites/services/favoritesService';
 import { motorcycleService } from '../services/motorcycleService';
 import { getMotorcycleReviews, createReview, updateReview, deleteReview } from '../services/reviewService';
-import { CostSimulatorModal } from '../../costSimulator';
 import apiClient from '../../../services/apiClient'; // para registrar búsquedas
-import MaintenanceEstimator from './MaintenanceEstimator';
-import { PriceAlertModal } from '../../priceAlerts/components/PriceAlertModal';
 import useAuth from '../../auth/hooks/useAuth';
+
+const CostSimulatorModal = lazy(() =>
+  import('../../costSimulator').then((module) => ({
+    default: module.CostSimulatorModal,
+  })),
+);
+const PriceAlertModal = lazy(() =>
+  import('../../priceAlerts/components/PriceAlertModal').then((module) => ({
+    default: module.PriceAlertModal,
+  })),
+);
+const MaintenanceEstimator = lazy(() => import('./MaintenanceEstimator'));
+
+const DETAIL_CACHE_PREFIX = 'mm_motorcycle_detail_';
+
+function warmMotorcycleHeroImage(imageUrl) {
+  if (typeof document === 'undefined' || !imageUrl) return;
+  if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) return;
+
+  const existingPreload = document.head.querySelector(`link[data-mm-motorcycle-hero="${imageUrl}"]`);
+  if (!existingPreload) {
+    const preloadLink = document.createElement('link');
+    preloadLink.rel = 'preload';
+    preloadLink.as = 'image';
+    preloadLink.href = imageUrl;
+    preloadLink.setAttribute('data-mm-motorcycle-hero', imageUrl);
+    document.head.appendChild(preloadLink);
+  }
+}
+
+function runWhenBrowserIsIdle(callback) {
+  if (typeof window === 'undefined') return () => {};
+
+  if ('requestIdleCallback' in window) {
+    const handle = window.requestIdleCallback(callback, { timeout: 1200 });
+    return () => window.cancelIdleCallback(handle);
+  }
+
+  const timeoutId = window.setTimeout(callback, 250);
+  return () => window.clearTimeout(timeoutId);
+}
+
+function readCachedMotorcycle(cacheKey) {
+  if (typeof sessionStorage === 'undefined') return null;
+
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (!cached) return null;
+
+    const { motorcycle, cachedAt } = JSON.parse(cached);
+    const isFresh = Date.now() - Number(cachedAt) < 5 * 60 * 1000;
+    return isFresh ? motorcycle : null;
+  } catch {
+    return null;
+  }
+}
+
+function cacheMotorcycle(cacheKey, motorcycle) {
+  if (typeof sessionStorage === 'undefined' || !motorcycle) return;
+
+  try {
+    sessionStorage.setItem(cacheKey, JSON.stringify({ motorcycle, cachedAt: Date.now() }));
+  } catch {
+    // Ignore storage quota/privacy mode failures; the network response still renders.
+  }
+}
+
+function useIsNarrowViewport() {
+  const [isNarrowViewport, setIsNarrowViewport] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 767px)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const handleChange = (event) => setIsNarrowViewport(event.matches);
+
+    setIsNarrowViewport(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
+
+  return isNarrowViewport;
+}
 
 export function MotorcycleDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [motorcycle, setMotorcycle] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const cacheKey = `${DETAIL_CACHE_PREFIX}${id}`;
+  const initialMotorcycle = useMemo(
+    () => location.state?.prefillMoto || readCachedMotorcycle(cacheKey),
+    [cacheKey, location.state],
+  );
+  const [motorcycle, setMotorcycle] = useState(initialMotorcycle);
+  const [loading, setLoading] = useState(!initialMotorcycle);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
@@ -34,6 +129,10 @@ export function MotorcycleDetail() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [currentReviewId, setCurrentReviewId] = useState(null);
+  const maintenanceAnchorRef = useRef(null);
+  const [shouldLoadMaintenance, setShouldLoadMaintenance] = useState(false);
+  const isNarrowViewport = useIsNarrowViewport();
+  const [shouldRenderMobileHeroImage, setShouldRenderMobileHeroImage] = useState(false);
 
   // Load favorite status once motorcycle id is known.
   // Depends on motorcycle?.id (not the whole object) to avoid infinite re-renders.
@@ -82,15 +181,25 @@ export function MotorcycleDetail() {
   };
 
   useEffect(() => {
+    const cachedMotorcycle = location.state?.prefillMoto || readCachedMotorcycle(cacheKey);
+    if (cachedMotorcycle) {
+      setMotorcycle(cachedMotorcycle);
+      setCurrentImageIndex(0);
+      setLoading(false);
+      warmMotorcycleHeroImage(cachedMotorcycle.imageUrl);
+    } else {
+      setLoading(true);
+    }
+
     const fetchMotorcycle = async () => {
       try {
-        setLoading(true);
         const data = await motorcycleService.getMotorcycleById(id);
         setMotorcycle(data);
         setCurrentImageIndex(0);
+        cacheMotorcycle(cacheKey, data);
         // Registrar visita a la ficha técnica en motorcycle_searches.
         // Se hace en segundo plano (fire-and-forget): si falla no afecta la UI.
-        apiClient.post('/searches', { motorcycleId: Number(id) }).catch(() => {});
+        warmMotorcycleHeroImage(data?.imageUrl);
       } catch (error) {
         console.error('Error al cargar moto:', error);
       } finally {
@@ -99,19 +208,50 @@ export function MotorcycleDetail() {
     };
 
     fetchMotorcycle();
-  }, [id]);
+  }, [cacheKey, id, location.state]);
 
   useEffect(() => {
     if (!motorcycle?.id) return;
-    loadReviews({ page: 1, append: false });
+
+    const cancelIdleWork = runWhenBrowserIsIdle(() => {
+      loadReviews({ page: 1, append: false });
+      apiClient.post('/searches', { motorcycleId: Number(motorcycle.id) }).catch(() => {});
+    });
+
+    return cancelIdleWork;
   }, [motorcycle?.id]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-[#FF6B35]"></div>
-      </div>
+  useEffect(() => {
+    if (shouldLoadMaintenance || !maintenanceAnchorRef.current) return;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      const cancelIdleWork = runWhenBrowserIsIdle(() => setShouldLoadMaintenance(true));
+      return cancelIdleWork;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldLoadMaintenance(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '700px 0px' },
     );
+
+    observer.observe(maintenanceAnchorRef.current);
+    return () => observer.disconnect();
+  }, [shouldLoadMaintenance]);
+
+  useEffect(() => {
+    if (!isNarrowViewport || shouldRenderMobileHeroImage) return undefined;
+
+    const cancelIdleWork = runWhenBrowserIsIdle(() => setShouldRenderMobileHeroImage(true));
+    return cancelIdleWork;
+  }, [isNarrowViewport, shouldRenderMobileHeroImage]);
+
+  if (loading) {
+    return <MotorcycleDetailSkeleton />;
   }
 
   if (!motorcycle) {
@@ -134,6 +274,9 @@ export function MotorcycleDetail() {
   );
   const hasMultipleImages = allImages.length > 1;
   const currentHeroImage = allImages[currentImageIndex] || allImages[0];
+  const shouldRenderHeroImage = !isNarrowViewport || shouldRenderMobileHeroImage;
+  const heroImageLoading = isNarrowViewport ? 'lazy' : 'eager';
+  const heroImageFetchPriority = isNarrowViewport ? 'auto' : 'high';
 
   const handlePreviousImage = () => {
     if (!allImages.length) return;
@@ -237,25 +380,35 @@ export function MotorcycleDetail() {
         {/* Hero Section */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-16 items-center">
           {/* Image */}
-          <div className="relative">
+          <div className="relative order-2 lg:order-1">
             <div className="group relative aspect-video w-full overflow-hidden rounded-2xl bg-slate-100 shadow-xl">
-              <MotorcycleImage
-                key={currentHeroImage || 'hero-placeholder'}
-                src={currentHeroImage}
-                alt={`${motorcycle.brand} ${motorcycle.model} ${motorcycle.year} - imagen ${currentImageIndex + 1}`}
-                className="h-full w-full p-3"
-                loading="eager"
-                fetchPriority="high"
-                width={1280}
-                height={720}
-                sizes="(min-width: 1024px) 50vw, 100vw"
-                style={{ objectFit: 'contain' }}
-                fallbackLabel="Sin imagen"
-              />
+              {shouldRenderHeroImage ? (
+                <MotorcycleImage
+                  key={currentHeroImage || 'hero-placeholder'}
+                  src={currentHeroImage}
+                  alt={`${motorcycle.brand} ${motorcycle.model} ${motorcycle.year} - imagen ${currentImageIndex + 1}`}
+                  className="h-full w-full p-3"
+                  loading={heroImageLoading}
+                  fetchPriority={heroImageFetchPriority}
+                  decoding="async"
+                  width={1280}
+                  height={720}
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  style={{ objectFit: 'contain' }}
+                  fallbackLabel="Sin imagen"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 text-slate-500">
+                  <div className="flex flex-col items-center gap-2 px-4 text-center">
+                    <span className="material-symbols-outlined text-5xl">two_wheeler</span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Cargando imagen</span>
+                  </div>
+                </div>
+              )}
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" />
 
-              {hasMultipleImages && (
+              {hasMultipleImages && shouldRenderHeroImage && (
                 <>
                   <button
                     type="button"
@@ -287,10 +440,14 @@ export function MotorcycleDetail() {
                         type="button"
                         onClick={() => setCurrentImageIndex(index)}
                         aria-label={`Ver imagen ${index + 1}`}
-                        className={`h-2.5 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-white/70 ${
-                          index === currentImageIndex ? 'w-8 bg-white' : 'w-2.5 bg-white/50 hover:bg-white/80'
-                        }`}
-                      />
+                        className="flex h-10 w-10 items-center justify-center rounded-full transition focus:outline-none focus:ring-2 focus:ring-white/70"
+                      >
+                        <span
+                          className={`h-2.5 rounded-full transition-all ${
+                            index === currentImageIndex ? 'w-8 bg-white' : 'w-2.5 bg-white/60'
+                          }`}
+                        />
+                      </button>
                     ))}
                   </div>
                 </>
@@ -299,7 +456,7 @@ export function MotorcycleDetail() {
           </div>
 
           {/* Info */}
-          <div className="flex flex-col justify-center space-y-6">
+          <div className="order-1 flex flex-col justify-center space-y-6 lg:order-2">
             <nav className="flex gap-2 text-xs font-bold tracking-widest text-[#FF6B35] uppercase">
               <span>{motorcycle.engineType || 'Motor'}</span>
               <span>•</span>
@@ -319,7 +476,7 @@ export function MotorcycleDetail() {
                   className="material-symbols-outlined text-3xl transition-colors"
                   style={{
                     fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0",
-                    color: isFavorite ? '#FF6B35' : '#cbd5e1',
+                    color: isFavorite ? '#FF6B35' : '#64748b',
                   }}
                 >
                   favorite
@@ -335,14 +492,14 @@ export function MotorcycleDetail() {
               <button
                 type="button"
                 onClick={scrollToReviews}
-                className="text-slate-500 text-sm hover:text-[#FF6B35] transition-colors"
+                className="text-slate-600 text-sm hover:text-[#FF6B35] transition-colors"
               >
                 (reseñas y comentarios)
               </button>
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm text-slate-500 font-medium">Precio sugerido</p>
+              <p className="text-sm text-slate-600 font-medium">Precio sugerido</p>
               <p className="text-4xl font-bold text-[#0A2463] tracking-tight">
                 ${parseFloat(motorcycle.price)?.toLocaleString('es-CO')} {motorcycle.currency || 'COP'}
               </p>
@@ -373,6 +530,8 @@ export function MotorcycleDetail() {
         </section>
 
         {/* Cost Simulator Modal */}
+        {isSimulatorOpen && (
+          <Suspense fallback={null}>
         <CostSimulatorModal
           motorcycle={motorcycle}
           userBudget={userBudget}
@@ -381,18 +540,24 @@ export function MotorcycleDetail() {
           onClose={() => setIsSimulatorOpen(false)}
           onSave={(simulation) => console.log('Simulación guardada:', simulation)}
         />
+          </Suspense>
+        )}
 
+        {isAlertOpen && (
+          <Suspense fallback={null}>
         <PriceAlertModal
           motorcycle={motorcycle}
           isOpen={isAlertOpen}
           onClose={() => setIsAlertOpen(false)}
         />
+          </Suspense>
+        )}
 
         {/* Ficha Técnica */}
         <section className="mb-20">
-          <h3 className="text-2xl font-bold mb-8 border-l-4 border-[#FF6B35] pl-4 text-[#0A2463]">
+          <h2 className="text-2xl font-bold mb-8 border-l-4 border-[#FF6B35] pl-4 text-[#0A2463]">
             Ficha Técnica
-          </h3>
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <TechCard icon="settings_input_component" label="Cilindraje" value={`${motorcycle.engineCc} cc`} />
             <TechCard icon="bolt" label="Potencia" value={`${motorcycle.powerHp} HP`} />
@@ -410,9 +575,9 @@ export function MotorcycleDetail() {
           <section className="mb-20">
             <div className="mb-8 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
               <div>
-                <h3 className="text-2xl font-bold border-l-4 border-[#FF6B35] pl-4 text-[#0A2463]">
+                <h2 className="text-2xl font-bold border-l-4 border-[#FF6B35] pl-4 text-[#0A2463]">
                   Referencias en YouTube
-                </h3>
+                </h2>
               </div>
               <span className="hidden md:inline-flex items-center gap-2 self-start rounded-full bg-[#0A2463]/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A2463]">
                 <span className="material-symbols-outlined text-base text-[#FF6B35]">smart_display</span>
@@ -468,12 +633,12 @@ export function MotorcycleDetail() {
                   <div className="p-6">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">
                           Video de referencia
                         </p>
-                        <h4 className="mt-2 text-xl font-bold text-[#0A2463] transition-colors group-hover:text-[#FF6B35]">
+                        <h3 className="mt-2 text-xl font-bold text-[#0A2463] transition-colors group-hover:text-[#FF6B35]">
                           {reference.title}
-                        </h4>
+                        </h3>
                       </div>
                       <span className="material-symbols-outlined text-[#FF6B35] transition-transform duration-300 group-hover:-translate-y-1 group-hover:translate-x-1">
                         open_in_new
@@ -497,7 +662,7 @@ export function MotorcycleDetail() {
           <div className="bg-white border-t-4 border-[#28A745] rounded-xl p-8 shadow-sm">
             <div className="flex items-center gap-3 mb-8">
               <span className="material-symbols-outlined text-[#28A745] text-3xl">check_circle</span>
-              <h3 className="text-xl font-bold text-[#28A745] tracking-tight">VENTAJAS</h3>
+              <h2 className="text-xl font-bold text-[#28A745] tracking-tight">VENTAJAS</h2>
             </div>
             <ul className="space-y-5">
               {motorcycle.advantages && motorcycle.advantages.length > 0 ? (
@@ -520,7 +685,7 @@ export function MotorcycleDetail() {
           <div className="bg-white border-t-4 border-[#DC3545] rounded-xl p-8 shadow-sm">
             <div className="flex items-center gap-3 mb-8">
               <span className="material-symbols-outlined text-[#DC3545] text-3xl">cancel</span>
-              <h3 className="text-xl font-bold text-[#DC3545] tracking-tight">DESVENTAJAS</h3>
+              <h2 className="text-xl font-bold text-[#DC3545] tracking-tight">DESVENTAJAS</h2>
             </div>
             <ul className="space-y-5">
               {motorcycle.disadvantages && motorcycle.disadvantages.length > 0 ? (
@@ -541,14 +706,22 @@ export function MotorcycleDetail() {
         </section>
 
 
-        <MaintenanceEstimator motorcycle={motorcycle} />
+        <div ref={maintenanceAnchorRef}>
+          {shouldLoadMaintenance ? (
+            <Suspense fallback={<MaintenanceEstimatorPlaceholder />}>
+              <MaintenanceEstimator motorcycle={motorcycle} />
+            </Suspense>
+          ) : (
+            <MaintenanceEstimatorPlaceholder />
+          )}
+        </div>
 
         <section id="reviews-section" className="mb-20 scroll-mt-8 rounded-3xl border border-slate-100 bg-white p-6 md:p-8 shadow-sm">
           <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.35em] text-[#FF6B35]">Reseñas y comentarios</p>
-              <h3 className="mt-2 text-2xl font-black text-[#0A2463]">Reseñas y comentarios</h3>
-              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+              <h2 className="mt-2 text-2xl font-black text-[#0A2463]">Reseñas y comentarios</h2>
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-600">
                 <span className="font-bold text-[#0A2463]">{reviewSummary.averageRating.toFixed(1)}</span>
                 <span>·</span>
                 <span>{reviewSummary.totalReviews} reseñas</span>
@@ -574,11 +747,11 @@ export function MotorcycleDetail() {
               )}
 
               {reviewsLoading && reviews.length === 0 ? (
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-8 text-sm text-slate-500">
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-8 text-sm text-slate-600">
                   Cargando reseñas...
                 </div>
               ) : reviews.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-600">
                   Aún no hay reseñas para esta moto. Sé la primera persona en opinar.
                 </div>
               ) : (
@@ -587,12 +760,12 @@ export function MotorcycleDetail() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="font-bold text-[#0A2463]">{review.user?.name || 'Usuario'}</p>
-                        <div className="mt-2 flex items-center gap-2 text-sm text-slate-500">
+                        <div className="mt-2 flex items-center gap-2 text-sm text-slate-600">
                           <ReviewStars value={review.rating} />
                           <span>{review.rating}/5</span>
                         </div>
                       </div>
-                      <span className="text-xs font-semibold text-slate-400">
+                      <span className="text-xs font-semibold text-slate-500">
                         {new Intl.DateTimeFormat('es-CO', {
                           day: '2-digit',
                           month: 'short',
@@ -622,10 +795,10 @@ export function MotorcycleDetail() {
             <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
               <div className="mb-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.35em] text-[#FF6B35]">Tu comentario</p>
-                <h4 className="mt-2 text-xl font-black text-[#0A2463]">
+                <h3 className="mt-2 text-xl font-black text-[#0A2463]">
                   {currentReviewId ? 'Actualizar tu reseña' : 'Escribe tu reseña'}
-                </h4>
-                <p className="mt-2 text-sm text-slate-500">
+                </h3>
+                <p className="mt-2 text-sm text-slate-600">
                   Toca una estrella arriba, escribe tu experiencia y guárdala en este espacio.
                 </p>
               </div>
@@ -654,7 +827,7 @@ export function MotorcycleDetail() {
                         >
                           <span
                             className="material-symbols-outlined text-3xl"
-                            style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0", color: active ? '#FF6B35' : '#cbd5e1' }}
+                            style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0", color: active ? '#FF6B35' : '#64748b' }}
                           >
                             star
                           </span>
@@ -665,8 +838,9 @@ export function MotorcycleDetail() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-[#1A202C]">Comentario</label>
+                  <label htmlFor="review-comment" className="mb-2 block text-sm font-bold text-[#1A202C]">Comentario</label>
                   <textarea
+                    id="review-comment"
                     value={reviewComment}
                     onChange={(event) => setReviewComment(event.target.value)}
                     rows={6}
@@ -674,7 +848,7 @@ export function MotorcycleDetail() {
                     placeholder="Cuéntanos tu experiencia con esta moto..."
                     className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition-colors focus:border-[#FF6B35]"
                   />
-                  <div className="mt-2 flex items-center justify-between text-xs text-slate-400">
+                  <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
                     <span>Mínimo 20 caracteres</span>
                     <span>{reviewComment.length}/500</span>
                   </div>
@@ -695,7 +869,7 @@ export function MotorcycleDetail() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#0A2463] text-white/70 py-16 px-10">
+      <footer className="bg-[#0A2463] text-white/80 py-16 px-10">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
           <div className="flex items-center gap-4 text-[#FF6B35] opacity-90">
             <div className="w-8 h-8">
@@ -710,7 +884,7 @@ export function MotorcycleDetail() {
             <a className="hover:text-[#FF6B35] transition-colors" href="#">Privacidad</a>
             <a className="hover:text-[#FF6B35] transition-colors" href="#">Cookies</a>
           </div>
-          <p className="text-[10px] text-white/40 max-w-xs text-center md:text-right">
+          <p className="text-[10px] text-white/70 max-w-xs text-center md:text-right">
             © 2024 MotorMatch Technical Engine. Todas las especificaciones están sujetas a cambios sin previo aviso según el fabricante.
           </p>
         </div>
@@ -720,11 +894,56 @@ export function MotorcycleDetail() {
 }
 
 // Componente auxiliar para tarjetas técnicas
+function MotorcycleDetailSkeleton() {
+  return (
+    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#F5F7FA] font-['Space_Grotesk'] text-[#2C3E50] antialiased">
+      <Header sticky={false} />
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 md:px-10 py-12">
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-16 items-center">
+          <div className="aspect-video w-full animate-pulse rounded-2xl bg-slate-200 shadow-xl" />
+          <div className="space-y-6">
+            <div className="h-4 w-48 animate-pulse rounded bg-slate-200" />
+            <div className="space-y-3">
+              <div className="h-12 w-full max-w-xl animate-pulse rounded bg-slate-200" />
+              <div className="h-12 w-3/4 animate-pulse rounded bg-slate-200" />
+            </div>
+            <div className="h-6 w-44 animate-pulse rounded bg-slate-200" />
+            <div className="h-12 w-64 animate-pulse rounded bg-slate-200" />
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="h-14 animate-pulse rounded-xl bg-slate-200" />
+              <div className="h-14 animate-pulse rounded-xl bg-slate-200" />
+              <div className="h-14 animate-pulse rounded-xl bg-slate-200" />
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-20">
+          <div className="mb-8 h-8 w-56 animate-pulse rounded bg-slate-200" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }, (_, index) => (
+              <div key={index} className="h-32 animate-pulse rounded-2xl bg-white shadow-sm" />
+            ))}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function MaintenanceEstimatorPlaceholder() {
+  return (
+    <section className="mb-20" aria-hidden="true">
+      <div className="mb-8 h-8 w-72 rounded bg-slate-200" />
+      <div className="min-h-[360px] rounded-2xl border border-slate-200 bg-white" />
+    </section>
+  );
+}
+
 function TechCard({ icon, label, value }) {
   return (
     <div className="p-6 rounded-2xl bg-white shadow-sm border border-slate-100 flex flex-col items-center text-center">
       <span className="material-symbols-outlined text-[#FF6B35] mb-3 text-3xl">{icon}</span>
-      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">{label}</p>
+      <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">{label}</p>
       <p className="text-lg font-bold">{value}</p>
     </div>
   );

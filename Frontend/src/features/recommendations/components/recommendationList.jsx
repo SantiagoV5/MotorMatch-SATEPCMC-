@@ -73,6 +73,12 @@ function TopCard({ rec, navigate }) {
           src={moto.imageUrl}
           alt={`${moto.brand} ${moto.model}`}
           className="absolute inset-0 w-full h-full transition-transform duration-700 group-hover:scale-105"
+          loading="eager"
+          fetchPriority="high"
+          decoding="sync"
+          width={1280}
+          height={720}
+          sizes="(min-width: 1024px) 60vw, 100vw"
           style={{ objectFit: 'contain' }}
           fallbackLabel="Sin imagen"
         />
@@ -115,6 +121,11 @@ function AlternativeCard({ rec, navigate }) {
           src={moto.imageUrl}
           alt={`${moto.brand} ${moto.model}`}
           className="w-full h-full transition-transform duration-500 group-hover:scale-105"
+          loading="lazy"
+          fetchPriority="low"
+          width={640}
+          height={360}
+          sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
           style={{ objectFit: 'contain' }}
           fallbackLabel="Sin imagen"
         />
