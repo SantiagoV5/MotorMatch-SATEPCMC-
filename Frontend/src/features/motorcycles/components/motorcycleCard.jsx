@@ -38,7 +38,20 @@ export default function MotorcycleCard({ motorcycle, isFavorite = false, onFavor
   };
 
   const handleClick = () => {
-    navigate(`/motorcycles/${motorcycle.id}`);
+    navigate(`/motorcycles/${motorcycle.id}`, { state: { prefillMoto: motorcycle } });
+  };
+
+  const handleWarmDetail = () => {
+    if (!motorcycle?.id || typeof sessionStorage === 'undefined') return;
+
+    try {
+      sessionStorage.setItem(
+        `mm_motorcycle_detail_${motorcycle.id}`,
+        JSON.stringify({ motorcycle, cachedAt: Date.now() }),
+      );
+    } catch {
+      // Navigation still works if the browser refuses session storage.
+    }
   };
 
   const getSegmentColor = (segment) => {
@@ -57,6 +70,8 @@ export default function MotorcycleCard({ motorcycle, isFavorite = false, onFavor
   return (
     <div 
       onClick={handleClick}
+      onMouseEnter={handleWarmDetail}
+      onFocus={handleWarmDetail}
       className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-lg border border-primary/5 flex flex-col group cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1"
     >
       {/* Image */}

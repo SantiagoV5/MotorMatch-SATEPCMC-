@@ -1,6 +1,26 @@
 import { useState, useEffect } from 'react'
 import apiClient from '../../../services/apiClient'
 
+function warmRecommendationHeroImage(imageUrl) {
+  if (typeof document === 'undefined' || !imageUrl) return
+
+  const existingPreload = document.head.querySelector(`link[data-mm-recommendation-hero="${imageUrl}"]`)
+  if (!existingPreload) {
+    const preloadLink = document.createElement('link')
+    preloadLink.rel = 'preload'
+    preloadLink.as = 'image'
+    preloadLink.href = imageUrl
+    preloadLink.setAttribute('data-mm-recommendation-hero', imageUrl)
+    preloadLink.crossOrigin = 'anonymous'
+    document.head.appendChild(preloadLink)
+  }
+
+  const image = new Image()
+  image.decoding = 'async'
+  image.fetchPriority = 'high'
+  image.src = imageUrl
+}
+
 export function useRecommendations() {
   const [recommendations, setRecommendations] = useState([])
   const [questionnaire, setQuestionnaire]     = useState(null)
@@ -16,6 +36,7 @@ export function useRecommendations() {
         // Shape from submitQuestionnaire: { questionnaire, recommendations }
         if (parsed.recommendations) {
           setRecommendations(parsed.recommendations)
+          warmRecommendationHeroImage(parsed.recommendations[0]?.motorcycle?.imageUrl)
           // questionnaire object has id, budget, usageType, heightCm
           setQuestionnaire(parsed.questionnaire || null)
           setLoading(false)
@@ -33,6 +54,7 @@ export function useRecommendations() {
       setLoading(true)
       const { data } = await apiClient.get('/questionnaire/my/recommendations')
       setRecommendations(data.recommendations || [])
+      warmRecommendationHeroImage(data.recommendations?.[0]?.motorcycle?.imageUrl)
       setQuestionnaire(data.questionnaire || null)
     } catch (err) {
       setError('No se pudieron cargar las recomendaciones')

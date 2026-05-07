@@ -1,0 +1,28 @@
+[
+  {
+    "motorcycleId": 1,
+    "videos": [
+      {
+        "title": "Review principal",
+        "url": "https://www.youtube.com/watch?v=VIDEO_ID_1"
+      },
+      {
+        "title": "Prueba en ruta",
+        "url": "https://www.youtube.com/watch?v=VIDEO_ID_2"
+      }
+    ]
+  },
+  {
+    "motorcycleId": 2,
+    "videos": [
+      {
+        "title": "Review principal",
+        "url": "https://youtu.be/VIDEO_ID_3"
+      },
+      {
+        "title": "Prueba en ciudad",
+        "url": "https://youtu.be/VIDEO_ID_4"
+      }
+    ]
+  }
+]

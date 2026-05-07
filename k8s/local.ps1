@@ -52,6 +52,42 @@ function Wait-ClusterReady {
     throw "El cluster kind-$ClusterName existe, pero su API server no responde. Ejecuta '.\k8s\local.ps1 recreate' o revisa Docker Desktop."
 }
 
+function Test-DockerImage {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Image
+    )
+
+    docker image inspect $Image *> $null
+    return $LASTEXITCODE -eq 0
+}
+
+function Invoke-FrontendBuild {
+    $frontendDockerfile = "$RootDir\Frontend\Dockerfile"
+    $frontendContext = "$RootDir\Frontend"
+
+    try {
+        Invoke-Native docker build -t motormatch-frontend:latest -f $frontendDockerfile $frontendContext
+        return
+    } catch {
+        Write-Warning "No se pudo construir el frontend descargando bases desde Docker Hub."
+        Write-Warning "Intentando build offline con imagenes locales cacheadas..."
+    }
+
+    if ((Test-DockerImage "node:20-slim") -and (Test-DockerImage "motormatch-frontend:latest")) {
+        Invoke-Native docker build `
+            --pull=false `
+            --build-arg NODE_IMAGE=node:20-slim `
+            --build-arg RUNTIME_IMAGE=motormatch-frontend:latest `
+            -t motormatch-frontend:latest `
+            -f $frontendDockerfile `
+            $frontendContext
+        return
+    }
+
+    throw "Docker no puede acceder a Docker Hub y faltan imagenes locales para el build offline. Revisa DNS/proxy de Docker Desktop o ejecuta: docker pull node:20-alpine; docker pull nginx:1.27-alpine"
+}
+
 function Invoke-Up {
     # Check for Kind
     if (!(Get-Command kind -ErrorAction SilentlyContinue)) {
@@ -111,7 +147,7 @@ function Invoke-Up {
     # Build Docker Images
     Write-Host "Construyendo contenedores (Backend y Frontend)..."
     Invoke-Native docker build -t motormatch-backend:latest -f "$RootDir\backend\Dockerfile" "$RootDir\backend" | Out-Null
-    Invoke-Native docker build -t motormatch-frontend:latest -f "$RootDir\Frontend\Dockerfile" "$RootDir\Frontend" | Out-Null
+    Invoke-FrontendBuild | Out-Null
 
     # Load Images to Kind
     Write-Host "Cargando imagenes en el cluster local..."

@@ -69,6 +69,7 @@ model Motorcycle {
   registrationEstimated Decimal?         @map("registration_estimated") @db.Decimal(10, 2)
   imageUrl              String?          @map("image_url")
   galleryImages         Json?            @map("gallery_images")
+  referencesYT          Json?            @map("references_yt")
   description           String?
   advantages            String[]
   disadvantages         String[]
