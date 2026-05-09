@@ -141,3 +141,5 @@ backend/node_modules/.prisma/
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+.vercel
+.env*.local
