@@ -1,7 +1,8 @@
 ﻿import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import AuthSidePanel from './AuthSidePanel'
 import useAuth from '../hooks/useAuth'
+import { resolvePostLoginPath } from '../utils/authRedirect'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -37,6 +38,7 @@ function RegisterForm() {
   const [emailSent, setEmailSent]         = useState(false)
   const [sentTo, setSentTo]               = useState('')
   const navigate                          = useNavigate()
+  const location                          = useLocation()
   const { register, loading, error }      = useAuth()
 
   const fieldErrors = validate({ name, email, password, confirmPassword })
@@ -99,7 +101,7 @@ function RegisterForm() {
           </p>
           <button
             type="button"
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/login', { state: { from: resolvePostLoginPath(location.state, '/') } })}
             className="mt-8 w-full py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors"
           >
             Ir al inicio de sesión

@@ -9,6 +9,8 @@ import { getAppUrl } from '../shared/utils/whatsappShare';
 import { trackShareUsage } from '../shared/services/shareAnalyticsService';
 import { SUPPORT_MAILTO } from '../shared/constants/support';
 import MotorcycleImage from '../shared/components/MotorcycleImage';
+import useAuth from '../features/auth/hooks/useAuth';
+import useAuthAction from '../features/auth/hooks/useAuthAction';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -23,6 +25,7 @@ function formatCOP(price) {
 
 const MAX_SLOTS = 3;
 const PDF_FILE_NAME = 'MotorMatch_Comparacion.pdf';
+const COMPARISON_DRAFT_KEY = 'mm_comparison_draft';
 
 async function createComparisonPdfBlob(activeMotos, winners) {
   const [{ pdf }, { ComparisonPDF }] = await Promise.all([
@@ -970,11 +973,22 @@ function MotoCard({ moto, onRemove, navigate, isOverallWinner }) {
 export default function ComparisonPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
+  const { requireAuth, authModal } = useAuthAction();
+
+  const savedDraft = (() => {
+    try {
+      const raw = sessionStorage.getItem(COMPARISON_DRAFT_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
 
   const prefillMoto    = location.state?.prefillMoto    || null;
-  const prefillSlots   = location.state?.prefillSlots   || null;
+  const prefillSlots   = location.state?.prefillSlots   || savedDraft?.slots || null;
   // Se lee el tipo de comparación y el ID de la ganadora guardados en el historial
-  const prefillMode    = location.state?.prefillMode    || null;
+  const prefillMode    = location.state?.prefillMode    || savedDraft?.activeMode || null;
   // prefillWinnerId: ID de la moto ganadora guardado en la BD (null = empate total)
   // Se usa para restaurar el resaltado de la tarjeta al ver el detalle del historial
   // sin necesidad de recalcular el score (que depende de datos del perfil que podrían
@@ -1051,6 +1065,17 @@ export default function ComparisonPage() {
 
   const activeMotos = slots.filter(Boolean);
   const canCompare  = activeMotos.length >= 2;
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(COMPARISON_DRAFT_KEY, JSON.stringify({
+        slots,
+        activeMode,
+      }));
+    } catch {
+      // Ignore storage failures; the page still works with in-memory state.
+    }
+  }, [activeMode, slots]);
 
   /**
    * [NUEVO] Auto-resaltado al venir del historial.
@@ -1170,6 +1195,14 @@ export default function ComparisonPage() {
     // fue abierta desde el historial. El auto-resaltado pone fromHistoryRef.current
     // a false antes de que el usuario pueda presionar el botón, por lo que no hay
     // riesgo de doble guardado con la comparación original del historial.
+    if (!isAuthenticated) {
+      requireAuth({
+        title: 'Debes iniciar sesión o registrarte para guardar tu comparación.',
+        description: 'Puedes comparar motos como invitado, pero el historial se guarda solo dentro de tu cuenta.',
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       await saveComparison(
@@ -1258,6 +1291,7 @@ export default function ComparisonPage() {
   return (
     <div className="min-h-screen bg-[#f7f9fc] font-body text-on-surface">
       <Header sticky={false} />
+      {authModal}
 
       <main className="max-w-screen-xl mx-auto px-6 pt-12 pb-32">
 
@@ -1272,7 +1306,17 @@ export default function ComparisonPage() {
           </div>
           <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
             <button
-              onClick={() => navigate('/comparison-history')}
+              onClick={() => {
+                if (!isAuthenticated) {
+                  requireAuth({
+                    title: 'Debes iniciar sesión o registrarte para ver tu historial.',
+                    description: 'Tus comparaciones guardadas viven en tu cuenta para que no pierdas contexto entre sesiones.',
+                  });
+                  return;
+                }
+
+                navigate('/comparison-history');
+              }}
               className="px-5 py-3 font-headline font-bold text-xs uppercase tracking-widest border border-slate-200 hover:bg-slate-100 transition-colors rounded-lg text-slate-600 flex items-center gap-2"
             >
               <span className="material-symbols-outlined text-sm">history</span>
