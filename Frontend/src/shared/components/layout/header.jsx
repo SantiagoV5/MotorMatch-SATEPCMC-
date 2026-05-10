@@ -1,184 +1,187 @@
-import { useNavigate } from 'react-router-dom';
-import useAuth from '../../../features/auth/hooks/useAuth';
+import { useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import useAuth from '../../../features/auth/hooks/useAuth'
 
-/**
- * Header compartido de MotorMatch.
- *
- * Props:
- *  - children : contenido extra que se inserta DEBAJO de la fila logo/usuario
- *               (usado por HomePage para la barra de búsqueda).
- *  - sticky   : (bool, default true) controla si el header es fixed o sticky.
- */
+const PRIMARY_LINKS = [
+  { to: '/', label: 'Inicio' },
+  { to: '/comparar', label: 'Comparar' },
+  { to: '/tendencias', label: 'Tendencias' },
+  { to: '/nosotros', label: 'Nosotros' },
+  { to: '/contacto', label: 'Contacto' },
+  { to: '/ayuda', label: 'Ayuda' },
+]
+
+const USER_MENU = [
+  { to: '/profile', label: 'Mi perfil', icon: 'person' },
+  { to: '/profile', label: 'Configuración', icon: 'settings' },
+  { to: '/favorites', label: 'Motos favoritas', icon: 'favorite' },
+  { to: '/comparison-history', label: 'Historial de comparaciones', icon: 'history' },
+  { to: '/simulations-history', label: 'Historial de simulaciones', icon: 'calculate' },
+  { to: '/market-analysis', label: 'Análisis de mercado', icon: 'show_chart' },
+  { to: '/market-trends', label: 'Tendencias de mercado', icon: 'trending_up' },
+  { to: '/ayuda', label: 'Ayuda y FAQ', icon: 'help_center' },
+]
+
+function isLinkActive(pathname, to) {
+  if (to === '/') return pathname === '/' || pathname === '/catalogo'
+  return pathname === to || pathname.startsWith(`${to}/`)
+}
+
 export default function Header({ children, sticky = true }) {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const displayName = user?.name || user?.fullName || 'Usuario';
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { user, isAuthenticated, logout } = useAuth()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const displayName = useMemo(
+    () => user?.name || user?.fullName || 'Explorador',
+    [user],
+  )
 
-  const positionClass = sticky
-    ? 'fixed top-0 left-0 z-30 w-full'
-    : 'sticky top-0 z-30 w-full';
+  const positionClass = sticky ? 'fixed top-0 left-0 z-30 w-full' : 'sticky top-0 z-30 w-full'
 
   return (
-    <header
-      className={`${positionClass} bg-white/95 backdrop-blur-sm border-b border-slate-200 px-4 md:px-6 py-3 shadow-sm`}
-    >
-      <div className="max-w-7xl mx-auto">
-        {/* ── Fila principal: logo + usuario ── */}
-        <div className={`flex items-center justify-between gap-4 ${children ? 'mb-0' : ''}`}>
-
-          {/* Logo + botón Comparar */}
-          <div className="flex items-center gap-3">
-            <div
-              className="flex items-center gap-2 cursor-pointer"
+    <header className={`${positionClass} border-b border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-sm md:px-6`}>
+      <div className="mx-auto max-w-7xl">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex items-center justify-between gap-4">
+            <button
+              type="button"
               onClick={() => navigate('/')}
+              className="flex items-center gap-2 text-left"
             >
               <div className="text-primary">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 48 48">
+                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 48 48">
                   <path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z" />
                 </svg>
               </div>
-              <h1 className="text-xl font-bold tracking-tight text-primary">MotorMatch</h1>
+              <div>
+                <h1 className="text-xl font-bold tracking-tight text-primary">MotorMatch</h1>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  {isAuthenticated ? `Hola, ${displayName}` : 'Explora sin fricción'}
+                </p>
+              </div>
+            </button>
+
+            <div className="flex items-center gap-2 xl:hidden">
+              {!isAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/login')}
+                  className="rounded-full border border-slate-200 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-600"
+                >
+                  Entrar
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsMenuOpen((value) => !value)}
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/5 text-primary"
+                aria-label="Abrir navegación"
+              >
+                <span className="material-symbols-outlined">{isMenuOpen ? 'close' : 'menu'}</span>
+              </button>
             </div>
-            {user && (
-              <span className="hidden lg:inline-flex items-center rounded-full border border-primary/10 bg-primary/5 px-3 py-1 text-sm font-semibold text-primary max-w-[240px] truncate">
-                ¡Hola, {displayName}!
-              </span>
-            )}
-            <button
-              onClick={() => navigate('/comparison')}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-sm hover:opacity-90 active:scale-95"
-              style={{ backgroundColor: '#FF6B35' }}
-            >
-              <span className="material-symbols-outlined text-base">compare_arrows</span>
-              <span className="hidden sm:inline">Comparar</span>
-            </button>
-            <button
-              onClick={() => navigate('/market-trends')}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border border-slate-200 bg-white text-slate-700 hover:border-primary/30 hover:text-primary hover:bg-slate-50 active:scale-95"
-            >
-              <span className="material-symbols-outlined text-base">trending_up</span>
-              <span>Tendencias</span>
-            </button>
-            <button
-              onClick={() => navigate('/ayuda-faq')}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border border-slate-200 bg-white text-slate-700 hover:border-primary/30 hover:text-primary hover:bg-slate-50 active:scale-95"
-            >
-              <span className="material-symbols-outlined text-base">help_center</span>
-              <span>Ayuda</span>
-            </button>
           </div>
 
-          {/* Lado derecho: saludo + menú desplegable */}
-          <div className="relative group flex items-center gap-4">
-            {/* Botón trigger */}
-            <button
-              aria-label="Abrir menú de usuario"
-              className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/5 hover:bg-primary/10 transition-colors duration-200 active:scale-95"
-            >
-              <span className="material-symbols-outlined text-primary">account_circle</span>
-            </button>
+          <div className={`${isMenuOpen ? 'flex' : 'hidden'} flex-col gap-4 xl:flex xl:flex-1 xl:flex-row xl:items-center xl:justify-between`}>
+            <nav className="flex flex-col gap-2 xl:ml-8 xl:flex-row xl:flex-wrap xl:items-center xl:gap-2">
+              {PRIMARY_LINKS.map((link) => {
+                const active = isLinkActive(location.pathname, link.to)
+                return (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+                      active
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'text-slate-600 hover:bg-slate-100 hover:text-primary'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                )
+              })}
+            </nav>
 
-            {/* Dropdown */}
-            <div className="absolute right-0 top-full mt-2 w-72 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right z-[60]">
-              <div
-                className="bg-white rounded-xl p-4 border border-slate-100"
-                style={{ boxShadow: '0px 4px 24px rgba(25,28,30,0.06)' }}
-              >
-                <div className="mb-4 pb-4 border-b border-slate-50">
-                  <p className="text-primary font-bold font-headline">
-                    {displayName}
-                  </p>
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+              {!isAuthenticated ? (
+                <div className="hidden items-center gap-3 xl:flex">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/login')}
+                    className="rounded-full border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-primary/20 hover:text-primary"
+                  >
+                    Iniciar sesión
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/register')}
+                    className="rounded-full bg-[#FF6B35] px-4 py-2 text-sm font-black text-white transition hover:brightness-110"
+                  >
+                    Registrarse
+                  </button>
                 </div>
-                <ul className="space-y-1">
-                  <li>
-                    <button type="button" onClick={() => navigate('/profile')} className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300">
-                      <span className="material-symbols-outlined text-lg">person</span>
-                      <span className="text-sm font-semibold font-label">Mi perfil</span>
-                    </button>
-                  </li>
-                  <li>
-                    <a href="#" className="flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300">
-                      <span className="material-symbols-outlined text-lg">settings</span>
-                      <span className="text-sm font-semibold font-label">Configuración</span>
-                    </a>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => navigate('/favorites')}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300"
-                    >
-                      <span className="material-symbols-outlined text-lg">favorite</span>
-                      <span className="text-sm font-semibold font-label">Motos favoritas</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => navigate('/comparison-history')}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300"
-                    >
-                      <span className="material-symbols-outlined text-lg">history</span>
-                      <span className="text-sm font-semibold font-label">Historial de comparaciones</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => navigate('/simulations-history')}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300"
-                    >
-                      <span className="material-symbols-outlined text-lg">calculate</span>
-                      <span className="text-sm font-semibold font-label">Historial de simulaciones</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => navigate('/market-analysis')}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300"
-                    >
-                      <span className="material-symbols-outlined text-lg">show_chart</span>
-                      <span className="text-sm font-semibold font-label">Análisis de Mercado</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => navigate('/market-trends')}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300"
-                    >
-                      <span className="material-symbols-outlined text-lg">trending_up</span>
-                      <span className="text-sm font-semibold font-label">Tendencias de Mercado</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => navigate('/ayuda-faq')}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300"
-                    >
-                      <span className="material-symbols-outlined text-lg">help_center</span>
-                      <span className="text-sm font-semibold font-label">Ayuda y FAQ</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-error hover:bg-error/5 transition-all duration-300"
-                    >
-                      <span className="material-symbols-outlined text-lg">logout</span>
-                      <span className="text-sm font-semibold font-label">Cerrar sesión</span>
-                    </button>
-                  </li>
-                </ul>
-              </div>
+              ) : (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsMenuOpen((value) => !value)}
+                    className="hidden items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm xl:flex"
+                  >
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/5 text-primary">
+                      <span className="material-symbols-outlined">account_circle</span>
+                    </span>
+                    <span className="max-w-[180px] truncate text-sm font-bold text-slate-700">{displayName}</span>
+                    <span className="material-symbols-outlined text-slate-400">expand_more</span>
+                  </button>
+
+                  <div className={`${isMenuOpen ? 'block' : 'hidden'} xl:absolute xl:right-0 xl:top-full xl:mt-3 xl:w-80`}>
+                    <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
+                      <div className="mb-3 rounded-2xl bg-primary/5 px-4 py-3">
+                        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Tu cuenta</p>
+                        <p className="mt-1 text-base font-black text-primary">{displayName}</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        {USER_MENU.map((item) => (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => {
+                              setIsMenuOpen(false)
+                              navigate(item.to)
+                            }}
+                            className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-primary"
+                          >
+                            <span className="material-symbols-outlined text-lg">{item.icon}</span>
+                            <span>{item.label}</span>
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsMenuOpen(false)
+                            logout()
+                            navigate('/')
+                          }}
+                          className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-500"
+                        >
+                          <span className="material-symbols-outlined text-lg">logout</span>
+                          <span>Cerrar sesión</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* ── Slot para contenido adicional (ej: barra de búsqueda en HomePage) ── */}
         {children && <div className="mt-3">{children}</div>}
       </div>
     </header>
-  );
+  )
 }

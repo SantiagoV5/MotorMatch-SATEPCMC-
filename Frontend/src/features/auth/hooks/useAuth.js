@@ -97,7 +97,7 @@ function useAuth() {
     window.dispatchEvent(new CustomEvent('mm:user-updated', { detail: null }))
   }, [])
 
-  return { user, token, loading, error, login, register, logout, updateUser }
+  return { user, token, isAuthenticated: Boolean(token), loading, error, login, register, logout, updateUser }
 }
 
 export default useAuth
