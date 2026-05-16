@@ -58,6 +58,13 @@ export default function Header({ children, sticky = true }) {
               <span className="hidden sm:inline">Comparar</span>
             </button>
             <button
+              onClick={() => navigate('/ai-chat')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border border-primary/20 bg-primary/5 text-primary hover:bg-primary hover:text-white active:scale-95"
+            >
+              <span className="material-symbols-outlined text-base">smart_toy</span>
+              <span className="hidden sm:inline">Concierge IA</span>
+            </button>
+            <button
               onClick={() => navigate('/market-trends')}
               className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border border-slate-200 bg-white text-slate-700 hover:border-primary/30 hover:text-primary hover:bg-slate-50 active:scale-95"
             >
@@ -95,6 +102,15 @@ export default function Header({ children, sticky = true }) {
                   </p>
                 </div>
                 <ul className="space-y-1">
+                  <li>
+                    <button
+                      onClick={() => navigate('/ai-chat')}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300"
+                    >
+                      <span className="material-symbols-outlined text-lg">smart_toy</span>
+                      <span className="text-sm font-semibold font-label">Concierge IA</span>
+                    </button>
+                  </li>
                   <li>
                     <button type="button" onClick={() => navigate('/profile')} className="w-full flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:text-accent hover:bg-surface transition-all duration-300">
                       <span className="material-symbols-outlined text-lg">person</span>

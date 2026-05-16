@@ -31,6 +31,7 @@ const MarketTrendsPage = lazy(() => import('./pages/MarketTrendsPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const HelpFaqPage = lazy(() => import('./pages/HelpFaqPage'))
 const SupportPage = lazy(() => import('./pages/SupportPage'))
+const AIChatPage  = lazy(() => import('./pages/AIChatPage'))
 
 function RouteFallback() {
   return (
@@ -118,6 +119,11 @@ function App() {
         } />
         <Route path="/ayuda-faq" element={<HelpFaqPage />} />
         <Route path="/soporte" element={<SupportPage />} />
+        <Route path="/ai-chat" element={
+          <ProtectedRoute>
+            <AIChatPage />
+          </ProtectedRoute>
+        } />
         <Route path="/login"    element={<LoginForm />} />
         <Route path="/register"     element={<RegisterForm />} />
         <Route path="/verify-email"   element={<VerifyEmailPage />} />

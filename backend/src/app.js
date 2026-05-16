@@ -20,6 +20,7 @@ const supportRoutes       = require('./modules/support/support.routes');
 const reviewRoutes        = require('./modules/reviews/review.routes');
 const searchesRoutes      = require('./modules/searches/searches.routes');
 const priceAlertsRoutes   = require('./modules/priceAlerts/priceAlerts.routes');
+const aiRoutes            = require('./modules/ai/ai.routes'); // ← NUEVO
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/price-alerts', priceAlertsRoutes);
+app.use('/api/ai', aiRoutes); // ← NUEVO
 
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
