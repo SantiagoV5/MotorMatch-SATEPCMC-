@@ -62,7 +62,7 @@ export default function Header({ children, sticky = true }) {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border border-primary/20 bg-primary/5 text-primary hover:bg-primary hover:text-white active:scale-95"
             >
               <span className="material-symbols-outlined text-base">smart_toy</span>
-              <span className="hidden sm:inline">Concierge IA</span>
+              <span className="hidden sm:inline">MIA</span>
             </button>
             <button
               onClick={() => navigate('/market-trends')}

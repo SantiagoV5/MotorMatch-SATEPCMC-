@@ -11,9 +11,9 @@ required.forEach((key) => {
   }
 });
 
-// GEMINI_API_KEY es opcional en arranque (aviso en consola, error al usarla)
-if (!process.env.GEMINI_API_KEY) {
-  console.warn('⚠️  GEMINI_API_KEY no configurada — el chat con IA no estará disponible.');
+// GROQ_API_KEY es opcional en arranque (aviso en consola, error al usarla)
+if (!process.env.GROQ_API_KEY) {
+  console.warn('⚠️  GROQ_API_KEY no configurada — el chat con IA no estará disponible.');
 }
 
 module.exports = {
@@ -27,6 +27,6 @@ module.exports = {
   JWT_SECRET: process.env.JWT_SECRET,
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
 
-  // Google Gemini (chat IA)
-  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+  // Groq (chat IA)
+  GROQ_API_KEY: process.env.GROQ_API_KEY,
 };

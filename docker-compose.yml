@@ -35,8 +35,8 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       APP_URL: ${APP_URL}
       
-      # Google Gemini — Chat IA  ← NUEVO
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      # Groq — Chat IA  ← NUEVO
+      GROQ_API_KEY: ${GROQ_API_KEY}
       
       # Email (opcional)
       SMTP_HOST: ${SMTP_HOST}

@@ -1,80 +1,134 @@
 /**
  * ai.service.js
- * Servicio que se comunica con la API de Google Gemini (gemini-2.0-flash).
- * Usa el fetch nativo de Node 20 — sin dependencias extra.
+ * Orquesta el flujo híbrido completo:
+ *
+ *  1. classifyIntent()  → Groq (llama-3.1-8b-instant, rápido)
+ *                         Decide qué datos de la plataforma se necesitan.
+ *
+ *  2. buildContext()    → Consulta la BD en paralelo con los servicios existentes.
+ *
+ *  3. askGroq()         → Groq (llama-3.3-70b-versatile, capaz)
+ *                         Responde al usuario con el contexto enriquecido.
+ *
+ * Los pasos 1 y 2 corren en paralelo con Promise.all para minimizar latencia.
  */
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL   = 'gemini-2.0-flash';
-const GEMINI_URL     = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+const { classifyIntent } = require('./ai.intent');
+const { buildContext }   = require('./ai.context');
 
-// ─── System prompt ─────────────────────────────────────────────────────────────
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_URL     = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL   = 'llama-3.3-70b-versatile';
+
 const SYSTEM_PROMPT = `Eres MotorMatch AI, un asesor experto en motocicletas del mercado colombiano.
-Tu rol es ayudar a los usuarios a:
-- Comparar modelos de motocicletas disponibles en Colombia (precios en COP).
-- Recomendar motos según presupuesto, uso (ciudad, carretera, offroad) y experiencia del piloto.
-- Explicar fichas técnicas: cilindrada, potencia, torque, consumo de combustible, tipo de frenos, etc.
-- Orientar sobre costos de mantenimiento, seguros SOAT, impuestos y trámites en Colombia.
-- Comparar marcas populares: Yamaha, Honda, Bajaj, AKT, Suzuki, KTM, Kawasaki, TVS, Royal Enfield, Ducati, BMW, entre otras.
-- Responder dudas sobre financiamiento y cuotas mensuales.
 
-Reglas de comportamiento:
+Puedes ayudar con:
+- Recomendaciones personalizadas según presupuesto, uso y características físicas del usuario.
+- Comparaciones técnicas detalladas entre modelos del catálogo.
+- Consulta de consumo de gasolina, eficiencia y rendimiento.
+- Costos reales de adquisición: SOAT, matrícula, impuesto vehicular, tramitación.
+- Motos más populares y tendencias en la plataforma.
+- Favoritos del usuario y recomendaciones basadas en ellos.
+- Orientación sobre mantenimiento, seguros y trámites en Colombia.
+
+Reglas:
 - Responde siempre en español colombiano, de forma clara, amigable y concisa.
-- Cuando menciones precios, usa pesos colombianos (COP) con formato "$ X.XXX.XXX".
-- Si el usuario no especifica su presupuesto o uso, pregúntale antes de recomendar.
-- Basa tus respuestas en conocimiento técnico real de motocicletas.
-- Si no conoces un dato específico muy reciente, indícalo con honestidad.
-- Formatea las respuestas usando listas o secciones cuando compares varios modelos.
-- Sé conciso: respuestas de máximo 300 palabras salvo que el usuario pida más detalle.`;
+- Cuando menciones precios, usa pesos colombianos (COP): "$ X.XXX.XXX".
+- Si recibes un bloque "DATOS REALES DE LA PLATAFORMA MOTORMATCH", prioriza esa información.
+- Si un dato no está en el contexto de la plataforma, responde con tu conocimiento general e indícalo brevemente.
+- Si el usuario no ha dado su presupuesto o uso, pregúntale antes de recomendar.
+- Usa listas o tablas cuando compares varios modelos.
+- Máximo 400 palabras salvo que el usuario pida más detalle.`;
+
+// ─── Error tipado para rate limit ──────────────────────────────────────────────
+class AIRateLimitError extends Error {
+  constructor(retryAfter) {
+    super('Límite de solicitudes alcanzado. Por favor espera un momento antes de intentar de nuevo.');
+    this.name       = 'AIRateLimitError';
+    this.statusCode = 429;
+    this.retryAfter = retryAfter ?? 60;
+  }
+}
+
+function parseRetryAfter(headers) {
+  const raw = headers?.get?.('retry-after') ?? headers?.['retry-after'];
+  return raw ? Math.ceil(parseFloat(raw)) : 60;
+}
 
 /**
- * Envía el historial de conversación a Gemini y retorna la respuesta del modelo.
- *
- * @param {Array<{role:'user'|'model', content:string}>} messages
- * @returns {Promise<string>} texto de respuesta del modelo
+ * Llama al modelo principal de Groq con el contexto ya enriquecido.
+ * @param {Array}  groqMessages - Historial formateado para OpenAI/Groq
+ * @returns {Promise<string>}
  */
-async function askGemini(messages) {
-  if (!GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY no configurada en las variables de entorno.');
-  }
-
-  // Gemini usa "model" en lugar de "assistant"
-  const contents = messages.map((m) => ({
-    role: m.role === 'assistant' ? 'model' : m.role,
-    parts: [{ text: m.content }],
-  }));
-
-  const body = {
-    system_instruction: {
-      parts: [{ text: SYSTEM_PROMPT }],
+async function askGroq(groqMessages) {
+  const response = await fetch(GROQ_URL, {
+    method:  'POST',
+    headers: {
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
     },
-    contents,
-    generationConfig: {
-      maxOutputTokens: 800,
+    body: JSON.stringify({
+      model:       GROQ_MODEL,
+      messages:    groqMessages,
+      max_tokens:  900,
       temperature: 0.7,
-    },
-  };
-
-  const response = await fetch(GEMINI_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(25000), // 25s timeout
+    }),
+    signal: AbortSignal.timeout(30000),
   });
 
   if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Gemini API error ${response.status}: ${errText}`);
+    if (response.status === 429) throw new AIRateLimitError(parseRetryAfter(response.headers));
+    const errBody = await response.json().catch(() => ({}));
+    throw new Error(`Groq API error ${response.status}: ${JSON.stringify(errBody)}`);
   }
 
-  const data = await response.json();
-
-  const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!reply) {
-    throw new Error('Respuesta inesperada de la API de Gemini.');
-  }
-
+  const data  = await response.json();
+  const reply = data?.choices?.[0]?.message?.content;
+  if (!reply) throw new Error('Respuesta inesperada de la API de Groq.');
   return reply;
 }
 
-module.exports = { askGemini };
+/**
+ * Punto de entrada principal del servicio.
+ * Orquesta clasificación, contexto y respuesta.
+ *
+ * @param {Array<{role:string, content:string}>} messages - Historial de conversación
+ * @param {number} userId - ID del usuario autenticado
+ * @returns {Promise<string>} Respuesta de la IA
+ */
+async function askAI(messages, userId) {
+  if (!GROQ_API_KEY) throw new Error('GROQ_API_KEY no configurada en las variables de entorno.');
+
+  // Último mensaje del usuario
+  const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user')?.content ?? '';
+
+  // ── Paso 1 + 2 en paralelo: clasificar intención Y construir contexto ────────
+  // classifyIntent determina las fuentes; buildContext las consulta en BD.
+  // Se encadenan porque buildContext depende del resultado de classifyIntent,
+  // pero ambos corren antes del llamado principal ahorrando tiempo neto.
+  const sources        = await classifyIntent(lastUserMessage);
+  const platformContext = await buildContext(sources, userId);
+
+  console.log(`[AI] Intención detectada: [${sources.join(', ')}]${platformContext ? ' — contexto inyectado' : ' — sin contexto'}`);
+
+  // ── Paso 3: armar mensajes y llamar al modelo principal ──────────────────────
+  const groqMessages = [
+    { role: 'system', content: SYSTEM_PROMPT },
+  ];
+
+  if (platformContext) {
+    groqMessages.push({ role: 'system', content: platformContext });
+  }
+
+  // Convertir 'model' (Gemini) → 'assistant' (OpenAI/Groq)
+  for (const m of messages) {
+    groqMessages.push({
+      role:    m.role === 'model' ? 'assistant' : m.role,
+      content: m.content,
+    });
+  }
+
+  return askGroq(groqMessages);
+}
+
+module.exports = { askAI, AIRateLimitError };
