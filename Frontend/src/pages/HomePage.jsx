@@ -596,7 +596,7 @@ export default function HomePage() {
               width="1920"
               height="300"
               loading="eager"
-              fetchPriority="high"
+              fetchpriority="high"
               decoding="async"
             />
           </div>

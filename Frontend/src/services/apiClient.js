@@ -3,24 +3,33 @@ import axios from 'axios'
 // ─────────────────────────────────────────────────────────────────────────────
 // Resolución de la URL base de la API según el entorno:
 //
-// • LOCAL (docker-compose / npm run dev):
-//     VITE_API_URL no está definida en el proceso de build local,
-//     así que baseURL queda como '/api' y el proxy de Vite
-//     (vite.config.js → proxy['/api']) lo redirige a http://backend:3000.
+// • LOCAL / DOCKER (desarrollo):
+//     Siempre se usa '/api' para que el proxy de Vite (vite.config.js)
+//     intercepte las peticiones y las reenvíe al backend correcto.
+//     Esto aplica tanto si corres `npm run dev` sin Docker como si usas
+//     docker-compose, ya que el proxy de Vite corre dentro del contenedor
+//     y puede resolver el hostname 'backend', pero el navegador NO puede.
 //
-// • PRODUCCIÓN (Vercel + Render):
-//     Durante el build en Vercel, VITE_API_URL = 'https://motormatch-erfb.onrender.com'
-//     queda horneada en el bundle, así que axios apunta directamente
-//     a https://motormatch-erfb.onrender.com/api sin pasar por ningún proxy.
+// • PRODUCCIÓN (Vercel + Render, etc.):
+//     Durante el build en producción (import.meta.env.PROD === true),
+//     se usa VITE_API_URL para apuntar directamente al backend desplegado
+//     (ej: 'https://motormatch-erfb.onrender.com').
+//     No hay proxy de Vite en producción, por lo que se necesita la URL absoluta.
 //
-// La regla: si VITE_API_URL termina en '/api', lo normalizamos para no
-// generar rutas duplicadas como /api/api/auth/login.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function resolveBaseURL() {
-  const raw = import.meta.env.VITE_API_URL   // undefined en local, URL real en producción
-  if (!raw) return '/api'                     // local → proxy de Vite se encarga
-  return raw.replace(/\/api\/?$/, '') + '/api' // producción → URL absoluta + /api
+  // En producción (build estático), usar la URL absoluta del backend
+  if (import.meta.env.PROD) {
+    const raw = import.meta.env.VITE_API_URL
+    if (raw) return raw.replace(/\/api\/?$/, '') + '/api'
+  }
+
+  // En desarrollo (local o Docker), SIEMPRE usar '/api' y dejar que
+  // el proxy de Vite (vite.config.js → server.proxy) maneje el reenvío.
+  // Esto evita que el navegador intente resolver hostnames internos de Docker
+  // como 'http://backend:3000' que solo existen dentro de la red de contenedores.
+  return '/api'
 }
 
 const apiClient = axios.create({

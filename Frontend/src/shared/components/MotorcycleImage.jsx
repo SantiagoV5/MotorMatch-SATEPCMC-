@@ -39,7 +39,7 @@ export default function MotorcycleImage({
       className={className}
       loading={loading}
       decoding={decoding}
-      fetchPriority={fetchPriority}
+      fetchpriority={fetchPriority}
       width={width}
       height={height}
       referrerPolicy="no-referrer"
