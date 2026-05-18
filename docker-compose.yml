@@ -40,6 +40,9 @@ services:
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
+      
+      # API Groq
+      GROQ_API_KEY: ${GROQ_API_KEY}
     
     volumes:
       # En desarrollo: hot-reload del código

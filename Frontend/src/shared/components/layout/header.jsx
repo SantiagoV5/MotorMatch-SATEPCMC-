@@ -9,6 +9,7 @@ const PRIMARY_LINKS = [
   { to: '/nosotros', label: 'Nosotros' },
   { to: '/contacto', label: 'Contacto' },
   { to: '/ayuda', label: 'Ayuda' },
+  { to: '/ai-chat', label: 'Asistente IA' },
 ]
 
 const USER_MENU = [

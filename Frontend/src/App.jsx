@@ -37,6 +37,7 @@ const AboutPage = lazy(() => import('./pages/AboutPage'))
 const ObjectivesPage = lazy(() => import('./pages/ObjectivesPage'))
 const ProgressPage = lazy(() => import('./pages/ProgressPage'))
 const ContactPage = lazy(() => import('./pages/ContactPage'))
+const AIChatPage = lazy(() => import('./pages/AIChatPage'))
 
 function RouteFallback() {
   return (
@@ -74,6 +75,11 @@ function App() {
         <Route path="/recommendations" element={
           <ProtectedRoute>
             <RecommendationList />
+          </ProtectedRoute>
+        } />
+        <Route path="/ai-chat" element={
+          <ProtectedRoute>
+            <AIChatPage />
           </ProtectedRoute>
         } />
         <Route path="/favorites" element={
