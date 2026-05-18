@@ -9,7 +9,7 @@ const PRIMARY_LINKS = [
   { to: '/nosotros', label: 'Nosotros' },
   { to: '/contacto', label: 'Contacto' },
   { to: '/ayuda', label: 'Ayuda' },
-  { to: '/ai-chat', label: 'Asistente IA' },
+  { to: '/ai-chat', label: 'MIA', icon: 'smart_toy' },
 ]
 
 const USER_MENU = [
@@ -89,17 +89,28 @@ export default function Header({ children, sticky = true }) {
             <nav className="flex flex-col gap-2 xl:ml-8 xl:flex-row xl:flex-wrap xl:items-center xl:gap-2">
               {PRIMARY_LINKS.map((link) => {
                 const active = isLinkActive(location.pathname, link.to)
+                const isAIChat = link.to === '/ai-chat'
+
                 return (
                   <Link
                     key={link.to}
                     to={link.to}
                     onClick={() => setIsMenuOpen(false)}
-                    className={`rounded-full px-4 py-2 text-sm font-bold transition ${
-                      active
-                        ? 'bg-primary text-white shadow-sm'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-primary'
+                    className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition ${
+                      isAIChat
+                        ? active
+                          ? 'bg-[#e85d26] text-white shadow-sm'
+                          : 'bg-[#e85d26] text-white hover:brightness-110'
+                        : active
+                          ? 'bg-primary text-white shadow-sm'
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-primary'
                     }`}
                   >
+                    {link.icon && (
+                      <span className="material-symbols-outlined text-[18px]">
+                        {link.icon}
+                      </span>
+                    )}
                     {link.label}
                   </Link>
                 )
