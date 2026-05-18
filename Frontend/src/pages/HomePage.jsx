@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getAllMotorcycles, getBrands } from '../features/motorcycles/services/motorcycleService';
 import { checkMyQuestionnaire } from '../features/questionnaire/services/questionnaireService';
 import MotorcycleCard from '../features/motorcycles/components/motorcycleCard';
@@ -8,6 +8,9 @@ import Header from '../shared/components/layout/header';
 import { getMyFavoriteIds } from '../features/favorites/services/favoritesService';
 import { SUPPORT_MAILTO } from '../shared/constants/support';
 import BrandLogoCarousel from '../shared/components/BrandLogoCarousel';
+import useAuth from '../features/auth/hooks/useAuth';
+import useAuthAction from '../features/auth/hooks/useAuthAction';
+import { consumeMatchingAuthAction } from '../features/auth/utils/authRedirect';
 
 
 // ----- price range constants for the slider -----
@@ -33,20 +36,28 @@ const getBrandLogo = (brand) => BRAND_LOGOS[brand.toUpperCase()] || null;
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { isAuthenticated } = useAuth();
+  const { requireAuth, authModal } = useAuthAction();
   const [motorcycles, setMotorcycles] = useState([]);
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [committedSearch, setCommittedSearch] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') || '');
+  const [committedSearch, setCommittedSearch] = useState(() => searchParams.get('search') || '');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState(new Set());
 
   // Filter states
-  const [priceRange, setPriceRange] = useState([MIN_PRICE, MAX_PRICE]);
-  const [selectedBrands, setSelectedBrands] = useState([]);
-  const [selectedDisplacement, setSelectedDisplacement] = useState('');
+  const [priceRange, setPriceRange] = useState(() => [
+    Number(searchParams.get('minPrice')) || MIN_PRICE,
+    Number(searchParams.get('maxPrice')) || MAX_PRICE,
+  ]);
+  const [selectedBrands, setSelectedBrands] = useState(() => (
+    searchParams.get('brands')?.split(',').filter(Boolean) || []
+  ));
+  const [selectedDisplacement, setSelectedDisplacement] = useState(() => searchParams.get('cc') || '');
 
   // Slider drag logic
   const trackRef = useRef(null);
@@ -90,8 +101,6 @@ export default function HomePage() {
   const minPct = toPercent(priceRange[0]);
   const maxPct = toPercent(priceRange[1]);
 
-  const user = JSON.parse(sessionStorage.getItem('mm_user') || 'null');
-
   // Map displacement option values to minCc/maxCc the backend understands
   const DISPLACEMENT_CC = {
     economica: { minCc: 0,   maxCc: 250 },
@@ -116,7 +125,17 @@ export default function HomePage() {
   // Re-fetch motorcycles from the backend whenever any filter changes
   useEffect(() => {
     loadMotorcycles();
-  }, [debouncedPrice, selectedBrands, selectedDisplacement, committedSearch]);
+  }, [debouncedPrice, selectedBrands, selectedDisplacement, committedSearch, isAuthenticated]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+    if (committedSearch.trim()) nextParams.set('search', committedSearch.trim());
+    if (priceRange[0] !== MIN_PRICE) nextParams.set('minPrice', String(priceRange[0]));
+    if (priceRange[1] !== MAX_PRICE) nextParams.set('maxPrice', String(priceRange[1]));
+    if (selectedBrands.length > 0) nextParams.set('brands', selectedBrands.join(','));
+    if (selectedDisplacement) nextParams.set('cc', selectedDisplacement);
+    setSearchParams(nextParams, { replace: true });
+  }, [committedSearch, priceRange, selectedBrands, selectedDisplacement, setSearchParams]);
 
   const loadMotorcycles = async () => {
     try {
@@ -144,19 +163,22 @@ export default function HomePage() {
       // OR send the first selected brand if only one is chosen.
       // For multiple brands we fetch each and deduplicate by id.
       // Fetch motorcycles and favorite IDs in parallel so they arrive together
+      const favoriteRequest = isAuthenticated
+        ? getMyFavoriteIds().catch(() => [])
+        : Promise.resolve([]);
       let motorcycleData;
       if (selectedBrands.length === 1) {
         filters.brand = selectedBrands[0];
         const [data, ids] = await Promise.all([
           getAllMotorcycles(filters),
-          getMyFavoriteIds().catch(() => []),
+          favoriteRequest,
         ]);
         motorcycleData = data || [];
         setFavoriteIds(new Set(ids.map(Number)));
       } else if (selectedBrands.length > 1) {
         const [results, ids] = await Promise.all([
           Promise.all(selectedBrands.map(brand => getAllMotorcycles({ ...filters, brand }))),
-          getMyFavoriteIds().catch(() => []),
+          favoriteRequest,
         ]);
         // Merge and deduplicate by id
         motorcycleData = Object.values(
@@ -167,7 +189,7 @@ export default function HomePage() {
         // No brand filter
         const [data, ids] = await Promise.all([
           getAllMotorcycles(filters),
-          getMyFavoriteIds().catch(() => []),
+          favoriteRequest,
         ]);
         motorcycleData = data || [];
         setFavoriteIds(new Set(ids.map(Number)));
@@ -189,7 +211,16 @@ export default function HomePage() {
     setCommittedSearch(searchTerm);   // triggers useEffect → loadMotorcycles
   };
 
-  const handleMatchClick = async () => {
+  const handleMatchClick = useCallback(async (skipAuthPrompt = false) => {
+    if (!isAuthenticated && !skipAuthPrompt) {
+      const allowed = requireAuth({
+        action: { type: 'resume-match' },
+        title: 'Debes iniciar sesión o registrarte para usar tu Match personal.',
+        description: 'Las recomendaciones personalizadas dependen de tu perfil y se guardan en tu cuenta.',
+      });
+
+      if (!allowed) return;
+    }
     try {
       const { exists } = await checkMyQuestionnaire();
       if (exists) {
@@ -200,7 +231,11 @@ export default function HomePage() {
     } catch (err) {
       if (err.response?.status === 401) {
         // Token expirado o inválido — redirigir al login
-        navigate('/login');
+        requireAuth({
+          action: { type: 'resume-match' },
+          title: 'Debes iniciar sesión o registrarte para usar tu Match personal.',
+          description: 'MotorMatch necesita autenticarte para cargar tu cuestionario y tus recomendaciones.',
+        });
       } else if (err.response?.status === 404) {
         // Sin cuestionario registrado
         setShowMatchModal(true);
@@ -209,7 +244,26 @@ export default function HomePage() {
         console.error('Error verificando cuestionario:', err);
       }
     }
-  };
+  }, [isAuthenticated, navigate, requireAuth]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const action = consumeMatchingAuthAction((candidate) => (
+      candidate?.type === 'resume-match' || candidate?.type === 'navigate'
+    ));
+
+    if (!action) return;
+
+    if (action.type === 'navigate' && action.to) {
+      navigate(action.to);
+      return;
+    }
+
+    if (action.type === 'resume-match') {
+      void handleMatchClick(true);
+    }
+  }, [handleMatchClick, isAuthenticated, navigate]);
 
   const handleBrandToggle = (brand) => {
     setSelectedBrands(prev =>
@@ -529,6 +583,7 @@ export default function HomePage() {
           </button>
         </form>
       </Header>
+      {authModal}
 
       <main className="flex-1 pt-[108px]">
         {/* Hero Section */}
@@ -574,7 +629,14 @@ export default function HomePage() {
 
         {/* Main CTAs */}
         <section className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-1 md:grid-cols-4 gap-3">
-          <button onClick={() => navigate('/questionnaire')} className="w-full py-2 bg-primary hover:bg-primary/95 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg">
+          <button onClick={() => {
+            if (!requireAuth({
+              action: { type: 'navigate', to: '/questionnaire' },
+              title: 'Debes iniciar sesión o registrarte para completar tu perfil.',
+              description: 'El cuestionario guarda tus preferencias y datos personales para darte recomendaciones útiles.',
+            })) return;
+            navigate('/questionnaire');
+          }} className="w-full py-2 bg-primary hover:bg-primary/95 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg">
             <span className="material-symbols-outlined text-base">quiz</span>
             COMENZAR CUESTIONARIO
           </button>

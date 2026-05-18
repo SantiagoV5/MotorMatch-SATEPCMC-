@@ -3,9 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { addFavorite, removeFavorite } from '../../favorites/services/favoritesService';
 import PropTypes from 'prop-types';
 import MotorcycleImage from '../../../shared/components/MotorcycleImage';
+import useAuth from '../../auth/hooks/useAuth';
+import useAuthAction from '../../auth/hooks/useAuthAction';
+import { consumeMatchingAuthAction } from '../../auth/utils/authRedirect';
 
 export default function MotorcycleCard({ motorcycle, isFavorite = false, onFavoriteToggle }) {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { requireAuth, authModal } = useAuthAction();
 
   // No local state for isFavorite — the parent (HomePage) owns the favoriteIds Set
   // and passes the computed value directly. This avoids timing issues where the
@@ -20,6 +25,16 @@ export default function MotorcycleCard({ motorcycle, isFavorite = false, onFavor
 
   const handleFavoriteToggle = async (e) => {
     e.stopPropagation();
+
+    if (!isAuthenticated) {
+      requireAuth({
+        action: { type: 'toggle-favorite', motorcycleId: motorcycle.id },
+        title: 'Debes iniciar sesión o registrarte para guardar favoritas.',
+        description: 'Tus motos favoritas se sincronizan con tu cuenta para que puedas retomarlas cuando quieras.',
+      });
+      return;
+    }
+
     const next = !currentFavorite;
     setOptimisticFavorite(next); // instant visual feedback
     try {
@@ -67,13 +82,29 @@ export default function MotorcycleCard({ motorcycle, isFavorite = false, onFavor
     }
   };
 
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const action = consumeMatchingAuthAction((candidate) => (
+      candidate?.type === 'toggle-favorite' && Number(candidate.motorcycleId) === Number(motorcycle.id)
+    ));
+
+    if (!action) return;
+
+    const syntheticEvent = { stopPropagation() {} };
+    void handleFavoriteToggle(syntheticEvent);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, motorcycle.id]);
+
   return (
-    <div 
-      onClick={handleClick}
-      onMouseEnter={handleWarmDetail}
-      onFocus={handleWarmDetail}
-      className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-lg border border-primary/5 flex flex-col group cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1"
-    >
+    <>
+      {authModal}
+      <div 
+        onClick={handleClick}
+        onMouseEnter={handleWarmDetail}
+        onFocus={handleWarmDetail}
+        className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-lg border border-primary/5 flex flex-col group cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1"
+      >
       {/* Image */}
       <div className="relative h-60 overflow-hidden">
         <MotorcycleImage
@@ -146,7 +177,8 @@ export default function MotorcycleCard({ motorcycle, isFavorite = false, onFavor
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

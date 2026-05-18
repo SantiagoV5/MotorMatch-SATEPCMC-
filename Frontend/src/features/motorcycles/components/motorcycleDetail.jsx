@@ -7,6 +7,8 @@ import { motorcycleService } from '../services/motorcycleService';
 import { getMotorcycleReviews, createReview, updateReview, deleteReview } from '../services/reviewService';
 import apiClient from '../../../services/apiClient'; // para registrar búsquedas
 import useAuth from '../../auth/hooks/useAuth';
+import useAuthAction from '../../auth/hooks/useAuthAction';
+import { consumeMatchingAuthAction } from '../../auth/utils/authRedirect';
 
 const CostSimulatorModal = lazy(() =>
   import('../../costSimulator').then((module) => ({
@@ -119,6 +121,7 @@ export function MotorcycleDetail() {
   const [userId, setUserId] = useState(null);
   const { user, token } = useAuth();
   const isAuthenticated = Boolean(token);
+  const { requireAuth, authModal } = useAuthAction();
   const [reviewSummary, setReviewSummary] = useState({ averageRating: 0, totalReviews: 0 });
   const [reviews, setReviews] = useState([]);
   const [reviewsPage, setReviewsPage] = useState(1);
@@ -138,11 +141,11 @@ export function MotorcycleDetail() {
   // Depends on motorcycle?.id (not the whole object) to avoid infinite re-renders.
   // ids are now plain numbers thanks to the toNumber() fix in the backend service.
   useEffect(() => {
-    if (!motorcycle?.id) return;
+    if (!motorcycle?.id || !isAuthenticated) return;
     getMyFavoriteIds()
       .then(ids => setIsFavorite(ids.map(Number).includes(Number(motorcycle.id))))
       .catch(() => {});
-  }, [motorcycle?.id]);
+  }, [isAuthenticated, motorcycle?.id]);
 
   // Get user profile info for budget
   useEffect(() => {
@@ -169,6 +172,15 @@ export function MotorcycleDetail() {
   }, [user]);
 
   const handleFavoriteToggle = async () => {
+    if (!isAuthenticated) {
+      requireAuth({
+        action: { type: 'toggle-favorite', motorcycleId: motorcycle.id },
+        title: 'Debes iniciar sesión o registrarte para guardar favoritas.',
+        description: 'Así podrás recuperar esta moto y tus preferencias desde cualquier momento.',
+      });
+      return;
+    }
+
     const next = !isFavorite;
     setIsFavorite(next);
     try {
@@ -179,6 +191,47 @@ export function MotorcycleDetail() {
       console.error('Error toggling favorite:', err);
     }
   };
+
+  const openPrivateAction = (action, title, description, onSuccess) => {
+    if (!isAuthenticated) {
+      requireAuth({ action, title, description });
+      return;
+    }
+
+    onSuccess();
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated || !motorcycle?.id) return;
+
+    const action = consumeMatchingAuthAction((candidate) => {
+      if (!candidate) return false;
+
+      const sameMotorcycle = Number(candidate.motorcycleId) === Number(motorcycle.id);
+      return (
+        (candidate.type === 'toggle-favorite' && sameMotorcycle) ||
+        (candidate.type === 'open-cost-simulator' && sameMotorcycle) ||
+        (candidate.type === 'open-price-alert' && sameMotorcycle)
+      );
+    });
+
+    if (!action) return;
+
+    if (action.type === 'toggle-favorite') {
+      void handleFavoriteToggle();
+      return;
+    }
+
+    if (action.type === 'open-cost-simulator') {
+      setIsSimulatorOpen(true);
+      return;
+    }
+
+    if (action.type === 'open-price-alert') {
+      setIsAlertOpen(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, motorcycle?.id]);
 
   useEffect(() => {
     const cachedMotorcycle = location.state?.prefillMoto || readCachedMotorcycle(cacheKey);
@@ -374,6 +427,7 @@ export function MotorcycleDetail() {
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#F5F7FA] font-['Space_Grotesk'] text-[#2C3E50] antialiased">
       <Header sticky={false} />
+      {authModal}
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 md:px-10 py-12">
@@ -507,13 +561,23 @@ export function MotorcycleDetail() {
 
             <div className="flex flex-wrap gap-4 pt-4">
               <button 
-                onClick={() => setIsSimulatorOpen(true)}
+                onClick={() => openPrivateAction(
+                  { type: 'open-cost-simulator', motorcycleId: motorcycle.id },
+                  'Debes iniciar sesión o registrarte para usar simulaciones personales.',
+                  'La simulación usa datos asociados a tu cuenta para que puedas retomarla después.',
+                  () => setIsSimulatorOpen(true),
+                )}
                 className="flex-1 min-w-[200px] h-14 bg-[#FF6B35] text-white rounded-xl font-bold hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF6B35]/20">
                 <span className="material-symbols-outlined">calculate</span>
                 SIMULAR COSTOS
               </button>
               <button
-                onClick={() => setIsAlertOpen(true)}
+                onClick={() => openPrivateAction(
+                  { type: 'open-price-alert', motorcycleId: motorcycle.id },
+                  'Debes iniciar sesión o registrarte para crear alertas de precio.',
+                  'Las alertas se guardan en tu cuenta para avisarte de cambios relevantes.',
+                  () => setIsAlertOpen(true),
+                )}
                 className="flex-1 min-w-[200px] h-14 bg-white text-[#0A2463] rounded-xl font-bold border-2 border-[#0A2463] hover:bg-[#0A2463]/5 transition-all flex items-center justify-center gap-2"
               >
                 <span className="material-symbols-outlined">notifications_active</span>

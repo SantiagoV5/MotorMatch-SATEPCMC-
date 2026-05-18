@@ -1,7 +1,30 @@
 import axios from 'axios'
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Resolución de la URL base de la API según el entorno:
+//
+// • LOCAL (docker-compose / npm run dev):
+//     VITE_API_URL no está definida en el proceso de build local,
+//     así que baseURL queda como '/api' y el proxy de Vite
+//     (vite.config.js → proxy['/api']) lo redirige a http://backend:3000.
+//
+// • PRODUCCIÓN (Vercel + Render):
+//     Durante el build en Vercel, VITE_API_URL = 'https://motormatch-erfb.onrender.com'
+//     queda horneada en el bundle, así que axios apunta directamente
+//     a https://motormatch-erfb.onrender.com/api sin pasar por ningún proxy.
+//
+// La regla: si VITE_API_URL termina en '/api', lo normalizamos para no
+// generar rutas duplicadas como /api/api/auth/login.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function resolveBaseURL() {
+  const raw = import.meta.env.VITE_API_URL   // undefined en local, URL real en producción
+  if (!raw) return '/api'                     // local → proxy de Vite se encarga
+  return raw.replace(/\/api\/?$/, '') + '/api' // producción → URL absoluta + /api
+}
+
 const apiClient = axios.create({
-  baseURL: '/api',       // Vite proxy → http://localhost:3000/api
+  baseURL: resolveBaseURL(),
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 })

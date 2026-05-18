@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import AuthSidePanel from './AuthSidePanel'
 import useAuth from '../hooks/useAuth'
 import apiClient from '../../../services/apiClient'
+import { resolvePostLoginPath } from '../utils/authRedirect'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -69,7 +70,7 @@ function LoginForm() {
     if (!EMAIL_RE.test(email) || !password) return
     try {
       await login(email, password, rememberMe)
-      navigate('/')
+      navigate(resolvePostLoginPath(location.state, '/'), { replace: true })
     } catch {
       // el error queda capturado en useAuth().error
     }

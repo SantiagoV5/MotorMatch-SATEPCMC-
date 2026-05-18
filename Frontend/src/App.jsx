@@ -1,5 +1,7 @@
 import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import ProtectedRoute from './features/auth/components/ProtectedRoute'
+import PublicOnlyRoute from './features/auth/components/PublicOnlyRoute'
 
 const LoginForm = lazy(() => import('./features/auth/components/loginForm'))
 const RegisterForm = lazy(() => import('./features/auth/components/registerForm'))
@@ -31,6 +33,10 @@ const MarketTrendsPage = lazy(() => import('./pages/MarketTrendsPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const HelpFaqPage = lazy(() => import('./pages/HelpFaqPage'))
 const SupportPage = lazy(() => import('./pages/SupportPage'))
+const AboutPage = lazy(() => import('./pages/AboutPage'))
+const ObjectivesPage = lazy(() => import('./pages/ObjectivesPage'))
+const ProgressPage = lazy(() => import('./pages/ProgressPage'))
+const ContactPage = lazy(() => import('./pages/ContactPage'))
 
 function RouteFallback() {
   return (
@@ -40,32 +46,26 @@ function RouteFallback() {
   )
 }
 
-// Protected Route Wrapper
-function ProtectedRoute({ children }) {
-  const token = sessionStorage.getItem('mm_token') || localStorage.getItem('mm_token')
-  if (!token) return <Navigate to="/login" replace />
-  return children
-}
-
 function App() {
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
-        <Route path="/" element={
-          <ProtectedRoute>
-            <HomePage />
-          </ProtectedRoute>
-        } />
-        <Route path="/home" element={
-          <ProtectedRoute>
-            <HomePage />
-          </ProtectedRoute>
-        } />
-        <Route path="/motorcycles/:id" element={
-          <ProtectedRoute>
-            <MotorcycleDetail />
-          </ProtectedRoute>
-        } />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/home" element={<Navigate to="/" replace />} />
+        <Route path="/catalogo" element={<HomePage />} />
+        <Route path="/motorcycles/:id" element={<MotorcycleDetail />} />
+        <Route path="/comparar" element={<ComparisonPage />} />
+        <Route path="/comparison" element={<ComparisonPage />} />
+        <Route path="/tendencias" element={<MarketTrendsPage />} />
+        <Route path="/market-trends" element={<MarketTrendsPage />} />
+        <Route path="/ayuda" element={<HelpFaqPage />} />
+        <Route path="/ayuda-faq" element={<HelpFaqPage />} />
+        <Route path="/soporte" element={<SupportPage />} />
+        <Route path="/nosotros" element={<AboutPage />} />
+        <Route path="/objetivos" element={<ObjectivesPage />} />
+        <Route path="/avances" element={<ProgressPage />} />
+        <Route path="/contacto" element={<ContactPage />} />
+
         <Route path="/questionnaire" element={
           <ProtectedRoute>
             <QuestionnaireWizard />
@@ -79,11 +79,6 @@ function App() {
         <Route path="/favorites" element={
           <ProtectedRoute>
             <FavoritesPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/comparison" element={
-          <ProtectedRoute>
-            <ComparisonPage />
           </ProtectedRoute>
         } />
         <Route path="/comparison-history" element={
@@ -106,23 +101,24 @@ function App() {
             <MarketAnalysisPage />
           </ProtectedRoute>
         } />
-        <Route path="/market-trends" element={
-          <ProtectedRoute>
-            <MarketTrendsPage />
-          </ProtectedRoute>
-        } />
         <Route path="/profile" element={
           <ProtectedRoute>
             <ProfilePage />
           </ProtectedRoute>
         } />
-        <Route path="/ayuda-faq" element={<HelpFaqPage />} />
-        <Route path="/soporte" element={<SupportPage />} />
-        <Route path="/login"    element={<LoginForm />} />
-        <Route path="/register"     element={<RegisterForm />} />
+        <Route path="/login" element={
+          <PublicOnlyRoute>
+            <LoginForm />
+          </PublicOnlyRoute>
+        } />
+        <Route path="/register" element={
+          <PublicOnlyRoute>
+            <RegisterForm />
+          </PublicOnlyRoute>
+        } />
         <Route path="/verify-email"   element={<VerifyEmailPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="*"              element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
   )
