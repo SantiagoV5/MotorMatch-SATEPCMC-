@@ -21,6 +21,7 @@ const reviewRoutes        = require('./modules/reviews/review.routes');
 const searchesRoutes      = require('./modules/searches/searches.routes');
 const priceAlertsRoutes   = require('./modules/priceAlerts/priceAlerts.routes');
 const aiRoutes            = require('./modules/ai/ai.routes'); // ← MotorMatch AI
+const adminRoutes         = require('./modules/admin/admin.routes');
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use('/api/support', supportRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/price-alerts', priceAlertsRoutes);
 app.use('/api/ai', aiRoutes);          // ← MotorMatch AI
+app.use('/api/admin', adminRoutes);
 
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {

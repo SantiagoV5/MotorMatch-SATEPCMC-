@@ -38,11 +38,43 @@ const apiClient = axios.create({
   timeout: 10000,
 })
 
+function clearStoredSession() {
+  sessionStorage.removeItem('mm_token')
+  sessionStorage.removeItem('mm_user')
+  sessionStorage.removeItem('mm_remember')
+  localStorage.removeItem('mm_token')
+  localStorage.removeItem('mm_user')
+  localStorage.removeItem('mm_remember')
+  window.dispatchEvent(new CustomEvent('mm:user-updated', { detail: null }))
+}
+
 // Adjunta el JWT automáticamente en cada petición si existe
 apiClient.interceptors.request.use((config) => {
   const token = sessionStorage.getItem('mm_token') || localStorage.getItem('mm_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status
+    const message = String(error.response?.data?.message || '').toLowerCase()
+
+    if (status === 401 || status === 403) {
+      const shouldInvalidateSession =
+        message.includes('deshabilitad') ||
+        message.includes('sesión expirada') ||
+        message.includes('no autorizado') ||
+        message.includes('token inválido')
+
+      if (shouldInvalidateSession) {
+        clearStoredSession()
+      }
+    }
+
+    return Promise.reject(error)
+  },
+)
 
 export default apiClient

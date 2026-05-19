@@ -12,17 +12,6 @@ const PRIMARY_LINKS = [
   { to: '/ai-chat', label: 'MIA', icon: 'smart_toy' },
 ]
 
-const USER_MENU = [
-  { to: '/profile', label: 'Mi perfil', icon: 'person' },
-  { to: '/profile', label: 'Configuración', icon: 'settings' },
-  { to: '/favorites', label: 'Motos favoritas', icon: 'favorite' },
-  { to: '/comparison-history', label: 'Historial de comparaciones', icon: 'history' },
-  { to: '/simulations-history', label: 'Historial de simulaciones', icon: 'calculate' },
-  { to: '/market-analysis', label: 'Análisis de mercado', icon: 'show_chart' },
-  { to: '/market-trends', label: 'Tendencias de mercado', icon: 'trending_up' },
-  { to: '/ayuda', label: 'Ayuda y FAQ', icon: 'help_center' },
-]
-
 function isLinkActive(pathname, to) {
   if (to === '/') return pathname === '/' || pathname === '/catalogo'
   return pathname === to || pathname.startsWith(`${to}/`)
@@ -38,6 +27,25 @@ export default function Header({ children, sticky = true }) {
     () => user?.name || user?.fullName || 'Explorador',
     [user],
   )
+
+  const userMenu = useMemo(() => {
+    const baseMenu = [
+      { to: '/profile', label: 'Mi perfil', icon: 'person' },
+      { to: '/profile', label: 'Configuración', icon: 'settings' },
+      { to: '/favorites', label: 'Motos favoritas', icon: 'favorite' },
+      { to: '/comparison-history', label: 'Historial de comparaciones', icon: 'history' },
+      { to: '/simulations-history', label: 'Historial de simulaciones', icon: 'calculate' },
+      { to: '/market-analysis', label: 'Análisis de mercado', icon: 'show_chart' },
+      { to: '/market-trends', label: 'Tendencias de mercado', icon: 'trending_up' },
+      { to: '/ayuda', label: 'Ayuda y FAQ', icon: 'help_center' },
+    ]
+
+    if (user?.isAdmin) {
+      baseMenu.splice(2, 0, { to: '/admin/login', label: 'Panel de administrador', icon: 'admin_panel_settings' })
+    }
+
+    return baseMenu
+  }, [user])
 
   const positionClass = sticky ? 'fixed top-0 left-0 z-30 w-full' : 'sticky top-0 z-30 w-full'
 
@@ -157,7 +165,7 @@ export default function Header({ children, sticky = true }) {
                       </div>
 
                       <div className="space-y-1">
-                        {USER_MENU.map((item) => (
+                        {userMenu.map((item) => (
                           <button
                             key={item.label}
                             type="button"

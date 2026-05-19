@@ -823,7 +823,14 @@ export function MotorcycleDetail() {
                   <article key={review.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="font-bold text-[#0A2463]">{review.user?.name || 'Usuario'}</p>
+                        <p className="font-bold text-[#0A2463]">
+                          {review.user?.isActive === false ? '[Usuario deshabilitado]' : (review.user?.name || 'Usuario')}
+                        </p>
+                        {review.user?.isActive === false && (
+                          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-600">
+                            Cuenta inactiva
+                          </p>
+                        )}
                         <div className="mt-2 flex items-center gap-2 text-sm text-slate-600">
                           <ReviewStars value={review.rating} />
                           <span>{review.rating}/5</span>

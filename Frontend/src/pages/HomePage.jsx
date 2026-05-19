@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { getAllMotorcycles, getBrands } from '../features/motorcycles/services/motorcycleService';
 import { checkMyQuestionnaire } from '../features/questionnaire/services/questionnaireService';
 import MotorcycleCard from '../features/motorcycles/components/motorcycleCard';
@@ -11,6 +11,7 @@ import BrandLogoCarousel from '../shared/components/BrandLogoCarousel';
 import useAuth from '../features/auth/hooks/useAuth';
 import useAuthAction from '../features/auth/hooks/useAuthAction';
 import { consumeMatchingAuthAction } from '../features/auth/utils/authRedirect';
+import { getMotorcycleCatalogEventName, getMotorcycleCatalogStorageKey } from '../shared/utils/motorcycleCatalogEvents';
 
 
 // ----- price range constants for the slider -----
@@ -36,6 +37,7 @@ const getBrandLogo = (brand) => BRAND_LOGOS[brand.toUpperCase()] || null;
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useAuth();
   const { requireAuth, authModal } = useAuthAction();
@@ -122,22 +124,7 @@ export default function HomePage() {
       .catch(err => console.error('Error cargando marcas:', err));
   }, []);
 
-  // Re-fetch motorcycles from the backend whenever any filter changes
-  useEffect(() => {
-    loadMotorcycles();
-  }, [debouncedPrice, selectedBrands, selectedDisplacement, committedSearch, isAuthenticated]);
-
-  useEffect(() => {
-    const nextParams = new URLSearchParams();
-    if (committedSearch.trim()) nextParams.set('search', committedSearch.trim());
-    if (priceRange[0] !== MIN_PRICE) nextParams.set('minPrice', String(priceRange[0]));
-    if (priceRange[1] !== MAX_PRICE) nextParams.set('maxPrice', String(priceRange[1]));
-    if (selectedBrands.length > 0) nextParams.set('brands', selectedBrands.join(','));
-    if (selectedDisplacement) nextParams.set('cc', selectedDisplacement);
-    setSearchParams(nextParams, { replace: true });
-  }, [committedSearch, priceRange, selectedBrands, selectedDisplacement, setSearchParams]);
-
-  const loadMotorcycles = async () => {
+  const loadMotorcycles = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -201,7 +188,43 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedPrice, selectedBrands, selectedDisplacement, committedSearch, isAuthenticated]);
+
+  // Re-fetch motorcycles from the backend whenever any filter changes
+  useEffect(() => {
+    loadMotorcycles();
+  }, [loadMotorcycles]);
+
+  useEffect(() => {
+    const storageKey = getMotorcycleCatalogStorageKey();
+    const eventName = getMotorcycleCatalogEventName();
+
+    const onStorage = (event) => {
+      if (event.key === storageKey) {
+        loadMotorcycles();
+      }
+    };
+
+    const onCatalogUpdate = () => loadMotorcycles();
+
+    window.addEventListener('storage', onStorage);
+    window.addEventListener(eventName, onCatalogUpdate);
+
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener(eventName, onCatalogUpdate);
+    };
+  }, [loadMotorcycles]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+    if (committedSearch.trim()) nextParams.set('search', committedSearch.trim());
+    if (priceRange[0] !== MIN_PRICE) nextParams.set('minPrice', String(priceRange[0]));
+    if (priceRange[1] !== MAX_PRICE) nextParams.set('maxPrice', String(priceRange[1]));
+    if (selectedBrands.length > 0) nextParams.set('brands', selectedBrands.join(','));
+    if (selectedDisplacement) nextParams.set('cc', selectedDisplacement);
+    setSearchParams(nextParams, { replace: true });
+  }, [committedSearch, priceRange, selectedBrands, selectedDisplacement, setSearchParams]);
 
   // Keep loadData as a simple alias so the "Reintentar" button still works
   const loadData = loadMotorcycles;
@@ -263,6 +286,14 @@ export default function HomePage() {
     if (action.type === 'resume-match') {
       void handleMatchClick(true);
     }
+            {(location.state?.accessDenied || location.state?.message) && (
+              <section className="max-w-7xl mx-auto px-4 pt-3">
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 shadow-sm">
+                  {location.state?.message || 'Acceso denegado'}
+                </div>
+              </section>
+            )}
+
   }, [handleMatchClick, isAuthenticated, navigate]);
 
   const handleBrandToggle = (brand) => {
