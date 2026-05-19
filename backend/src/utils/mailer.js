@@ -8,16 +8,12 @@ const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'soportemotormatch@gmail.com'
 // se imprime el enlace directamente en la terminal para facilitar pruebas.
 
 function createTransporter() {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FAMILY } = process.env;
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
 
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
     // Modo consola: no envía email, solo loguea el enlace
     return null;
   }
-
-  // Fuerza IPv4 por defecto para evitar ENETUNREACH en entornos sin IPv6
-  // En producción (Render, AWS, etc.), IPv6 suele estar bloqueado para SMTP
-  const smtpFamily = Number(SMTP_FAMILY) || 4;
 
   return nodemailer.createTransport({
     host: SMTP_HOST,
@@ -27,7 +23,6 @@ function createTransporter() {
     connectionTimeout: 8000,  // 8 segundos para conectar
     greetingTimeout:  5000,   // 5 segundos para saludo SMTP
     socketTimeout:    10000,  // 10 segundos de inactividad
-    family: smtpFamily,       // 4 = IPv4, 6 = IPv6
   });
 }
 
