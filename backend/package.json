@@ -12,6 +12,7 @@
     "import-youtube-refs": "dotenv -e ../.env -- node scripts/importYoutubeReferences.js",
     "enrich-bikes": "node scripts/enrichBike.js",
     "update-prices": "node scripts/updatePrices.js",
+    "smtp:test": "npx dotenv -e ../.env -- node scripts/test-smtp.js",
     "db:migrate": "dotenv -e ../.env -- prisma migrate dev",
     "db:generate": "dotenv -e ../.env -- prisma generate",
     "db:studio": "dotenv -e ../.env -- prisma studio"
