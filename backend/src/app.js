@@ -4,6 +4,7 @@ const morgan  = require('morgan');
 
 const { NODE_ENV } = require('./config/environment');
 const errorHandler = require('./middlewares/error.handler');
+const prisma       = require('./config/database');
 
 // ─── Rutas (se irán añadiendo por módulo) ───────────────────────────────────
 const authRoutes        = require('./modules/auth/auth.routes');
@@ -20,6 +21,8 @@ const supportRoutes       = require('./modules/support/support.routes');
 const reviewRoutes        = require('./modules/reviews/review.routes');
 const searchesRoutes      = require('./modules/searches/searches.routes');
 const priceAlertsRoutes   = require('./modules/priceAlerts/priceAlerts.routes');
+const aiRoutes            = require('./modules/ai/ai.routes'); // ← MotorMatch AI
+const adminRoutes         = require('./modules/admin/admin.routes');
 
 const app = express();
 
@@ -53,10 +56,26 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/price-alerts', priceAlertsRoutes);
+app.use('/api/ai', aiRoutes);          // ← MotorMatch AI
+app.use('/api/admin', adminRoutes);
 
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', env: NODE_ENV });
+});
+
+app.get('/api/health/db', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', database: 'reachable' });
+  } catch (err) {
+    res.status(503).json({
+      status: 'error',
+      database: 'unreachable',
+      code: err.code || err.name || 'UNKNOWN',
+      message: err.message,
+    });
+  }
 });
 
 // ─── 404 para rutas no definidas ─────────────────────────────────────────────

@@ -10,9 +10,62 @@ const SALT_ROUNDS = 12;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+function normalizeAuthUser(user) {
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    fullName: user.fullName ?? user.full_name ?? '',
+    email: user.email,
+    createdAt: user.createdAt ?? user.created_at ?? null,
+    isAdmin: Boolean(user.isAdmin ?? user.is_admin ?? false),
+    isActive: Boolean(user.isActive ?? user.is_active ?? true),
+    emailVerified: user.emailVerified ?? user.email_verified ?? false,
+    passwordHash: user.passwordHash ?? user.password_hash,
+  };
+}
+
+async function getAuthUserByEmail(email) {
+  const [user] = await prisma.$queryRaw`
+    SELECT
+      id,
+      full_name AS "fullName",
+      email,
+      password_hash AS "passwordHash",
+      email_verified AS "emailVerified",
+      is_admin AS "isAdmin",
+      is_active AS "isActive",
+      created_at AS "createdAt"
+    FROM users
+    WHERE email = ${email}
+    LIMIT 1
+  `;
+
+  return normalizeAuthUser(user);
+}
+
+async function getAuthUserById(id) {
+  const [user] = await prisma.$queryRaw`
+    SELECT
+      id,
+      full_name AS "fullName",
+      email,
+      is_admin AS "isAdmin",
+      is_active AS "isActive",
+      created_at AS "createdAt"
+    FROM users
+    WHERE id = ${id}
+    LIMIT 1
+  `;
+
+  return normalizeAuthUser(user);
+}
+
 function signToken(user) {
+  const normalizedUser = normalizeAuthUser(user);
+
   return jwt.sign(
-    { sub: user.id, email: user.email },
+    { sub: normalizedUser.id, email: normalizedUser.email, is_admin: normalizedUser.isAdmin },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN },
   );
@@ -55,7 +108,7 @@ async function register({ name, email, password }) {
 
   // No emitir token JWT hasta que el email esté verificado
   return {
-    user: { id: user.id, name: user.fullName, email: user.email, createdAt: user.createdAt },
+    user: { id: user.id, name: user.fullName, email: user.email, createdAt: user.createdAt, isAdmin: false },
   };
 }
 
@@ -75,6 +128,9 @@ async function verifyEmail(token) {
   if (user.verificationExpiresAt < new Date()) {
     throw createError('El enlace de verificación ha expirado. Solicita uno nuevo.', 400);
   }
+  if (!user.isActive) {
+    throw createError('Tu cuenta está deshabilitada. Contacta a un administrador.', 403);
+  }
 
   await prisma.user.update({
     where: { id: user.id },
@@ -89,17 +145,18 @@ async function verifyEmail(token) {
     logger.error(`Error enviando email de bienvenida a ${user.email}: ${mailErr.message}`);
   }
 
-  const jwtToken = signToken(user);
+  const authUser = await getAuthUserById(user.id);
+  const jwtToken = signToken(authUser);
   return {
     token: jwtToken,
-    user: { id: user.id, name: user.fullName, email: user.email, createdAt: user.createdAt },
+    user: { id: authUser.id, name: authUser.fullName, email: authUser.email, createdAt: authUser.createdAt, isAdmin: authUser.isAdmin },
   };
 }
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 
 async function login({ email, password }) {
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await getAuthUserByEmail(email);
   if (!user) throw createError('Correo o contraseña incorrectos', 401);
 
   const match = await bcrypt.compare(password, user.passwordHash);
@@ -109,10 +166,14 @@ async function login({ email, password }) {
     throw createError('Debes verificar tu correo electrónico antes de iniciar sesión.', 403);
   }
 
+  if (!user.isActive) {
+    throw createError('Tu cuenta está deshabilitada. Contacta a un administrador.', 403);
+  }
+
   const token = signToken(user);
   return {
     token,
-    user: { id: user.id, name: user.fullName, email: user.email, createdAt: user.createdAt },
+    user: { id: user.id, name: user.fullName, email: user.email, createdAt: user.createdAt, isAdmin: user.isAdmin },
   };
 }
 

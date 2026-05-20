@@ -222,6 +222,7 @@ model Review {
   motorcycleId Int        @map("motorcycle_id")
   rating       Int
   comment      String     @db.VarChar(500)
+  isVisible    Boolean    @default(true) @map("is_visible")
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
