@@ -6,6 +6,9 @@ FROM ${NODE_IMAGE} AS build
 
 WORKDIR /app/frontend
 
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
+
 COPY package*.json ./
 RUN npm ci
 
