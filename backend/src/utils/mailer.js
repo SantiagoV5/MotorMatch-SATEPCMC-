@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 const { logger } = require('./logger');
 
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'soportemotormatch@gmail.com';
+const DEFAULT_FROM_NAME = 'MotorMatch';
 
 // ─── Transporter ──────────────────────────────────────────────────────────────
 // En desarrollo (NODE_ENV !== 'production') y sin SMTP configurado,
@@ -24,6 +25,12 @@ function createTransporter() {
     greetingTimeout:  5000,   // 5 segundos para saludo SMTP
     socketTimeout:    10000,  // 10 segundos de inactividad
   });
+}
+
+function getFromAddress() {
+  const fromName = process.env.SMTP_FROM_NAME || DEFAULT_FROM_NAME;
+  const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.EMAIL_FROM || process.env.SMTP_USER;
+  return `"${fromName}" <${fromEmail}>`;
 }
 
 function escapeHtml(value = '') {
@@ -102,7 +109,7 @@ async function sendVerificationEmail({ to, name, verificationUrl }) {
   }
 
   await transporter.sendMail({
-    from: `"MotorMatch" <${process.env.SMTP_USER}>`,
+    from: getFromAddress(),
     to,
     subject: '✅ Confirma tu cuenta en MotorMatch',
     html,
@@ -191,7 +198,7 @@ async function sendWelcomeEmail({ to, name }) {
   }
 
   await transporter.sendMail({
-    from: `"MotorMatch" <${process.env.SMTP_USER}>`,
+    from: getFromAddress(),
     to,
     subject: '🎉 ¡Bienvenido a MotorMatch!',
     html,
@@ -254,7 +261,7 @@ async function sendPasswordResetEmail({ to, name, resetUrl }) {
   }
 
   await transporter.sendMail({
-    from: `"MotorMatch" <${process.env.SMTP_USER}>`,
+    from: getFromAddress(),
     to,
     subject: '🔑 Restablece tu contraseña en MotorMatch',
     html,
@@ -305,7 +312,7 @@ async function sendPasswordChangedEmail({ to, name }) {
   }
 
   await transporter.sendMail({
-    from: `"MotorMatch" <${process.env.SMTP_USER}>`,
+    from: getFromAddress(),
     to,
     subject: '🔒 Tu contraseña de MotorMatch ha sido actualizada',
     html,
@@ -397,7 +404,7 @@ async function sendSupportEmail({ name, email, message, sourcePage }) {
   }
 
   await transporter.sendMail({
-    from: `"MotorMatch" <${process.env.SMTP_USER}>`,
+    from: getFromAddress(),
     to: SUPPORT_EMAIL,
     replyTo: email,
     subject: '🛟 Ayuda MotorMatch',
@@ -481,7 +488,7 @@ async function sendPriceAlertEmail({ to, name, motorcycle, targetPrice, currentP
   }
 
   await transporter.sendMail({
-    from: `"MotorMatch" <${process.env.SMTP_USER}>`,
+    from: getFromAddress(),
     to,
     subject: `Bajo de precio: ${motorcycle.brand} ${motorcycle.model}`,
     html,
