@@ -1,5 +1,7 @@
 import axios from 'axios'
 
+const DEFAULT_PROD_API_URL = 'https://motormatch-erfb.onrender.com'
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Resolución de la URL base de la API según el entorno:
 //
@@ -21,8 +23,8 @@ import axios from 'axios'
 function resolveBaseURL() {
   // En producción (build estático), usar la URL absoluta del backend
   if (import.meta.env.PROD) {
-    const raw = import.meta.env.VITE_API_URL
-    if (raw) return raw.replace(/\/api\/?$/, '') + '/api'
+    const raw = import.meta.env.VITE_API_URL || DEFAULT_PROD_API_URL
+    return raw.replace(/\/api\/?$/, '') + '/api'
   }
 
   // En desarrollo (local o Docker), SIEMPRE usar '/api' y dejar que
