@@ -64,7 +64,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', env: NODE_ENV });
 });
 
-app.get('/api/health/db', async (_req, res) => {
+async function checkDatabaseHealth(_req, res) {
   try {
     await prisma.$queryRaw`SELECT 1`;
     res.json({ status: 'ok', database: 'reachable' });
@@ -76,7 +76,10 @@ app.get('/api/health/db', async (_req, res) => {
       message: err.message,
     });
   }
-});
+}
+
+app.get('/api/health/db', checkDatabaseHealth);
+app.get('/api/health/bd', checkDatabaseHealth);
 
 // ─── 404 para rutas no definidas ─────────────────────────────────────────────
 app.use((_req, res) => {
