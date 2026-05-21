@@ -9,6 +9,7 @@ import apiClient from '../../../services/apiClient'; // para registrar búsqueda
 import useAuth from '../../auth/hooks/useAuth';
 import useAuthAction from '../../auth/hooks/useAuthAction';
 import { consumeMatchingAuthAction } from '../../auth/utils/authRedirect';
+import DealershipMapSection from '../../dealerships/components/DealershipMapSection';
 
 const CostSimulatorModal = lazy(() =>
   import('../../costSimulator').then((module) => ({
@@ -633,6 +634,8 @@ export function MotorcycleDetail() {
             <TechCard icon="speed" label="Transmisión" value={motorcycle.transmission} />
           </div>
         </section>
+
+        <DealershipMapSection motorcycle={motorcycle} />
 
         {/* Referencias en YouTube */}
         {youtubeReferences.length > 0 && (
