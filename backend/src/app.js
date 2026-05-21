@@ -5,6 +5,7 @@ const morgan  = require('morgan');
 const { NODE_ENV } = require('./config/environment');
 const errorHandler = require('./middlewares/error.handler');
 const prisma       = require('./config/database');
+const { getSmtpHealth } = require('./utils/smtpHealth');
 
 // ─── Rutas (se irán añadiendo por módulo) ───────────────────────────────────
 const authRoutes        = require('./modules/auth/auth.routes');
@@ -64,7 +65,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', env: NODE_ENV });
 });
 
-app.get('/api/health/db', async (_req, res) => {
+async function checkDatabaseHealth(_req, res) {
   try {
     await prisma.$queryRaw`SELECT 1`;
     res.json({ status: 'ok', database: 'reachable' });
@@ -76,6 +77,14 @@ app.get('/api/health/db', async (_req, res) => {
       message: err.message,
     });
   }
+}
+
+app.get('/api/health/db', checkDatabaseHealth);
+app.get('/api/health/bd', checkDatabaseHealth);
+
+app.get('/api/health/smtp', async (_req, res) => {
+  const health = await getSmtpHealth();
+  res.status(health.ok ? 200 : 503).json(health);
 });
 
 // ─── 404 para rutas no definidas ─────────────────────────────────────────────
