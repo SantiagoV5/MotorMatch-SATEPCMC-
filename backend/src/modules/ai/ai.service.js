@@ -16,9 +16,12 @@
 const { classifyIntent } = require('./ai.intent');
 const { buildContext }   = require('./ai.context');
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_URL     = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL   = 'llama-3.3-70b-versatile';
+
+function getGroqApiKey() {
+  return process.env.GROQ_API_KEY?.trim();
+}
 
 const SYSTEM_PROMPT = `Eres MotorMatch AI, un asesor experto en motocicletas del mercado colombiano.
 
@@ -50,6 +53,22 @@ class AIRateLimitError extends Error {
   }
 }
 
+class AIConfigurationError extends Error {
+  constructor(message = 'El asistente de IA no esta configurado. Agrega GROQ_API_KEY en el archivo .env y reinicia el backend.') {
+    super(message);
+    this.name = 'AIConfigurationError';
+    this.statusCode = 503;
+  }
+}
+
+class AIProviderError extends Error {
+  constructor(message = 'El proveedor de IA no esta disponible en este momento. Intenta de nuevo en unos minutos.', statusCode = 502) {
+    super(message);
+    this.name = 'AIProviderError';
+    this.statusCode = statusCode;
+  }
+}
+
 function parseRetryAfter(headers) {
   const raw = headers?.get?.('retry-after') ?? headers?.['retry-after'];
   return raw ? Math.ceil(parseFloat(raw)) : 60;
@@ -61,25 +80,40 @@ function parseRetryAfter(headers) {
  * @returns {Promise<string>}
  */
 async function askGroq(groqMessages) {
-  const response = await fetch(GROQ_URL, {
-    method:  'POST',
-    headers: {
-      'Content-Type':  'application/json',
-      'Authorization': `Bearer ${GROQ_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model:       GROQ_MODEL,
-      messages:    groqMessages,
-      max_tokens:  900,
-      temperature: 0.7,
-    }),
-    signal: AbortSignal.timeout(30000),
-  });
+  const apiKey = getGroqApiKey();
+  if (!apiKey) throw new AIConfigurationError();
+
+  let response;
+  try {
+    response = await fetch(GROQ_URL, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model:       GROQ_MODEL,
+        messages:    groqMessages,
+        max_tokens:  900,
+        temperature: 0.7,
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+  } catch (err) {
+    if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+      throw new AIProviderError('El proveedor de IA tardo demasiado en responder. Intenta de nuevo.', 504);
+    }
+    throw new AIProviderError();
+  }
 
   if (!response.ok) {
     if (response.status === 429) throw new AIRateLimitError(parseRetryAfter(response.headers));
+    if (response.status === 401 || response.status === 403) {
+      throw new AIConfigurationError('No se pudo autenticar con Groq. Verifica que GROQ_API_KEY sea valida.');
+    }
     const errBody = await response.json().catch(() => ({}));
-    throw new Error(`Groq API error ${response.status}: ${JSON.stringify(errBody)}`);
+    console.error(`[AI] Groq API error ${response.status}: ${JSON.stringify(errBody)}`);
+    throw new AIProviderError();
   }
 
   const data  = await response.json();
@@ -97,7 +131,7 @@ async function askGroq(groqMessages) {
  * @returns {Promise<string>} Respuesta de la IA
  */
 async function askAI(messages, userId) {
-  if (!GROQ_API_KEY) throw new Error('GROQ_API_KEY no configurada en las variables de entorno.');
+  if (!getGroqApiKey()) throw new AIConfigurationError();
 
   // Último mensaje del usuario
   const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user')?.content ?? '';
@@ -131,4 +165,4 @@ async function askAI(messages, userId) {
   return askGroq(groqMessages);
 }
 
-module.exports = { askAI, AIRateLimitError };
+module.exports = { askAI, AIRateLimitError, AIConfigurationError, AIProviderError };
