@@ -63,6 +63,11 @@ export default function useAIChat() {
           type: 'generic',
           message: 'Debes iniciar sesión para usar el asistente de IA.',
         });
+      } else if (err?.code === 'ECONNABORTED') {
+        setError({
+          type: 'generic',
+          message: 'El asistente tardo demasiado en responder. Intenta de nuevo.',
+        });
       } else {
         setError({
           type: 'generic',

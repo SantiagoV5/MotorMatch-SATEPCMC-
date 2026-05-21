@@ -17,8 +17,11 @@
  *   none             → pregunta general, no necesita datos de la plataforma
  */
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_URL     = 'https://api.groq.com/openai/v1/chat/completions';
+
+function getGroqApiKey() {
+  return process.env.GROQ_API_KEY?.trim();
+}
 
 const VALID_SOURCES = [
   'catalog',
@@ -64,11 +67,14 @@ Formato de respuesta:
  */
 async function classifyIntent(userMessage) {
   try {
+    const apiKey = getGroqApiKey();
+    if (!apiKey) return ['none'];
+
     const response = await fetch(GROQ_URL, {
       method:  'POST',
       headers: {
         'Content-Type':  'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model:       'llama-3.1-8b-instant', // Modelo pequeño para clasificación rápida
