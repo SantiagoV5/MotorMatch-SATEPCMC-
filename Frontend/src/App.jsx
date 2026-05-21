@@ -41,6 +41,7 @@ const ContactPage = lazy(() => import('./pages/ContactPage'))
 const AIChatPage = lazy(() => import('./pages/AIChatPage'))
 const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage'))
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
+const DealershipAdminPage = lazy(() => import('./pages/DealershipAdminPage'))
 
 function RouteFallback() {
   return (
@@ -77,6 +78,11 @@ function App() {
         <Route path="/admin" element={
           <AdminRoute>
             <AdminDashboardPage />
+          </AdminRoute>
+        } />
+        <Route path="/admin/concesionarios" element={
+          <AdminRoute>
+            <DealershipAdminPage />
           </AdminRoute>
         } />
 

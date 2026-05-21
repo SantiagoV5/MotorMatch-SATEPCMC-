@@ -24,6 +24,8 @@ const searchesRoutes      = require('./modules/searches/searches.routes');
 const priceAlertsRoutes   = require('./modules/priceAlerts/priceAlerts.routes');
 const aiRoutes            = require('./modules/ai/ai.routes'); // ← MotorMatch AI
 const adminRoutes         = require('./modules/admin/admin.routes');
+const dealershipRoutes    = require('./modules/dealerships/dealership.routes');
+const adminDealershipRoutes = require('./modules/adminDealerships/adminDealership.routes');
 
 const app = express();
 
@@ -57,6 +59,8 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/price-alerts', priceAlertsRoutes);
+app.use('/api/dealerships', dealershipRoutes);
+app.use('/api/admin/dealerships', adminDealershipRoutes);
 app.use('/api/ai', aiRoutes);          // ← MotorMatch AI
 app.use('/api/admin', adminRoutes);
 

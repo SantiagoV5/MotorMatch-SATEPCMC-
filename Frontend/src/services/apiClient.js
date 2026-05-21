@@ -1,7 +1,5 @@
 import axios from 'axios'
 
-const DEFAULT_PROD_API_URL = 'https://motormatch-erfb.onrender.com'
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Resolución de la URL base de la API según el entorno:
 //
@@ -21,9 +19,12 @@ const DEFAULT_PROD_API_URL = 'https://motormatch-erfb.onrender.com'
 // ─────────────────────────────────────────────────────────────────────────────
 
 function resolveBaseURL() {
+  const raw = import.meta.env.VITE_API_URL?.trim()
+  const host = typeof window !== 'undefined' ? window.location.hostname : ''
+  const isLocalHost = ['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(host)
+
   // En producción (build estático), usar la URL absoluta del backend
-  if (import.meta.env.PROD) {
-    const raw = import.meta.env.VITE_API_URL || DEFAULT_PROD_API_URL
+  if (raw && !isLocalHost) {
     return raw.replace(/\/api\/?$/, '') + '/api'
   }
 
@@ -67,6 +68,8 @@ apiClient.interceptors.response.use(
       const shouldInvalidateSession =
         message.includes('deshabilitad') ||
         message.includes('sesión expirada') ||
+        message.includes('sesion expirada') ||
+        message.includes('token invalido') ||
         message.includes('no autorizado') ||
         message.includes('token inválido')
 

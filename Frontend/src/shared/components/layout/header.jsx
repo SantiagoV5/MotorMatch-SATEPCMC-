@@ -27,7 +27,6 @@ export default function Header({ children, sticky = true }) {
     () => user?.name || user?.fullName || 'Explorador',
     [user],
   )
-
   const userMenu = useMemo(() => {
     const baseMenu = [
       { to: '/profile', label: 'Mi perfil', icon: 'person' },
@@ -42,6 +41,7 @@ export default function Header({ children, sticky = true }) {
 
     if (user?.isAdmin) {
       baseMenu.splice(2, 0, { to: '/admin/login', label: 'Panel de administrador', icon: 'admin_panel_settings' })
+      baseMenu.splice(3, 0, { to: '/admin/concesionarios', label: 'Concesionarios', icon: 'storefront' })
     }
 
     return baseMenu
