@@ -2,6 +2,102 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html,
+  body,
+  #root {
+    font-family: 'Inter', sans-serif;
+  }
+
+  html {
+    color-scheme: light;
+    background-color: #F5F7FA;
+  }
+
+  html.dark {
+    color-scheme: dark;
+    background-color: #0B1220;
+  }
+
+  body,
+  #root {
+    background-color: #F5F7FA;
+    color: #2C3E50;
+  }
+
+  html.dark body,
+  html.dark #root {
+    background-color: #0B1220;
+    color: #E2E8F0;
+  }
+
+  button,
+  input,
+  textarea,
+  select,
+  option {
+    font-family: 'Inter', sans-serif;
+  }
+
+  /*
+   * Dark-mode fallback for components that still use light utility tokens
+   * without a dedicated dark variant.
+   */
+  html.dark [class~='bg-white']:not([class*='dark:bg-']),
+  html.dark [class~='bg-white/95']:not([class*='dark:bg-']),
+  html.dark [class~='bg-white/90']:not([class*='dark:bg-']),
+  html.dark [class~='bg-white/80']:not([class*='dark:bg-']),
+  html.dark [class~='bg-white/75']:not([class*='dark:bg-']),
+  html.dark [class~='bg-white/70']:not([class*='dark:bg-']),
+  html.dark [class~='bg-white/60']:not([class*='dark:bg-']),
+  html.dark [class~='bg-white/50']:not([class*='dark:bg-']),
+  html.dark [class~='bg-slate-50']:not([class*='dark:bg-']),
+  html.dark [class*='bg-slate-50/']:not([class*='dark:bg-']),
+  html.dark [class~='bg-slate-50/90']:not([class*='dark:bg-']),
+  html.dark [class~='bg-slate-50/80']:not([class*='dark:bg-']),
+  html.dark [class~='bg-slate-50/70']:not([class*='dark:bg-']),
+  html.dark [class~='bg-slate-50/50']:not([class*='dark:bg-']),
+  html.dark [class~='bg-slate-100']:not([class*='dark:bg-']),
+  html.dark [class*='bg-slate-100/']:not([class*='dark:bg-']),
+  html.dark [class~='bg-slate-100/90']:not([class*='dark:bg-']),
+  html.dark [class~='bg-slate-100/80']:not([class*='dark:bg-']),
+  html.dark [class~='bg-slate-100/70']:not([class*='dark:bg-']),
+  html.dark [class~='bg-slate-100/50']:not([class*='dark:bg-']),
+  html.dark [class~='bg-slate-200']:not([class*='dark:bg-']),
+  html.dark [class~='bg-background-light']:not([class*='dark:bg-']),
+  html.dark [class~='bg-[#F5F7FA]']:not([class*='dark:bg-']) {
+    background-color: #0F172A;
+  }
+
+  html.dark [class~='border-slate-50']:not([class*='dark:border-']),
+  html.dark [class*='border-slate-50/']:not([class*='dark:border-']),
+  html.dark [class~='border-slate-100']:not([class*='dark:border-']),
+  html.dark [class*='border-slate-100/']:not([class*='dark:border-']),
+  html.dark [class~='border-slate-200']:not([class*='dark:border-']),
+  html.dark [class*='border-slate-200/']:not([class*='dark:border-']),
+  html.dark [class~='border-slate-300']:not([class*='dark:border-']),
+  html.dark [class*='border-slate-300/']:not([class*='dark:border-']),
+  html.dark [class~='border-[#D9E2EC]']:not([class*='dark:border-']),
+  html.dark [class~='border-[#E2E8F0]']:not([class*='dark:border-']) {
+    border-color: #334155;
+  }
+
+  html.dark [class~='text-slate-900']:not([class*='dark:text-']),
+  html.dark [class~='text-slate-800']:not([class*='dark:text-']),
+  html.dark [class~='text-slate-700']:not([class*='dark:text-']),
+  html.dark [class~='text-slate-600']:not([class*='dark:text-']),
+  html.dark [class~='text-slate-500']:not([class*='dark:text-']),
+  html.dark [class~='text-slate-400']:not([class*='dark:text-']),
+  html.dark [class~='text-neutral-dark']:not([class*='dark:text-']),
+  html.dark [class~='text-primary']:not([class*='dark:text-']),
+  html.dark [class~='text-[#0A2463]']:not([class*='dark:text-']),
+  html.dark [class~='text-[#1E2A3A]']:not([class*='dark:text-']),
+  html.dark [class~='text-[#1A202C]']:not([class*='dark:text-']),
+  html.dark [class~='text-[#2C3E50]']:not([class*='dark:text-']) {
+    color: #E2E8F0;
+  }
+}
+
 /* Slider thumb styles */
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -41,4 +137,58 @@ input[type='range'] {
 
 .brand-carousel::-webkit-scrollbar {
   display: none;
+}
+
+html.dark [class~='bg-white']:not([class*='dark:bg-']),
+html.dark [class~='bg-white/95']:not([class*='dark:bg-']),
+html.dark [class~='bg-white/90']:not([class*='dark:bg-']),
+html.dark [class~='bg-white/80']:not([class*='dark:bg-']),
+html.dark [class~='bg-white/75']:not([class*='dark:bg-']),
+html.dark [class~='bg-white/70']:not([class*='dark:bg-']),
+html.dark [class~='bg-white/60']:not([class*='dark:bg-']),
+html.dark [class~='bg-white/50']:not([class*='dark:bg-']),
+html.dark [class~='bg-slate-50']:not([class*='dark:bg-']),
+html.dark [class~='bg-slate-50/90']:not([class*='dark:bg-']),
+html.dark [class~='bg-slate-50/80']:not([class*='dark:bg-']),
+html.dark [class~='bg-slate-50/70']:not([class*='dark:bg-']),
+html.dark [class~='bg-slate-50/50']:not([class*='dark:bg-']),
+html.dark [class~='bg-slate-100']:not([class*='dark:bg-']),
+html.dark [class~='bg-slate-100/90']:not([class*='dark:bg-']),
+html.dark [class~='bg-slate-100/80']:not([class*='dark:bg-']),
+html.dark [class~='bg-slate-100/70']:not([class*='dark:bg-']),
+html.dark [class~='bg-slate-100/50']:not([class*='dark:bg-']),
+html.dark [class~='bg-slate-200']:not([class*='dark:bg-']),
+html.dark [class~='bg-background-light']:not([class*='dark:bg-']),
+html.dark [class~='bg-[#F5F7FA]']:not([class*='dark:bg-']) {
+  background-color: #0F172A !important;
+}
+
+html.dark [class~='border-slate-50']:not([class*='dark:border-']),
+html.dark [class~='border-slate-100']:not([class*='dark:border-']),
+html.dark [class~='border-slate-200']:not([class*='dark:border-']),
+html.dark [class~='border-slate-300']:not([class*='dark:border-']),
+html.dark [class~='border-[#D9E2EC]']:not([class*='dark:border-']),
+html.dark [class~='border-[#E2E8F0]']:not([class*='dark:border-']) {
+  border-color: #334155 !important;
+}
+
+html.dark [class~='text-slate-900']:not([class*='dark:text-']),
+html.dark [class~='text-slate-800']:not([class*='dark:text-']),
+html.dark [class~='text-slate-700']:not([class*='dark:text-']),
+html.dark [class~='text-slate-600']:not([class*='dark:text-']),
+html.dark [class~='text-slate-500']:not([class*='dark:text-']),
+html.dark [class~='text-slate-400']:not([class*='dark:text-']),
+html.dark [class~='text-neutral-dark']:not([class*='dark:text-']),
+html.dark [class~='text-primary']:not([class*='dark:text-']),
+html.dark [class~='text-[#0A2463]']:not([class*='dark:text-']),
+html.dark [class~='text-[#1E2A3A]']:not([class*='dark:text-']),
+html.dark [class~='text-[#1A202C]']:not([class*='dark:text-']),
+html.dark [class~='text-[#2C3E50]']:not([class*='dark:text-']) {
+  color: #E2E8F0 !important;
+}
+
+html.dark #root > *:not(.pointer-events-none) {
+  background-color: #0B1220 !important;
+  background-image: none !important;
+  color: #E2E8F0 !important;
 }

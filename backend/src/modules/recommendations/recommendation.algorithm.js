@@ -7,6 +7,138 @@
  *   - Uso         : 25 pts
  */
 
+const USAGE_TYPES = new Set(['ciudad', 'carretera', 'mixto', 'offroad', 'trabajo', 'deporte'])
+
+function normalizeText(value) {
+  return String(value || '').trim().toLowerCase()
+}
+
+function normalizeUsageTypes(userProfile) {
+  const usageTypes = Array.isArray(userProfile.usageTypes) ? userProfile.usageTypes : []
+  const legacyUsage = typeof userProfile.usageType === 'string' && userProfile.usageType ? [userProfile.usageType] : []
+
+  return [...usageTypes, ...legacyUsage]
+    .map(normalizeText)
+    .filter(value => USAGE_TYPES.has(value))
+    .filter((value, index, array) => array.indexOf(value) === index)
+}
+
+function normalizeTransmission(value) {
+  const text = normalizeText(value)
+  if (!text) return 'unknown'
+  if (text.includes('auto')) return 'automatica'
+  if (text.includes('semi')) return 'semiautomatica'
+  if (text.includes('manual') || text.includes('mec') || text.includes('veloc') || text.includes('cambio')) return 'manual'
+  return 'unknown'
+}
+
+function scoreTransmissionMatch(skillType, motorcycleTransmission) {
+  if (!skillType || motorcycleTransmission === 'unknown') {
+    return { score: 0, reasons: [], warnings: [] }
+  }
+
+  if (skillType === 'manual') {
+    return {
+      score: 10,
+      reasons: ['La transmisión encaja con tu experiencia'],
+      warnings: [],
+    }
+  }
+
+  if (skillType === motorcycleTransmission) {
+    return {
+      score: 10,
+      reasons: ['La transmisión coincide con lo que sueles manejar'],
+      warnings: [],
+    }
+  }
+
+  if (skillType === 'semiautomatica' && motorcycleTransmission === 'automatica') {
+    return {
+      score: 8,
+      reasons: ['La transmisión automática es compatible con tu experiencia semiautomática'],
+      warnings: [],
+    }
+  }
+
+  return {
+    score: 0,
+    reasons: [],
+    warnings: ['La transmisión de esta moto puede ser menos cómoda para ti'],
+  }
+}
+
+function scoreUsageForType(usageType, cc, experienceYears) {
+  switch (usageType) {
+    case 'ciudad':
+    case 'trabajo':
+      if (cc <= 150) {
+        return { score: 25, reasons: ['Cilindraje ideal para uso urbano'], warnings: [] }
+      }
+      if (cc <= 250) {
+        return { score: 15, reasons: ['Cilindraje aceptable para ciudad'], warnings: [] }
+      }
+      if (experienceYears >= 3) {
+        return { score: 8, reasons: ['Tu experiencia permite manejar un cilindraje alto en ciudad'], warnings: [] }
+      }
+      return { score: 5, reasons: [], warnings: ['Cilindraje alto para uso exclusivamente urbano'] }
+
+    case 'carretera':
+    case 'deporte':
+      if (cc >= 250) {
+        if (experienceYears >= 3) {
+          return { score: 25, reasons: ['Cilindraje ideal para carretera y tu experiencia lo respalda'], warnings: [] }
+        }
+        return { score: 15, reasons: ['Cilindraje potente para carretera'], warnings: ['Con menos de 3 años de experiencia, este cilindraje puede requerir más cuidado'] }
+      }
+      if (cc >= 150) {
+        return { score: 15, reasons: ['Cilindraje aceptable para carretera'], warnings: [] }
+      }
+      return { score: 5, reasons: [], warnings: ['Cilindraje bajo para carretera o deporte'] }
+
+    case 'mixto':
+      if (cc >= 150 && cc <= 300) {
+        return { score: 25, reasons: ['Cilindraje versátil para uso mixto'], warnings: [] }
+      }
+      if (cc > 300 && experienceYears >= 3) {
+        return { score: 16, reasons: ['Tu experiencia ayuda a manejar una moto más potente para uso mixto'], warnings: [] }
+      }
+      return { score: 12, reasons: [], warnings: [] }
+
+    case 'offroad':
+      if (cc >= 150 && cc <= 300) {
+        return { score: 22, reasons: ['Cilindraje adecuado para off-road'], warnings: [] }
+      }
+      return { score: 10, reasons: [], warnings: [] }
+
+    default:
+      return { score: 12, reasons: [], warnings: [] }
+  }
+}
+
+function getBestUsageMatch(usageTypes, cc, experienceYears) {
+  if (usageTypes.length === 0) {
+    return { score: 12, reasons: ['Sin tipo de uso definido'], warnings: [] }
+  }
+
+  const matches = usageTypes.map((usageType) => ({
+    usageType,
+    ...scoreUsageForType(usageType, cc, experienceYears),
+  }))
+
+  const bestMatch = matches.sort((a, b) => b.score - a.score)[0]
+  const versatilityBonus = usageTypes.length > 1 ? Math.min(usageTypes.length - 1, 2) * 2 : 0
+
+  return {
+    score: bestMatch.score + versatilityBonus,
+    reasons: [
+      ...bestMatch.reasons,
+      ...(versatilityBonus > 0 ? ['Se adapta a varios usos que marcaste'] : []),
+    ],
+    warnings: bestMatch.warnings,
+  }
+}
+
 function scoreMotorcycle(motorcycle, userProfile) {
   const reasons = []
   const warnings = []
@@ -87,50 +219,24 @@ function scoreMotorcycle(motorcycle, userProfile) {
     warnings.push('Moto de alto peso — puede ser difícil de maniobrar')
   }
 
+  // ─── TRANSMISIÓN / EXPERIENCIA (10 pts) ──────────────────────────────────
+  const motorcycleTransmission = normalizeTransmission(motorcycle.transmission)
+  const userSkillType = normalizeTransmission(userProfile.motorcycleTypeExperience)
+  const experienceYears = Number.parseInt(userProfile.ridingExperienceYears, 10) || 0
+
+  const transmissionMatch = scoreTransmissionMatch(userSkillType, motorcycleTransmission)
+  score += transmissionMatch.score
+  reasons.push(...transmissionMatch.reasons)
+  warnings.push(...transmissionMatch.warnings)
+
   // ─── USO (25 pts) ─────────────────────────────────────────────────────────
   const cc        = motorcycle.engineCc || 0
-  const usageType = userProfile.usageType
+  const usageTypes = normalizeUsageTypes(userProfile)
+  const usageMatch = getBestUsageMatch(usageTypes, cc, experienceYears)
 
-  if (usageType === 'ciudad' || usageType === 'trabajo') {
-    if (cc <= 150) {
-      score += 25
-      reasons.push('Cilindraje ideal para uso urbano')
-    } else if (cc <= 250) {
-      score += 15
-      reasons.push('Cilindraje aceptable para ciudad')
-    } else {
-      score += 5
-      warnings.push('Cilindraje alto para uso exclusivamente urbano')
-    }
-  } else if (usageType === 'carretera' || usageType === 'deporte') {
-    if (cc >= 250) {
-      score += 25
-      reasons.push('Cilindraje ideal para carretera')
-    } else if (cc >= 150) {
-      score += 15
-      reasons.push('Cilindraje aceptable para carretera')
-    } else {
-      score += 5
-      warnings.push('Cilindraje bajo para carretera o deporte')
-    }
-  } else if (usageType === 'mixto') {
-    if (cc >= 150 && cc <= 300) {
-      score += 25
-      reasons.push('Cilindraje versátil para uso mixto')
-    } else {
-      score += 12
-    }
-  } else if (usageType === 'offroad') {
-    if (cc >= 150 && cc <= 300) {
-      score += 22
-      reasons.push('Cilindraje adecuado para off-road')
-    } else {
-      score += 10
-    }
-  } else {
-    // Sin tipo de uso definido → puntaje neutro
-    score += 12
-  }
+  score += usageMatch.score
+  reasons.push(...usageMatch.reasons)
+  warnings.push(...usageMatch.warnings)
 
   // ─── MARCA PREFERIDA (10 pts) ─────────────────────────────────────────────
   if (preferredBrands.length > 0) {

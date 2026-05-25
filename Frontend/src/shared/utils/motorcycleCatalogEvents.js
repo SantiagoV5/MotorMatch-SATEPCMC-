@@ -1,8 +1,12 @@
 const MOTORCYCLE_CATALOG_EVENT = 'mm:motorcycle-catalog-updated'
 const MOTORCYCLE_CATALOG_STORAGE_KEY = 'mm_motorcycle_catalog_version'
 
-export function notifyMotorcycleCatalogUpdated() {
+export function notifyMotorcycleCatalogUpdated(detail = {}) {
   const version = String(Date.now())
+  const payload = {
+    version,
+    ...detail,
+  }
 
   try {
     localStorage.setItem(MOTORCYCLE_CATALOG_STORAGE_KEY, version)
@@ -11,7 +15,7 @@ export function notifyMotorcycleCatalogUpdated() {
   }
 
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(MOTORCYCLE_CATALOG_EVENT, { detail: { version } }))
+    window.dispatchEvent(new CustomEvent(MOTORCYCLE_CATALOG_EVENT, { detail: payload }))
   }
 }
 

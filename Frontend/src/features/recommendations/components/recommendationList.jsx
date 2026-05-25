@@ -20,6 +20,12 @@ const USAGE_LABELS = {
   mixto:     'uso mixto',
 }
 
+const MOTORCYCLE_SKILL_LABELS = {
+  automatica: 'automática',
+  semiautomatica: 'semiautomática',
+  manual: 'manual',
+}
+
 function formatCOP(value) {
   if (!value) return 'Consultar'
   return new Intl.NumberFormat('es-CO', {
@@ -342,8 +348,21 @@ export default function RecommendationList() {
   // Build personalised subtitle from questionnaire data
   const userName = user?.name || user?.fullName || 'usuario'
   const budget   = questionnaire?.budget   ? formatCOP(questionnaire.budget)   : null
-  const usage    = questionnaire?.usageType ? USAGE_LABELS[questionnaire.usageType] || questionnaire.usageType : null
+  const usageTypes = Array.isArray(questionnaire?.usageTypes) && questionnaire.usageTypes.length > 0
+    ? questionnaire.usageTypes
+    : questionnaire?.usageType
+      ? [questionnaire.usageType]
+      : []
+  const usage = usageTypes.length > 0
+    ? usageTypes.map((usageType) => USAGE_LABELS[usageType] || usageType).join(' · ')
+    : null
   const height   = questionnaire?.heightCm  ? `${questionnaire.heightCm}cm`    : null
+  const experienceYears = questionnaire?.ridingExperienceYears !== null && questionnaire?.ridingExperienceYears !== undefined
+    ? `${questionnaire.ridingExperienceYears} ${Number(questionnaire.ridingExperienceYears) === 1 ? 'año' : 'años'}`
+    : null
+  const skill = questionnaire?.motorcycleTypeExperience
+    ? MOTORCYCLE_SKILL_LABELS[questionnaire.motorcycleTypeExperience] || questionnaire.motorcycleTypeExperience
+    : null
   const shareBaseUrl = getAppUrl()
   const shareRecommendations = recommendations.slice(0, 3)
 
@@ -378,11 +397,14 @@ export default function RecommendationList() {
             <h1 className="text-[#0A2463] text-3xl md:text-4xl font-black leading-tight tracking-tight">
               ¡Listo, {userName}! Aquí tienes tus matches ideales
             </h1>
-            {(budget || usage || height) && (
+            {(budget || usage || height || experienceYears || skill) && (
               <p className="text-[#64748B] text-sm leading-relaxed max-w-lg">
                 Basado en{budget && <> tu presupuesto de <span className="font-semibold text-[#0A2463]">{budget}</span></>}
                 {usage  && <>{budget ? ',' : ''} uso en <span className="font-semibold text-[#0A2463]">{usage}</span></>}
-                {height && <>{(budget || usage) ? ' y' : ''} estatura de <span className="font-semibold text-[#0A2463]">{height}</span></>}.
+                {experienceYears && <>{(budget || usage) ? ' y' : ''} experiencia de <span className="font-semibold text-[#0A2463]">{experienceYears}</span></>}
+                {skill && <>{(budget || usage || experienceYears) ? ' y' : ''} manejo tipo <span className="font-semibold text-[#0A2463]">{skill}</span></>}
+                {height && <>{(budget || usage || experienceYears || skill) ? ' y' : ''} estatura de <span className="font-semibold text-[#0A2463]">{height}</span></>}
+                .
               </p>
             )}
           </div>

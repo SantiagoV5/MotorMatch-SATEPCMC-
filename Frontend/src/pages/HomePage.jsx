@@ -616,9 +616,9 @@ export default function HomePage() {
       </Header>
       {authModal}
 
-      <main className="flex-1 pt-[108px]">
+      <main className="flex-1 pt-[132px] sm:pt-[144px] xl:pt-[152px]">
         {/* Hero Section */}
-        <section className="relative w-full h-[100px] flex items-center justify-center px-4 overflow-hidden bg-primary">
+        <section className="relative w-full min-h-[210px] sm:min-h-[240px] md:min-h-[280px] flex items-center justify-center px-4 py-10 sm:py-12 overflow-hidden bg-primary">
           <div className="absolute inset-0 opacity-30">
             <img
               className="w-full h-full object-cover"
@@ -632,11 +632,11 @@ export default function HomePage() {
             />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/50 to-transparent"></div>
-          <div className="relative z-10 max-w-4xl w-full text-center">
-            <h2 className="text-lg md:text-2xl font-black text-white leading-tight mb-1">
+          <div className="relative z-10 max-w-4xl w-full text-center px-2">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white leading-tight mb-2">
               MotorMatch: Encuentra tu moto ideal en Colombia
             </h2>
-            <p className="text-xs md:text-sm text-slate-200 font-medium">
+            <p className="text-xs sm:text-sm text-slate-200 font-medium">
               Descubre la libertad sobre dos ruedas con la mejor asesoría personalizada.
             </p>
           </div>
@@ -659,7 +659,7 @@ export default function HomePage() {
         )}
 
         {/* Main CTAs */}
-        <section className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-1 md:grid-cols-4 gap-3">
+        <section className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-1 md:grid-cols-3 gap-3">
           <button onClick={() => {
             if (!requireAuth({
               action: { type: 'navigate', to: '/questionnaire' },
@@ -670,10 +670,6 @@ export default function HomePage() {
           }} className="w-full py-2 bg-primary hover:bg-primary/95 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg">
             <span className="material-symbols-outlined text-base">quiz</span>
             COMENZAR CUESTIONARIO
-          </button>
-          <button className="w-full py-2 bg-white dark:bg-slate-800 border-2 border-primary text-primary dark:text-slate-100 dark:border-slate-700 hover:bg-primary/5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 shadow-sm">
-            <span className="material-symbols-outlined text-base">explore</span>
-            VER CATÁLOGO
           </button>
           <button onClick={handleMatchClick} className="w-full py-2 bg-accent hover:bg-accent/90 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg">
             <span className="material-symbols-outlined text-base">auto_awesome</span>

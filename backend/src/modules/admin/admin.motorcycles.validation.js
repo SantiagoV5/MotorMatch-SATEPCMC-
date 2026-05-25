@@ -28,7 +28,7 @@ const motorcycleSchema = Joi.object({
   fuelTankLiters: optionalNumber.allow(null, ''),
   consumptionKmpl: optionalNumber.allow(null, ''),
   transmission: Joi.string().trim().max(30).allow('', null),
-  brakeSystem: Joi.string().trim().max(50).allow('', null),
+  frontBrakeSystem: Joi.string().trim().max(50).allow('', null),
   price: optionalNumber.required().messages({
     'any.required': 'El precio es obligatorio',
     'string.empty': 'El precio es obligatorio',
