@@ -50,7 +50,7 @@ export default function Header({ children, sticky = true }) {
   const positionClass = sticky ? 'fixed top-0 left-0 z-30 w-full' : 'sticky top-0 z-30 w-full'
 
   return (
-    <header className={`${positionClass} border-b border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-sm md:px-6`}>
+    <header className={`${positionClass} border-b border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/95 md:px-6`}>
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex items-center justify-between gap-4">
@@ -59,14 +59,14 @@ export default function Header({ children, sticky = true }) {
               onClick={() => navigate('/')}
               className="flex items-center gap-2 text-left"
             >
-              <div className="text-primary">
+              <div className="text-accent">
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 48 48">
                   <path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z" />
                 </svg>
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-primary">MotorMatch</h1>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                <h1 className="text-xl font-bold tracking-tight text-primary dark:text-slate-100">MotorMatch</h1>
+                <p className="text-[11px] font-semibold normal-case tracking-normal text-slate-400 dark:text-slate-500">
                   {isAuthenticated ? `Hola, ${displayName}` : 'Explora sin fricción'}
                 </p>
               </div>
@@ -77,7 +77,7 @@ export default function Header({ children, sticky = true }) {
                 <button
                   type="button"
                   onClick={() => navigate('/login')}
-                  className="rounded-full border border-slate-200 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-600"
+                  className="rounded-full border border-slate-200 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-600 dark:border-slate-700 dark:text-slate-300"
                 >
                   Entrar
                 </button>
@@ -85,7 +85,7 @@ export default function Header({ children, sticky = true }) {
               <button
                 type="button"
                 onClick={() => setIsMenuOpen((value) => !value)}
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/5 text-primary"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/5 text-primary dark:bg-slate-800 dark:text-slate-200"
                 aria-label="Abrir navegación"
               >
                 <span className="material-symbols-outlined">{isMenuOpen ? 'close' : 'menu'}</span>
@@ -111,7 +111,7 @@ export default function Header({ children, sticky = true }) {
                           : 'bg-[#e85d26] text-white hover:brightness-110'
                         : active
                           ? 'bg-primary text-white shadow-sm'
-                          : 'text-slate-600 hover:bg-slate-100 hover:text-primary'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-primary dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100'
                     }`}
                   >
                     {link.icon && (
@@ -148,20 +148,20 @@ export default function Header({ children, sticky = true }) {
                   <button
                     type="button"
                     onClick={() => setIsMenuOpen((value) => !value)}
-                    className="hidden items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm xl:flex"
+                    className="hidden items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm xl:flex dark:border-slate-700 dark:bg-slate-900"
                   >
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/5 text-primary">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/5 text-primary dark:bg-slate-800 dark:text-slate-100">
                       <span className="material-symbols-outlined">account_circle</span>
                     </span>
-                    <span className="max-w-[180px] truncate text-sm font-bold text-slate-700">{displayName}</span>
-                    <span className="material-symbols-outlined text-slate-400">expand_more</span>
+                    <span className="max-w-[180px] truncate text-sm font-bold text-slate-700 dark:text-slate-100">{displayName}</span>
+                    <span className="material-symbols-outlined text-slate-400 dark:text-slate-500">expand_more</span>
                   </button>
 
-                  <div className={`${isMenuOpen ? 'block' : 'hidden'} xl:absolute xl:right-0 xl:top-full xl:mt-3 xl:w-80`}>
-                    <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
-                      <div className="mb-3 rounded-2xl bg-primary/5 px-4 py-3">
-                        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Tu cuenta</p>
-                        <p className="mt-1 text-base font-black text-primary">{displayName}</p>
+                  <div className={`${isMenuOpen ? 'block' : 'hidden'} xl:absolute xl:right-0 xl:top-full xl:mt-3 xl:w-80 xl:z-50`}>
+                    <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.12)] dark:border-slate-800 dark:bg-slate-950 dark:shadow-[0_20px_60px_rgba(2,6,23,0.45)]">
+                      <div className="mb-3 rounded-2xl bg-primary/5 px-4 py-3 dark:bg-slate-900">
+                        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">Tu cuenta</p>
+                        <p className="mt-1 text-base font-black text-primary dark:text-slate-100">{displayName}</p>
                       </div>
 
                       <div className="space-y-1">
@@ -173,7 +173,7 @@ export default function Header({ children, sticky = true }) {
                               setIsMenuOpen(false)
                               navigate(item.to)
                             }}
-                            className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-primary"
+                            className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-primary dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100"
                           >
                             <span className="material-symbols-outlined text-lg">{item.icon}</span>
                             <span>{item.label}</span>
@@ -186,7 +186,7 @@ export default function Header({ children, sticky = true }) {
                             logout()
                             navigate('/')
                           }}
-                          className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-500"
+                          className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-500 dark:text-slate-300 dark:hover:bg-red-950/40"
                         >
                           <span className="material-symbols-outlined text-lg">logout</span>
                           <span>Cerrar sesión</span>

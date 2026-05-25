@@ -22,7 +22,7 @@ const INITIAL_FORM = {
   fuelTankLiters: '',
   consumptionKmpl: '',
   transmission: '',
-  brakeSystem: '',
+  frontBrakeSystem: '',
   price: '',
   currency: 'COP',
   soatEstimated: '',
@@ -68,7 +68,7 @@ const FORM_SECTIONS = [
       { name: 'fuelTankLiters', label: 'Tanque (L)', type: 'number', placeholder: '14' },
       { name: 'consumptionKmpl', label: 'Consumo (km/l)', type: 'number', placeholder: '25' },
       { name: 'transmission', label: 'Transmisión', type: 'text', placeholder: '6 velocidades' },
-      { name: 'brakeSystem', label: 'Sistema de frenos', type: 'text', placeholder: 'ABS doble canal' },
+      { name: 'frontBrakeSystem', label: 'Freno delantero', type: 'text', placeholder: 'ABS doble canal' },
     ],
   },
   {
@@ -125,7 +125,7 @@ function toFormState(motorcycle) {
     fuelTankLiters: motorcycle.fuelTankLiters?.toString() || '',
     consumptionKmpl: motorcycle.consumptionKmpl?.toString() || '',
     transmission: motorcycle.transmission || '',
-    brakeSystem: motorcycle.brakeSystem || '',
+    frontBrakeSystem: motorcycle.frontBrakeSystem || '',
     price: motorcycle.price?.toString() || '',
     currency: motorcycle.currency || 'COP',
     soatEstimated: motorcycle.soatEstimated?.toString() || '',
@@ -182,7 +182,7 @@ function toPayload(form) {
     fuelTankLiters: parseOptionalNumber(form.fuelTankLiters),
     consumptionKmpl: parseOptionalNumber(form.consumptionKmpl),
     transmission: form.transmission.trim() || null,
-    brakeSystem: form.brakeSystem.trim() || null,
+    frontBrakeSystem: form.frontBrakeSystem.trim() || null,
     price: Number(form.price),
     currency: form.currency.trim() || 'COP',
     soatEstimated: parseOptionalNumber(form.soatEstimated),
@@ -438,8 +438,6 @@ function AdminMotorcycleManager({ onDataMutated }) {
     event.preventDefault()
     const nextErrors = getValidationErrors(form)
     setValidationErrors(nextErrors)
-      notifyMotorcycleCatalogUpdated()
-      onDataMutated?.()
     if (Object.keys(nextErrors).length > 0) {
       return
     }
@@ -452,14 +450,14 @@ function AdminMotorcycleManager({ onDataMutated }) {
       const payload = toPayload(form)
       if (formMode === 'create') {
         await createAdminMotorcycle(payload)
+        notifyMotorcycleCatalogUpdated({ action: 'created', motorcycle: payload })
         setSuccess('Motocicleta creada correctamente')
       } else if (editingMotorcycle) {
         await updateAdminMotorcycle(editingMotorcycle.id, payload)
-      onDataMutated?.()
+        notifyMotorcycleCatalogUpdated({ action: 'updated', motorcycle: payload })
         setSuccess('Motocicleta actualizada correctamente')
       }
 
-      notifyMotorcycleCatalogUpdated()
       await loadMotorcycles()
       closeForm()
     } catch (err) {
@@ -475,7 +473,7 @@ function AdminMotorcycleManager({ onDataMutated }) {
       onDataMutated?.()
       setSuccess('')
       await toggleAdminMotorcycleStatus(motorcycle.id)
-      notifyMotorcycleCatalogUpdated()
+      notifyMotorcycleCatalogUpdated({ action: 'status-changed', motorcycle })
       await loadMotorcycles()
       setSuccess(`Motocicleta ${motorcycle.isActive ? 'deshabilitada' : 'habilitada'} correctamente`)
     } catch (err) {
@@ -491,7 +489,7 @@ function AdminMotorcycleManager({ onDataMutated }) {
       setError('')
       setSuccess('')
       await deleteAdminMotorcycle(deleteTarget.id)
-      notifyMotorcycleCatalogUpdated()
+      notifyMotorcycleCatalogUpdated({ action: 'deleted', motorcycle: deleteTarget })
       await loadMotorcycles()
       setSuccess('Motocicleta eliminada correctamente')
       setDeleteTarget(null)

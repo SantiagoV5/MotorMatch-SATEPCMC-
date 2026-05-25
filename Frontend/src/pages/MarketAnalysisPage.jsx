@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './MarketAnalysisPage.css';
 import apiClient from '../services/apiClient';
 import MotorcycleImage from '../shared/components/MotorcycleImage';
+import { getMotorcycleCatalogEventName } from '../shared/utils/motorcycleCatalogEvents';
+import { useMotorcycleNotifications } from '../shared/hooks/useMotorcycleNotifications';
 
 export default function MarketAnalysisPage() {
   const navigate = useNavigate();
@@ -10,11 +12,7 @@ export default function MarketAnalysisPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchMarketData();
-  }, []);
-
-  const fetchMarketData = async () => {
+  const fetchMarketData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -26,7 +24,25 @@ export default function MarketAnalysisPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useMotorcycleNotifications(data?.topMotorcycles || []);
+
+  useEffect(() => {
+    fetchMarketData();
+  }, [fetchMarketData]);
+
+  useEffect(() => {
+    const handleCatalogUpdate = () => {
+      void fetchMarketData();
+    };
+
+    window.addEventListener(getMotorcycleCatalogEventName(), handleCatalogUpdate);
+
+    return () => {
+      window.removeEventListener(getMotorcycleCatalogEventName(), handleCatalogUpdate);
+    };
+  }, [fetchMarketData]);
 
   if (loading) {
     return (

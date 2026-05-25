@@ -60,38 +60,38 @@ export default function Step3Physical() {
   const activeComfort = getComfortKey()
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#F5F7FA] font-display text-slate-800">
+    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#F5F7FA] font-display text-slate-800 dark:bg-background-dark dark:text-slate-100">
       <Header sticky={false} />
 
       <main className="flex flex-1 justify-center py-12 px-4 md:px-0">
         <div className="flex flex-col max-w-[800px] w-full flex-1 gap-6">
 
           {/* Progress */}
-          <div className="flex flex-col gap-3 p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex flex-col gap-3 p-6 bg-white rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_20px_50px_rgba(2,6,23,0.25)]">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-500">Paso 3 de {totalSteps}</span>
+              <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Paso 3 de {totalSteps}</span>
               <span className="text-sm font-semibold text-[#FF6B35]">Características físicas</span>
             </div>
-            <div className="w-full bg-slate-100 rounded-full h-2">
+            <div className="w-full bg-slate-100 rounded-full h-2 dark:bg-slate-800">
               <div className="bg-[#FF6B35] h-2 rounded-full transition-all duration-500" style={{ width: '100%' }} />
             </div>
           </div>
 
           {/* Estatura */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 flex flex-col gap-6">
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 flex flex-col gap-6 dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_20px_50px_rgba(2,6,23,0.25)]">
             <div className="flex items-center gap-3 text-[#FF6B35]">
               <span className="material-symbols-outlined text-3xl">height</span>
-              <h3 className="text-xl font-bold text-[#1E2A3A]">Estatura</h3>
+              <h3 className="text-xl font-bold text-[#1E2A3A] dark:text-slate-100">Estatura</h3>
             </div>
 
             {/* Valor + slider */}
             <div className="flex flex-col items-center gap-4">
               <div className="text-center">
                 <span className="text-6xl font-black text-[#FF6B35]">{heightCm}</span>
-                <span className="text-sm font-semibold text-slate-400 block mt-1">CENTÍMETROS</span>
+                <span className="text-sm font-semibold text-slate-400 block mt-1 dark:text-slate-500">CENTÍMETROS</span>
               </div>
               <div className="w-full flex items-center gap-3">
-                <span className="text-xs text-slate-400 whitespace-nowrap">140 CM</span>
+                <span className="text-xs text-slate-400 whitespace-nowrap dark:text-slate-500">140 CM</span>
                 <input
                   type="range"
                   min={140}
@@ -100,7 +100,7 @@ export default function Step3Physical() {
                   onChange={handleHeightSlider}
                   className="w-full h-2 rounded-full accent-[#FF6B35] cursor-pointer"
                 />
-                <span className="text-xs text-slate-400 whitespace-nowrap">200 CM</span>
+                <span className="text-xs text-slate-400 whitespace-nowrap dark:text-slate-500">200 CM</span>
               </div>
             </div>
 
@@ -115,7 +115,7 @@ export default function Step3Physical() {
                     className={`flex-1 py-4 px-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1
                       ${active
                         ? 'border-[#FF6B35] bg-[#FF6B35]/5 text-[#FF6B35]'
-                        : 'border-slate-100 bg-slate-50/50 text-slate-500 hover:border-[#FF6B35] hover:text-[#FF6B35]'
+                        : 'border-slate-100 bg-slate-50/50 text-slate-500 hover:border-[#FF6B35] hover:text-[#FF6B35] dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:border-[#FF6B35]'
                       }`}
                   >
                     <span className="text-sm font-black uppercase">{preset.label}</span>
@@ -126,19 +126,19 @@ export default function Step3Physical() {
             </div>
 
             {/* Safety message */}
-            <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-xl border border-blue-100">
+            <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-xl border border-blue-100 dark:border-blue-900/50 dark:bg-blue-950/30">
               <span className="material-symbols-outlined text-blue-500 text-xl mt-0.5">info</span>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-blue-700 dark:text-blue-100">
                 Para mayor seguridad, es importante que apoyes ambos pies en el suelo al detener la moto.
               </p>
             </div>
           </div>
 
           {/* Comodidad con peso */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 flex flex-col gap-6">
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 flex flex-col gap-6 dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_20px_50px_rgba(2,6,23,0.25)]">
             <div className="flex items-center gap-3 text-[#FF6B35]">
               <span className="material-symbols-outlined text-3xl">fitness_center</span>
-              <h3 className="text-xl font-bold text-[#1E2A3A]">¿Te sientes cómodo manejando una moto pesada?</h3>
+              <h3 className="text-xl font-bold text-[#1E2A3A] dark:text-slate-100">¿Te sientes cómodo manejando una moto pesada?</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {WEIGHT_COMFORT_OPTIONS.map(opt => {
@@ -150,13 +150,13 @@ export default function Step3Physical() {
                     className={`flex flex-col items-center gap-2 py-6 px-4 rounded-xl border-2 transition-all
                       ${active
                         ? 'border-[#FF6B35] bg-[#FF6B35]/5'
-                        : 'border-slate-100 bg-slate-50/50 hover:border-[#FF6B35]/40'
+                        : 'border-slate-100 bg-slate-50/50 hover:border-[#FF6B35]/40 dark:border-slate-700 dark:bg-slate-950/40 dark:hover:border-[#FF6B35]/60'
                       }`}
                   >
-                    <span className={`text-xl font-black ${active ? 'text-[#FF6B35]' : 'text-slate-700'}`}>
+                    <span className={`text-xl font-black ${active ? 'text-[#FF6B35]' : 'text-slate-700 dark:text-slate-200'}`}>
                       {opt.label}
                     </span>
-                    <span className="text-xs text-slate-500 text-center">{opt.sub}</span>
+                    <span className="text-xs text-slate-500 text-center dark:text-slate-400">{opt.sub}</span>
                   </button>
                 )
               })}
@@ -165,8 +165,8 @@ export default function Step3Physical() {
 
           {/* Error */}
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-sm text-red-600 font-medium">{error}</p>
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl dark:border-red-900/50 dark:bg-red-950/30">
+              <p className="text-sm text-red-600 font-medium dark:text-red-200">{error}</p>
             </div>
           )}
 
@@ -174,7 +174,7 @@ export default function Step3Physical() {
           <div className="flex flex-col sm:flex-row gap-4 pb-8">
             <button
               onClick={prevStep}
-              className="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold hover:border-slate-400 transition-all"
+              className="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold hover:border-slate-400 transition-all dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-500"
             >
               ← Anterior
             </button>

@@ -73,7 +73,7 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#F5F7FA_0%,#EEF3FB_45%,#F7F9FC_100%)] text-slate-900">
+    <div className="min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#F5F7FA_0%,#EEF3FB_45%,#F7F9FC_100%)] text-slate-900 dark:bg-background-dark dark:text-slate-100">
       <Header sticky={false} />
 
       <main className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10">
@@ -110,21 +110,21 @@ export default function ContactPage() {
         </section>
 
         <section className="mt-12 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8 dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-8">
               <p className="text-[11px] font-black uppercase tracking-[0.32em] text-[#FF6B35]">Formulario de contacto</p>
-              <h2 className="mt-2 text-3xl font-black text-[#0A2463]">Envíanos un mensaje</h2>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
+              <h2 className="mt-2 text-3xl font-black text-[#0A2463] dark:text-slate-100">Envíanos un mensaje</h2>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-300">
                 Completa los datos básicos y te abrimos tu cliente de correo con el mensaje listo para enviar. Así mantenemos una experiencia simple y directa.
               </p>
             </div>
 
             {showSuccess && (
-              <div className="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+              <div className="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 dark:border-emerald-900/50 dark:bg-emerald-950/30">
                 <span className="material-symbols-outlined text-emerald-500">check_circle</span>
                 <div>
-                  <p className="text-sm font-bold text-emerald-700">Tu mensaje ya está listo para enviarse.</p>
-                  <p className="mt-1 text-sm leading-6 text-emerald-700/85">
+                  <p className="text-sm font-bold text-emerald-700 dark:text-emerald-200">Tu mensaje ya está listo para enviarse.</p>
+                  <p className="mt-1 text-sm leading-6 text-emerald-700/85 dark:text-emerald-100/80">
                     Si tu correo no se abrió automáticamente, puedes usar el botón de envío nuevamente o escribirnos directo a {SUPPORT_EMAIL}.
                   </p>
                 </div>
@@ -134,44 +134,44 @@ export default function ContactPage() {
             <div className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 <label className="block">
-                  <span className="mb-2 block text-xs font-black uppercase tracking-[0.24em] text-slate-500">Nombre completo</span>
+                  <span className="mb-2 block text-xs font-black uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Nombre completo</span>
                   <div className="relative">
-                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">person</span>
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">person</span>
                     <input
                       type="text"
                       value={form.name}
                       onChange={handleChange('name')}
                       placeholder="Juan García"
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-12 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#FF6B35]"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-12 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#FF6B35] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
                     />
                   </div>
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-xs font-black uppercase tracking-[0.24em] text-slate-500">Correo electrónico</span>
+                  <span className="mb-2 block text-xs font-black uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Correo electrónico</span>
                   <div className="relative">
-                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">mail</span>
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">mail</span>
                     <input
                       type="email"
                       value={form.email}
                       onChange={handleChange('email')}
                       placeholder="tu@correo.com"
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-12 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#FF6B35]"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-12 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#FF6B35] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
                     />
                   </div>
                 </label>
               </div>
 
               <label className="block">
-                <span className="mb-2 block text-xs font-black uppercase tracking-[0.24em] text-slate-500">Tu mensaje</span>
+                <span className="mb-2 block text-xs font-black uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Tu mensaje</span>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-4 text-slate-400">edit</span>
+                  <span className="material-symbols-outlined absolute left-4 top-4 text-slate-400 dark:text-slate-500">edit</span>
                   <textarea
                     rows={6}
                     value={form.message}
                     onChange={handleChange('message')}
                     placeholder="Cuéntanos cómo podemos ayudarte con MotorMatch..."
-                    className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-12 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#FF6B35]"
+                    className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-12 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#FF6B35] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
                   />
                 </div>
               </label>
@@ -189,7 +189,7 @@ export default function ContactPage() {
 
                 <a
                   href={mailtoLink}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-[#0A2463]/15 bg-[#0A2463]/5 px-6 py-3 text-sm font-black uppercase tracking-[0.18em] text-[#0A2463] transition hover:bg-[#0A2463]/10"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-[#0A2463]/15 bg-[#0A2463]/5 px-6 py-3 text-sm font-black uppercase tracking-[0.18em] text-[#0A2463] transition hover:bg-[#0A2463]/10 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
                 >
                   Abrir correo
                 </a>
@@ -198,14 +198,14 @@ export default function ContactPage() {
           </div>
 
           <aside className="space-y-6">
-            <div className="rounded-[2rem] bg-[#0A2463] p-6 text-white shadow-[0_24px_80px_rgba(10,36,99,0.22)] md:p-8">
+            <div className="rounded-[2rem] bg-[#0A2463] p-6 text-white shadow-[0_24px_80px_rgba(10,36,99,0.22)] md:p-8 dark:bg-slate-900 dark:shadow-[0_24px_80px_rgba(2,6,23,0.35)]">
               <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/60">Canales</p>
               <h2 className="mt-2 text-2xl font-black">Información de contacto</h2>
 
               <div className="mt-6 space-y-5">
                 {CONTACT_METHODS.map((item) => (
-                  <article key={item.label} className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur">
-                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-[#FF6B35]">
+                  <article key={item.label} className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur dark:border-slate-700 dark:bg-slate-800/70">
+                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-[#FF6B35] dark:bg-slate-800">
                       <span className="material-symbols-outlined">{item.icon}</span>
                     </span>
                     <div>
@@ -218,10 +218,10 @@ export default function ContactPage() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8 dark:border-slate-800 dark:bg-slate-900">
               <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#FF6B35]">Red y comunidad</p>
-              <h2 className="mt-2 text-2xl font-black text-[#0A2463]">Sigue la conversación</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-500">
+              <h2 className="mt-2 text-2xl font-black text-[#0A2463] dark:text-slate-100">Sigue la conversación</h2>
+              <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-300">
                 MotorMatch también se piensa como una experiencia de comunidad, aprendizaje y acompañamiento en el proceso de compra.
               </p>
 
@@ -229,16 +229,16 @@ export default function ContactPage() {
                 {SOCIAL_ITEMS.map((item) => (
                   <div
                     key={item.label}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-600"
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                   >
-                    <span className="material-symbols-outlined text-base text-[#0A2463]">{item.icon}</span>
+                    <span className="material-symbols-outlined text-base text-[#0A2463] dark:text-slate-100">{item.icon}</span>
                     {item.label}
                   </div>
                 ))}
               </div>
 
-              <div className="mt-6 rounded-[1.5rem] bg-slate-50 p-5">
-                <p className="text-sm italic leading-7 text-slate-500">
+              <div className="mt-6 rounded-[1.5rem] bg-slate-50 p-5 dark:bg-slate-800">
+                <p className="text-sm italic leading-7 text-slate-500 dark:text-slate-300">
                   "La mejor decisión no siempre es la moto más llamativa, sino la que realmente encaja contigo."
                 </p>
               </div>
@@ -246,12 +246,12 @@ export default function ContactPage() {
           </aside>
         </section>
 
-        <section className="mt-12 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+        <section className="mt-12 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8 dark:border-slate-800 dark:bg-slate-900">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#FF6B35]">Acceso rápido</p>
-              <h2 className="mt-2 text-2xl font-black text-[#0A2463]">¿Prefieres seguir explorando antes de escribirnos?</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+              <h2 className="mt-2 text-2xl font-black text-[#0A2463] dark:text-slate-100">¿Prefieres seguir explorando antes de escribirnos?</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-300">
                 Puedes volver al catálogo, revisar ayuda o seguir comparando motos antes de contactarnos.
               </p>
             </div>
@@ -267,7 +267,7 @@ export default function ContactPage() {
               <button
                 type="button"
                 onClick={() => navigate('/ayuda')}
-                className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-black uppercase tracking-[0.18em] text-slate-600 transition hover:bg-slate-50"
+                className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-black uppercase tracking-[0.18em] text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 Ayuda y FAQ
               </button>
@@ -276,7 +276,7 @@ export default function ContactPage() {
         </section>
       </main>
 
-      <footer className="mt-8 border-t border-white/40 bg-[#0A2463]">
+      <footer className="mt-8 border-t border-white/40 bg-[#0A2463] dark:border-slate-800 dark:bg-slate-950">
         <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 md:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="text-2xl font-black text-white">MotorMatch</div>

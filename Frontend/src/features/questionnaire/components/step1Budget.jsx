@@ -46,40 +46,40 @@ export default function Step1Budget() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#F5F7FA] font-display text-slate-800">
+    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#F5F7FA] font-display text-slate-800 dark:bg-background-dark dark:text-slate-100">
       <Header sticky={false} />
 
       <main className="flex flex-1 justify-center py-12 px-4 md:px-0">
         <div className="flex flex-col max-w-[800px] w-full flex-1">
 
           {/* Progress */}
-          <div className="flex flex-col gap-3 p-6 bg-white rounded-2xl mb-8 shadow-sm border border-slate-100">
+          <div className="flex flex-col gap-3 p-6 bg-white rounded-2xl mb-8 shadow-sm border border-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_20px_50px_rgba(2,6,23,0.25)]">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-500">Paso 1 de {totalSteps}</span>
+              <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Paso 1 de {totalSteps}</span>
               <span className="text-sm font-semibold text-[#FF6B35]">Presupuesto</span>
             </div>
-            <div className="w-full bg-slate-100 rounded-full h-2">
+            <div className="w-full bg-slate-100 rounded-full h-2 dark:bg-slate-800">
               <div className="bg-[#FF6B35] h-2 rounded-full transition-all duration-500" style={{ width: `${(1 / totalSteps) * 100}%` }} />
             </div>
           </div>
 
           {/* Card */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 flex flex-col gap-8">
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 flex flex-col gap-8 dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_20px_50px_rgba(2,6,23,0.25)]">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-3 text-[#FF6B35]">
                 <span className="material-symbols-outlined text-3xl">payments</span>
-                <h3 className="text-2xl font-bold text-[#1E2A3A]">¿Cuál es tu presupuesto?</h3>
+                <h3 className="text-2xl font-bold text-[#1E2A3A] dark:text-slate-100">¿Cuál es tu presupuesto?</h3>
               </div>
-              <p className="text-slate-500 text-sm">
+              <p className="text-slate-500 text-sm dark:text-slate-300">
                 Indica cuánto estás dispuesto a invertir en tu moto. El presupuesto mínimo es de {formatCOP(MIN_BUDGET)}.
               </p>
             </div>
 
             {/* Input */}
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-slate-600">Monto en pesos colombianos (COP)</label>
+              <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Monto en pesos colombianos (COP)</label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg dark:text-slate-500">$</span>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -87,11 +87,11 @@ export default function Step1Budget() {
                   onChange={handleInputChange}
                   placeholder="Ej: 8000000"
                   className={`w-full pl-8 pr-4 py-4 rounded-xl border-2 text-lg font-semibold transition-all outline-none
-                    ${showError ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-slate-50 focus:border-[#FF6B35]'}`}
+                    ${showError ? 'border-red-400 bg-red-50 dark:border-red-500/60 dark:bg-red-950/30' : 'border-slate-200 bg-slate-50 focus:border-[#FF6B35] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500'}`}
                 />
               </div>
               {budget > 0 && (
-                <p className="text-sm text-slate-500 font-medium">{formatCOP(budget)}</p>
+                <p className="text-sm text-slate-500 font-medium dark:text-slate-400">{formatCOP(budget)}</p>
               )}
               {showError && (
                 <p className="text-sm text-red-500 font-medium">
@@ -102,7 +102,7 @@ export default function Step1Budget() {
 
             {/* Quick chips */}
             <div className="flex flex-col gap-3">
-              <span className="text-sm font-semibold text-slate-600">Valores frecuentes</span>
+              <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">Valores frecuentes</span>
               <div className="flex flex-wrap gap-3">
                 {QUICK_CHIPS.map(chip => (
                   <button
@@ -111,7 +111,7 @@ export default function Step1Budget() {
                     className={`px-5 py-2 rounded-full border-2 font-semibold text-sm transition-all
                       ${budget === chip.value
                         ? 'border-[#FF6B35] bg-[#FF6B35]/10 text-[#FF6B35]'
-                        : 'border-slate-200 text-slate-600 hover:border-[#FF6B35] hover:text-[#FF6B35]'
+                        : 'border-slate-200 text-slate-600 hover:border-[#FF6B35] hover:text-[#FF6B35] dark:border-slate-700 dark:text-slate-300 dark:hover:border-[#FF6B35]'
                       }`}
                   >
                     {chip.label}
@@ -122,7 +122,7 @@ export default function Step1Budget() {
 
             {/* Checkboxes */}
             <div className="flex flex-col gap-3">
-              <span className="text-sm font-semibold text-slate-600">¿El presupuesto incluye?</span>
+              <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">¿El presupuesto incluye?</span>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -130,7 +130,7 @@ export default function Step1Budget() {
                   onChange={e => updateAnswers({ includesSoat: e.target.checked })}
                   className="w-5 h-5 accent-[#FF6B35]"
                 />
-                <span className="text-sm text-slate-700">SOAT (Seguro Obligatorio)</span>
+                <span className="text-sm text-slate-700 dark:text-slate-200">SOAT (Seguro Obligatorio)</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -139,7 +139,7 @@ export default function Step1Budget() {
                   onChange={e => updateAnswers({ includesRegistration: e.target.checked })}
                   className="w-5 h-5 accent-[#FF6B35]"
                 />
-                <span className="text-sm text-slate-700">Matrícula y traspaso</span>
+                <span className="text-sm text-slate-700 dark:text-slate-200">Matrícula y traspaso</span>
               </label>
             </div>
 
@@ -147,7 +147,7 @@ export default function Step1Budget() {
             <div className="flex flex-col sm:flex-row gap-4 pt-2">
               <button
                 onClick={handleGoHome}
-                className="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold hover:border-slate-400 transition-all"
+                className="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold hover:border-slate-400 transition-all dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-500"
               >
                 ← Volver al inicio
               </button>

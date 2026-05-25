@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './features/auth/components/ProtectedRoute'
 import PublicOnlyRoute from './features/auth/components/PublicOnlyRoute'
 import AdminRoute from './features/auth/components/AdminRoute'
+import MotorcycleNotificationCenter from './shared/components/MotorcycleNotificationCenter'
 
 const LoginForm = lazy(() => import('./features/auth/components/loginForm'))
 const RegisterForm = lazy(() => import('./features/auth/components/registerForm'))
@@ -54,6 +55,7 @@ function RouteFallback() {
 function App() {
   return (
     <Suspense fallback={<RouteFallback />}>
+      <MotorcycleNotificationCenter />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/home" element={<Navigate to="/" replace />} />

@@ -1,10 +1,20 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
+
+const INTER_LATIN_FONT_URL = 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2';
+
+Font.register({
+  family: 'Inter',
+  fonts: [
+    { src: INTER_LATIN_FONT_URL, fontWeight: 400 },
+    { src: INTER_LATIN_FONT_URL, fontWeight: 700 },
+  ],
+});
 
 const styles = StyleSheet.create({
   page: {
     padding: 40,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Inter',
     backgroundColor: '#ffffff',
   },
   header: {
