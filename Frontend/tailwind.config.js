@@ -1,6 +1,8 @@
 import forms from '@tailwindcss/forms'
 import containerQueries from '@tailwindcss/container-queries'
 
+const sharedFontFamily = ['Inter', 'sans-serif']
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
@@ -19,9 +21,10 @@ export default {
         'on-surface-variant': '#64748B',
       },
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        display: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        sans: sharedFontFamily,
+        body: sharedFontFamily,
+        display: sharedFontFamily,
+        headline: sharedFontFamily,
       },
       borderRadius: {
         DEFAULT: '0.25rem',

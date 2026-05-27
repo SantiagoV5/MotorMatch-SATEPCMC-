@@ -1,4 +1,12 @@
-require('dotenv').config();
+const path = require('path');
+const dotenv = require('dotenv');
+
+[
+  path.resolve(__dirname, '../../.env'),
+  path.resolve(__dirname, '../../../.env'),
+].forEach((envPath) => {
+  dotenv.config({ path: envPath });
+});
 
 const required = [
   'DATABASE_URL',

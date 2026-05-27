@@ -256,7 +256,7 @@
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
-  font-family: monospace;
+  font-family: inherit;
   transition: border-color 0.2s;
 }
 
@@ -267,7 +267,7 @@
 }
 
 .cost-value {
-  font-family: monospace;
+  font-family: inherit;
   font-weight: 500;
   color: #2563eb;
   font-size: 14px;
@@ -281,7 +281,7 @@
 }
 
 .cost-display {
-  font-family: monospace;
+  font-family: inherit;
   font-weight: 500;
   color: #2563eb;
   font-size: 14px;
@@ -314,7 +314,7 @@
   font-size: 32px;
   font-weight: 700;
   color: #2563eb;
-  font-family: monospace;
+  font-family: inherit;
   margin-bottom: 12px;
 }
 

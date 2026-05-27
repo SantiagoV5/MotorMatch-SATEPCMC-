@@ -2,6 +2,8 @@ import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './features/auth/components/ProtectedRoute'
 import PublicOnlyRoute from './features/auth/components/PublicOnlyRoute'
+import AdminRoute from './features/auth/components/AdminRoute'
+import MotorcycleNotificationCenter from './shared/components/MotorcycleNotificationCenter'
 
 const LoginForm = lazy(() => import('./features/auth/components/loginForm'))
 const RegisterForm = lazy(() => import('./features/auth/components/registerForm'))
@@ -38,6 +40,9 @@ const ObjectivesPage = lazy(() => import('./pages/ObjectivesPage'))
 const ProgressPage = lazy(() => import('./pages/ProgressPage'))
 const ContactPage = lazy(() => import('./pages/ContactPage'))
 const AIChatPage = lazy(() => import('./pages/AIChatPage'))
+const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage'))
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
+const DealershipAdminPage = lazy(() => import('./pages/DealershipAdminPage'))
 
 function RouteFallback() {
   return (
@@ -50,6 +55,7 @@ function RouteFallback() {
 function App() {
   return (
     <Suspense fallback={<RouteFallback />}>
+      <MotorcycleNotificationCenter />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/home" element={<Navigate to="/" replace />} />
@@ -66,6 +72,21 @@ function App() {
         <Route path="/objetivos" element={<ObjectivesPage />} />
         <Route path="/avances" element={<ProgressPage />} />
         <Route path="/contacto" element={<ContactPage />} />
+        <Route path="/admin/login" element={
+          <AdminRoute>
+            <AdminLoginPage />
+          </AdminRoute>
+        } />
+        <Route path="/admin" element={
+          <AdminRoute>
+            <AdminDashboardPage />
+          </AdminRoute>
+        } />
+        <Route path="/admin/concesionarios" element={
+          <AdminRoute>
+            <DealershipAdminPage />
+          </AdminRoute>
+        } />
 
         <Route path="/questionnaire" element={
           <ProtectedRoute>

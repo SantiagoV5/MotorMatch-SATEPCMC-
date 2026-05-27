@@ -1,4 +1,5 @@
 const prisma = require('../../config/database')
+const { ensureReviewVisibilityColumn } = require('./review.schema')
 
 const BLOCKED_WORDS = ['puta', 'mierda', 'imbecil', 'idiota', 'estupido', 'gonorrea']
 
@@ -15,6 +16,7 @@ function normalizeReview(review, currentUserId = null) {
     motorcycleId: review.motorcycleId,
     rating: review.rating,
     comment: review.comment,
+    isVisible: Boolean(review.isVisible ?? review.is_visible ?? true),
     createdAt: review.createdAt,
     updatedAt: review.updatedAt,
     isMine: currentUserId ? Number(review.userId) === Number(currentUserId) : false,
@@ -22,6 +24,7 @@ function normalizeReview(review, currentUserId = null) {
       ? {
           id: review.user.id,
           name: review.user.fullName,
+          isActive: Boolean(review.user.isActive ?? review.user.is_active ?? true),
         }
       : null,
   }
@@ -33,6 +36,8 @@ function detectBlockedWord(comment) {
 }
 
 async function getMotorcycleReviews({ motorcycleId, page = 1, limit = 5, userId = null }) {
+  await ensureReviewVisibilityColumn()
+
   const motorcycleIdNumber = Number.parseInt(motorcycleId, 10)
   const pageNumber = Number.parseInt(page, 10) || 1
   const pageSize = Number.parseInt(limit, 10) || 5
@@ -46,16 +51,16 @@ async function getMotorcycleReviews({ motorcycleId, page = 1, limit = 5, userId 
 
   const [summary, reviews, currentUserReview, totalReviews] = await Promise.all([
     prisma.review.aggregate({
-      where: { motorcycleId: motorcycleIdNumber },
+      where: { motorcycleId: motorcycleIdNumber, isVisible: true },
       _avg: { rating: true },
     }),
     prisma.review.findMany({
-      where: { motorcycleId: motorcycleIdNumber },
+      where: { motorcycleId: motorcycleIdNumber, isVisible: true },
       orderBy: { createdAt: 'desc' },
       take: pageSize,
       skip,
       include: {
-        user: { select: { id: true, fullName: true } },
+        user: { select: { id: true, fullName: true, isActive: true } },
       },
     }),
     userId
@@ -67,11 +72,11 @@ async function getMotorcycleReviews({ motorcycleId, page = 1, limit = 5, userId 
             },
           },
           include: {
-            user: { select: { id: true, fullName: true } },
+            user: { select: { id: true, fullName: true, isActive: true } },
           },
         })
       : Promise.resolve(null),
-    prisma.review.count({ where: { motorcycleId: motorcycleIdNumber } }),
+    prisma.review.count({ where: { motorcycleId: motorcycleIdNumber, isVisible: true } }),
   ])
 
   return {
@@ -91,6 +96,8 @@ async function getMotorcycleReviews({ motorcycleId, page = 1, limit = 5, userId 
 }
 
 async function createReview(userId, payload) {
+  await ensureReviewVisibilityColumn()
+
   const motorcycleId = Number.parseInt(payload.motorcycleId, 10)
   const rating = Number.parseInt(payload.rating, 10)
   const comment = normalizeText(payload.comment)
@@ -127,7 +134,7 @@ async function createReview(userId, payload) {
       comment,
     },
     include: {
-      user: { select: { id: true, fullName: true } },
+      user: { select: { id: true, fullName: true, isActive: true } },
     },
   })
 
@@ -135,6 +142,8 @@ async function createReview(userId, payload) {
 }
 
 async function updateReview(reviewId, userId, payload) {
+  await ensureReviewVisibilityColumn()
+
   const id = Number.parseInt(reviewId, 10)
   const review = await prisma.review.findUnique({ where: { id } })
 
@@ -167,7 +176,7 @@ async function updateReview(reviewId, userId, payload) {
       ...(nextComment !== undefined ? { comment: nextComment } : {}),
     },
     include: {
-      user: { select: { id: true, fullName: true } },
+      user: { select: { id: true, fullName: true, isActive: true } },
     },
   })
 
@@ -175,6 +184,8 @@ async function updateReview(reviewId, userId, payload) {
 }
 
 async function deleteReview(reviewId, userId) {
+  await ensureReviewVisibilityColumn()
+
   const id = Number.parseInt(reviewId, 10)
   const review = await prisma.review.findUnique({ where: { id } })
 

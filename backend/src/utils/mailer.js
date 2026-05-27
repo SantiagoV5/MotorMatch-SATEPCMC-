@@ -2,6 +2,8 @@ const nodemailer = require('nodemailer');
 const { logger } = require('./logger');
 
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'soportemotormatch@gmail.com';
+const DEFAULT_FROM_NAME = 'MotorMatch';
+const EMAIL_FONT_FAMILY = "'Inter', sans-serif";
 
 // ─── Transporter ──────────────────────────────────────────────────────────────
 // En desarrollo (NODE_ENV !== 'production') y sin SMTP configurado,
@@ -26,6 +28,12 @@ function createTransporter() {
   });
 }
 
+function getFromAddress() {
+  const fromName = process.env.SMTP_FROM_NAME || DEFAULT_FROM_NAME;
+  const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.EMAIL_FROM || process.env.SMTP_USER;
+  return `"${fromName}" <${fromEmail}>`;
+}
+
 function escapeHtml(value = '') {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -43,7 +51,7 @@ async function sendVerificationEmail({ to, name, verificationUrl }) {
     <!DOCTYPE html>
     <html lang="es">
     <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-    <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',sans-serif;">
+    <body style="margin:0;padding:0;background:#f1f5f9;font-family:${EMAIL_FONT_FAMILY};">
       <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
         <tr><td align="center">
           <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
@@ -102,7 +110,7 @@ async function sendVerificationEmail({ to, name, verificationUrl }) {
   }
 
   await transporter.sendMail({
-    from: `"MotorMatch" <${process.env.SMTP_USER}>`,
+    from: getFromAddress(),
     to,
     subject: '✅ Confirma tu cuenta en MotorMatch',
     html,
@@ -120,7 +128,7 @@ async function sendWelcomeEmail({ to, name }) {
     <!DOCTYPE html>
     <html lang="es">
     <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-    <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',sans-serif;">
+    <body style="margin:0;padding:0;background:#f1f5f9;font-family:${EMAIL_FONT_FAMILY};">
       <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
         <tr><td align="center">
           <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
@@ -191,7 +199,7 @@ async function sendWelcomeEmail({ to, name }) {
   }
 
   await transporter.sendMail({
-    from: `"MotorMatch" <${process.env.SMTP_USER}>`,
+    from: getFromAddress(),
     to,
     subject: '🎉 ¡Bienvenido a MotorMatch!',
     html,
@@ -209,7 +217,7 @@ async function sendPasswordResetEmail({ to, name, resetUrl }) {
     <!DOCTYPE html>
     <html lang="es">
     <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-    <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',sans-serif;">
+    <body style="margin:0;padding:0;background:#f1f5f9;font-family:${EMAIL_FONT_FAMILY};">
       <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
         <tr><td align="center">
           <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
@@ -254,7 +262,7 @@ async function sendPasswordResetEmail({ to, name, resetUrl }) {
   }
 
   await transporter.sendMail({
-    from: `"MotorMatch" <${process.env.SMTP_USER}>`,
+    from: getFromAddress(),
     to,
     subject: '🔑 Restablece tu contraseña en MotorMatch',
     html,
@@ -270,7 +278,7 @@ async function sendPasswordChangedEmail({ to, name }) {
     <!DOCTYPE html>
     <html lang="es">
     <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-    <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',sans-serif;">
+    <body style="margin:0;padding:0;background:#f1f5f9;font-family:${EMAIL_FONT_FAMILY};">
       <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
         <tr><td align="center">
           <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
@@ -305,7 +313,7 @@ async function sendPasswordChangedEmail({ to, name }) {
   }
 
   await transporter.sendMail({
-    from: `"MotorMatch" <${process.env.SMTP_USER}>`,
+    from: getFromAddress(),
     to,
     subject: '🔒 Tu contraseña de MotorMatch ha sido actualizada',
     html,
@@ -326,7 +334,7 @@ async function sendSupportEmail({ name, email, message, sourcePage }) {
     <!DOCTYPE html>
     <html lang="es">
     <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-    <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',sans-serif;">
+    <body style="margin:0;padding:0;background:#f1f5f9;font-family:${EMAIL_FONT_FAMILY};">
       <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
         <tr><td align="center">
           <table width="620" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
@@ -397,7 +405,7 @@ async function sendSupportEmail({ name, email, message, sourcePage }) {
   }
 
   await transporter.sendMail({
-    from: `"MotorMatch" <${process.env.SMTP_USER}>`,
+    from: getFromAddress(),
     to: SUPPORT_EMAIL,
     replyTo: email,
     subject: '🛟 Ayuda MotorMatch',
@@ -428,7 +436,7 @@ async function sendPriceAlertEmail({ to, name, motorcycle, targetPrice, currentP
     <!DOCTYPE html>
     <html lang="es">
     <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-    <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',sans-serif;">
+    <body style="margin:0;padding:0;background:#f1f5f9;font-family:${EMAIL_FONT_FAMILY};">
       <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
         <tr><td align="center">
           <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
@@ -481,7 +489,7 @@ async function sendPriceAlertEmail({ to, name, motorcycle, targetPrice, currentP
   }
 
   await transporter.sendMail({
-    from: `"MotorMatch" <${process.env.SMTP_USER}>`,
+    from: getFromAddress(),
     to,
     subject: `Bajo de precio: ${motorcycle.brand} ${motorcycle.model}`,
     html,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { getAllMotorcycles, getBrands } from '../features/motorcycles/services/motorcycleService';
 import { checkMyQuestionnaire } from '../features/questionnaire/services/questionnaireService';
 import MotorcycleCard from '../features/motorcycles/components/motorcycleCard';
@@ -11,6 +11,7 @@ import BrandLogoCarousel from '../shared/components/BrandLogoCarousel';
 import useAuth from '../features/auth/hooks/useAuth';
 import useAuthAction from '../features/auth/hooks/useAuthAction';
 import { consumeMatchingAuthAction } from '../features/auth/utils/authRedirect';
+import { getMotorcycleCatalogEventName, getMotorcycleCatalogStorageKey } from '../shared/utils/motorcycleCatalogEvents';
 
 
 // ----- price range constants for the slider -----
@@ -36,6 +37,7 @@ const getBrandLogo = (brand) => BRAND_LOGOS[brand.toUpperCase()] || null;
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useAuth();
   const { requireAuth, authModal } = useAuthAction();
@@ -122,22 +124,7 @@ export default function HomePage() {
       .catch(err => console.error('Error cargando marcas:', err));
   }, []);
 
-  // Re-fetch motorcycles from the backend whenever any filter changes
-  useEffect(() => {
-    loadMotorcycles();
-  }, [debouncedPrice, selectedBrands, selectedDisplacement, committedSearch, isAuthenticated]);
-
-  useEffect(() => {
-    const nextParams = new URLSearchParams();
-    if (committedSearch.trim()) nextParams.set('search', committedSearch.trim());
-    if (priceRange[0] !== MIN_PRICE) nextParams.set('minPrice', String(priceRange[0]));
-    if (priceRange[1] !== MAX_PRICE) nextParams.set('maxPrice', String(priceRange[1]));
-    if (selectedBrands.length > 0) nextParams.set('brands', selectedBrands.join(','));
-    if (selectedDisplacement) nextParams.set('cc', selectedDisplacement);
-    setSearchParams(nextParams, { replace: true });
-  }, [committedSearch, priceRange, selectedBrands, selectedDisplacement, setSearchParams]);
-
-  const loadMotorcycles = async () => {
+  const loadMotorcycles = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -201,7 +188,43 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedPrice, selectedBrands, selectedDisplacement, committedSearch, isAuthenticated]);
+
+  // Re-fetch motorcycles from the backend whenever any filter changes
+  useEffect(() => {
+    loadMotorcycles();
+  }, [loadMotorcycles]);
+
+  useEffect(() => {
+    const storageKey = getMotorcycleCatalogStorageKey();
+    const eventName = getMotorcycleCatalogEventName();
+
+    const onStorage = (event) => {
+      if (event.key === storageKey) {
+        loadMotorcycles();
+      }
+    };
+
+    const onCatalogUpdate = () => loadMotorcycles();
+
+    window.addEventListener('storage', onStorage);
+    window.addEventListener(eventName, onCatalogUpdate);
+
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener(eventName, onCatalogUpdate);
+    };
+  }, [loadMotorcycles]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+    if (committedSearch.trim()) nextParams.set('search', committedSearch.trim());
+    if (priceRange[0] !== MIN_PRICE) nextParams.set('minPrice', String(priceRange[0]));
+    if (priceRange[1] !== MAX_PRICE) nextParams.set('maxPrice', String(priceRange[1]));
+    if (selectedBrands.length > 0) nextParams.set('brands', selectedBrands.join(','));
+    if (selectedDisplacement) nextParams.set('cc', selectedDisplacement);
+    setSearchParams(nextParams, { replace: true });
+  }, [committedSearch, priceRange, selectedBrands, selectedDisplacement, setSearchParams]);
 
   // Keep loadData as a simple alias so the "Reintentar" button still works
   const loadData = loadMotorcycles;
@@ -263,6 +286,14 @@ export default function HomePage() {
     if (action.type === 'resume-match') {
       void handleMatchClick(true);
     }
+            {(location.state?.accessDenied || location.state?.message) && (
+              <section className="max-w-7xl mx-auto px-4 pt-3">
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 shadow-sm">
+                  {location.state?.message || 'Acceso denegado'}
+                </div>
+              </section>
+            )}
+
   }, [handleMatchClick, isAuthenticated, navigate]);
 
   const handleBrandToggle = (brand) => {
@@ -585,9 +616,9 @@ export default function HomePage() {
       </Header>
       {authModal}
 
-      <main className="flex-1 pt-[108px]">
+      <main className="flex-1 pt-[132px] sm:pt-[144px] xl:pt-[152px]">
         {/* Hero Section */}
-        <section className="relative w-full h-[100px] flex items-center justify-center px-4 overflow-hidden bg-primary">
+        <section className="relative w-full min-h-[210px] sm:min-h-[240px] md:min-h-[280px] flex items-center justify-center px-4 py-10 sm:py-12 overflow-hidden bg-primary">
           <div className="absolute inset-0 opacity-30">
             <img
               className="w-full h-full object-cover"
@@ -601,11 +632,11 @@ export default function HomePage() {
             />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/50 to-transparent"></div>
-          <div className="relative z-10 max-w-4xl w-full text-center">
-            <h2 className="text-lg md:text-2xl font-black text-white leading-tight mb-1">
+          <div className="relative z-10 max-w-4xl w-full text-center px-2">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white leading-tight mb-2">
               MotorMatch: Encuentra tu moto ideal en Colombia
             </h2>
-            <p className="text-xs md:text-sm text-slate-200 font-medium">
+            <p className="text-xs sm:text-sm text-slate-200 font-medium">
               Descubre la libertad sobre dos ruedas con la mejor asesoría personalizada.
             </p>
           </div>
@@ -628,7 +659,7 @@ export default function HomePage() {
         )}
 
         {/* Main CTAs */}
-        <section className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-1 md:grid-cols-4 gap-3">
+        <section className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-1 md:grid-cols-3 gap-3">
           <button onClick={() => {
             if (!requireAuth({
               action: { type: 'navigate', to: '/questionnaire' },
@@ -639,10 +670,6 @@ export default function HomePage() {
           }} className="w-full py-2 bg-primary hover:bg-primary/95 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg">
             <span className="material-symbols-outlined text-base">quiz</span>
             COMENZAR CUESTIONARIO
-          </button>
-          <button className="w-full py-2 bg-white dark:bg-slate-800 border-2 border-primary text-primary dark:text-slate-100 dark:border-slate-700 hover:bg-primary/5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 shadow-sm">
-            <span className="material-symbols-outlined text-base">explore</span>
-            VER CATÁLOGO
           </button>
           <button onClick={handleMatchClick} className="w-full py-2 bg-accent hover:bg-accent/90 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 shadow-lg">
             <span className="material-symbols-outlined text-base">auto_awesome</span>

@@ -1,6 +1,29 @@
 const prisma = require('../../config/database')
 const { generateRecommendations } = require('../recommendations/recommendation.service')
 
+const USAGE_TYPES = new Set(['ciudad', 'carretera', 'mixto', 'offroad', 'trabajo', 'deporte'])
+const MOTORCYCLE_SKILLS = new Set(['automatica', 'semiautomatica', 'manual'])
+
+function normalizeUsageTypes(data) {
+  const rawValues = Array.isArray(data.usageTypes) ? data.usageTypes : []
+  const legacyValue = typeof data.usageType === 'string' && data.usageType.trim() ? [data.usageType.trim()] : []
+
+  return [...rawValues, ...legacyValue]
+    .map(value => String(value).trim())
+    .filter(value => USAGE_TYPES.has(value))
+    .filter((value, index, array) => array.indexOf(value) === index)
+}
+
+function normalizeExperienceYears(value) {
+  const numericValue = Number.parseInt(value, 10)
+  return Number.isNaN(numericValue) ? null : numericValue
+}
+
+function normalizeMotorcycleSkill(value) {
+  const normalized = String(value || '').trim().toLowerCase()
+  return MOTORCYCLE_SKILLS.has(normalized) ? normalized : null
+}
+
 /**
  * Procesa el cuestionario del usuario:
  * 1. Guarda el cuestionario en la BD
@@ -10,6 +33,10 @@ const { generateRecommendations } = require('../recommendations/recommendation.s
  */
 async function processQuestionnaire(userId, data) {
   const budget = data.budget ? parseFloat(data.budget) : 0
+  const usageTypes = normalizeUsageTypes(data)
+  const primaryUsageType = usageTypes[0] || null
+  const ridingExperienceYears = normalizeExperienceYears(data.ridingExperienceYears)
+  const motorcycleTypeExperience = normalizeMotorcycleSkill(data.motorcycleTypeExperience)
 
   const currentUser = await prisma.user.findUnique({
     where: { id: userId },
@@ -24,10 +51,11 @@ async function processQuestionnaire(userId, data) {
     budget,
     includesSoat:         data.includesSoat         ?? false,
     includesRegistration: data.includesRegistration  ?? false,
-    usageType:            data.usageType             ?? '',
+    usageType:            primaryUsageType           ?? '',
+    usageTypes,
     frequency:            data.frequency             ?? null,
-    hasPassenger:         data.hasPassenger          ?? false,
-    passengerFrequency:   data.passengerFrequency    ?? null,
+    motorcycleTypeExperience,
+    ridingExperienceYears,
     heightCm:             data.heightCm,
     weightKg:             data.weightKg              ?? null,
     comfortWithHeavy:     data.comfortWithHeavy      ?? null,
@@ -71,10 +99,13 @@ async function processQuestionnaire(userId, data) {
     budget,
     includesSoat:         data.includesSoat,
     includesRegistration: data.includesRegistration,
-    usageType:            data.usageType,
+    usageType:            primaryUsageType,
+    usageTypes,
     heightCm:             currentUser?.heightCm || data.heightCm,
     weightKg:             data.weightKg,
     comfortWithHeavy:     data.comfortWithHeavy,
+    ridingExperienceYears,
+    motorcycleTypeExperience,
     preferredBrands:      currentUser?.preferredBrands || [],
   })
 

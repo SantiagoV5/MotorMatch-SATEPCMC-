@@ -153,7 +153,7 @@ function normalizeMotorcycleDetailRow(row) {
     fuelTankLiters: pickField(row, ['fuelTankLiters', 'fuel_tank_liters']),
     consumptionKmpl: pickField(row, ['consumptionKmpl', 'consumption_kmpl']),
     transmission: pickField(row, ['transmission']),
-    brakeSystem: pickField(row, ['brakeSystem', 'brake_system']),
+    frontBrakeSystem: pickField(row, ['frontBrakeSystem', 'front_brake_system']),
     price: pickField(row, ['price']),
     currency: pickField(row, ['currency']),
     imageUrl: pickField(row, ['imageUrl', 'image_url']),

@@ -182,7 +182,7 @@
 .detail-item value {
   font-weight: 600;
   color: #1a1a1a;
-  font-family: monospace;
+  font-family: inherit;
 }
 
 .detail-item.total {

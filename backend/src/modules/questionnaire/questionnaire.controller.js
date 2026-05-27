@@ -49,7 +49,7 @@ async function getMyRecommendations(req, res, next) {
       prisma.questionnaire.findFirst({
         where: { userId: req.user.id },
         orderBy: { createdAt: 'desc' },
-        select: { id: true, budget: true, usageType: true, heightCm: true },
+        select: { id: true, budget: true, usageType: true, usageTypes: true, heightCm: true, motorcycleTypeExperience: true, ridingExperienceYears: true },
       }),
     ])
     res.json({ recommendations, questionnaire })
@@ -80,6 +80,9 @@ async function getMyQuestionnaireProfile(req, res, next) {
         budget: true,
         heightCm: true,
         usageType: true,
+        usageTypes: true,
+        motorcycleTypeExperience: true,
+        ridingExperienceYears: true,
         completedAt: true,
       },
     })
